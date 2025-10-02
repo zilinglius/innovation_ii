@@ -65,10 +65,10 @@ default via 192.168.1.1 dev eth0
 ---
 
 ## 二、实验目标
-通过 **Linux network namespace**，搭建一个简单的三节点网络拓扑，配置路由规则，让三个节点互通：
+通过 **Linux network namespace**，搭建一个简单的四节点网络拓扑，配置路由规则，让四个节点互通：
 
 ```
-ns1 --- ns2 --- ns3
+ns1 --- ns2 --- ns3 --- ns4
 ```
 
 - 每个节点是一个独立的 network namespace。
@@ -84,6 +84,7 @@ ns1 --- ns2 --- ns3
 ip netns add ns1
 ip netns add ns2
 ip netns add ns3
+ip netns add ns4
 ```
 
 ### 2. 创建 veth pair 并连接命名空间
@@ -94,9 +95,14 @@ ip link set veth-ns1 netns ns1
 ip link set veth-ns2-1 netns ns2
 
 # ns2 <-> ns3
-ip link add veth-ns2-2 type veth peer name veth-ns3
+ip link add veth-ns2-2 type veth peer name veth-ns3-1
 ip link set veth-ns2-2 netns ns2
-ip link set veth-ns3 netns ns3
+ip link set veth-ns3-1 netns ns3
+
+# ns3 <-> ns4
+ip link add veth-ns3-2 type veth peer name veth-ns4
+ip link set veth-ns3-2 netns ns3
+ip link set veth-ns4 netns ns4
 ```
 
 ### 3. 分配 IP 地址
@@ -114,22 +120,37 @@ ip netns exec ns2 ip link set veth-ns2-2 up
 ip netns exec ns2 ip link set lo up
 
 # ns3
-ip netns exec ns3 ip addr add 10.0.23.3/24 dev veth-ns3
-ip netns exec ns3 ip link set veth-ns3 up
+ip netns exec ns3 ip addr add 10.0.23.3/24 dev veth-ns3-1
+ip netns exec ns3 ip addr add 10.0.34.3/24 dev veth-ns3-2
+ip netns exec ns3 ip link set veth-ns3-1 up
+ip netns exec ns3 ip link set veth-ns3-2 up
 ip netns exec ns3 ip link set lo up
+
+# ns4
+ip netns exec ns4 ip addr add 10.0.34.4/24 dev veth-ns4
+ip netns exec ns4 ip link set veth-ns4 up
+ip netns exec ns4 ip link set lo up
 ```
 
 ---
 
 ## 四、路由配置
 
-### 1. 配置默认路由
+### 1. 配置静态路由
 ```bash
-# 在 ns1 中，配置到 ns3 的路由，下一跳为 ns2
+# 在 ns1 中，配置到 ns3、ns4 的路由，下一跳为 ns2
 ip netns exec ns1 ip route add 10.0.23.0/24 via 10.0.12.2
+ip netns exec ns1 ip route add 10.0.34.0/24 via 10.0.12.2
+
+# 在 ns2 中，配置到 ns4 的路由，下一跳为 ns3
+ip netns exec ns2 ip route add 10.0.34.0/24 via 10.0.23.3
 
 # 在 ns3 中，配置到 ns1 的路由，下一跳为 ns2
 ip netns exec ns3 ip route add 10.0.12.0/24 via 10.0.23.2
+
+# 在 ns4 中，配置到 ns1、ns2 的路由，下一跳为 ns3
+ip netns exec ns4 ip route add 10.0.12.0/24 via 10.0.34.3
+ip netns exec ns4 ip route add 10.0.23.0/24 via 10.0.34.3
 ```
 
 ### 2. 验证路由表
@@ -137,6 +158,7 @@ ip netns exec ns3 ip route add 10.0.12.0/24 via 10.0.23.2
 ip netns exec ns1 ip route show
 ip netns exec ns2 ip route show
 ip netns exec ns3 ip route show
+ip netns exec ns4 ip route show
 ```
 
 ---
@@ -150,24 +172,33 @@ ip netns exec ns1 ping -c 3 10.0.12.2
 
 # ns1 ping ns3 （经过 ns2 转发）
 ip netns exec ns1 ping -c 3 10.0.23.3
+
+# ns1 ping ns4 （经过 ns2、ns3 转发）
+ip netns exec ns1 ping -c 3 10.0.34.4
+
+# ns4 ping ns1 （逆向验证）
+ip netns exec ns4 ping -c 3 10.0.12.1
 ```
 
 ### 2. 抓包验证
 ```bash
-# 在 ns2 上抓包，观察转发的数据包
-ip netns exec ns2 tcpdump -i veth-ns2-1 icmp
+# 在 ns2 上抓包，观察往返 ns1/ns4 的 ICMP 数据包
+ip netns exec ns2 tcpdump -i veth-ns2-2 icmp
+
+# 在 ns3 上抓包，确认同时处理来自 ns2 与 ns4 的流量
+ip netns exec ns3 tcpdump -i veth-ns3-2 icmp
 ```
 
 ---
 
 ## 六、思考题
-1. 如果没有配置路由，ns1 能否 ping 通 ns3？为什么？
-2. 如何扩展拓扑，加入第四个节点 ns4？
-3. 如果想让 ns2 不转发数据包，应该修改什么参数？
+1. 如果没有在 ns2、ns3 中配置转发路由，ns1 能否 ping 通 ns4？为什么？
+2. 如何进一步扩展拓扑，加入第五个节点 ns5？
+3. 如果想让 ns3 不再转发数据包，应调整哪些系统参数？
 
 ---
 
 ## 七、总结
-- 本实验展示了 **路由表在数据转发中的作用**。
-- 通过 network namespace 搭建了最小实验环境。
-- 掌握了 **IP 地址分配、路由配置和验证方法**。
+- 本实验展示了 **路由表在多跳数据转发中的作用**。
+- 通过 network namespace 搭建了四节点的最小实验环境。
+- 掌握了 **IP 地址分配、路由配置和链路验证方法**。
