@@ -245,27 +245,31 @@ BGP is a **path-vector** protocol designed for **inter-domain routing**. Instead
 
 ```mermaid
 flowchart LR
-  subgraph ISP_A[AS65010 (ISP-A)]
-    A1[[A1]]
-  end
-  subgraph ENT[AS65100 (Enterprise)]
-    E1[[E1]] --- E2[[E2]]
-  end
-  subgraph ISP_B[AS65020 (ISP-B)]
-    B1[[B1]]
-  end
+  ISP_A[A1 in AS65010]
+  ISP_B[B1 in AS65020]
+  E1[E1 in AS65100]
+  E2[E2 in AS65100]
 
-  E1 --> A1
-  E2 --> B1
+  %% eBGP sessions (represented as simple edges)
+  E1 --> ISP_A
+  E2 --> ISP_B
 
+  %% iBGP session inside enterprise
   E1 --- E2
 
-  ATTR1[(Path via ISP-A: AS_PATH 65010, LOCAL_PREF=200)]
-  ATTR2[(Path via ISP-B: AS_PATH 65020, LOCAL_PREF=100, MED=50)]
+  %% Attributes as standalone annotation nodes
+  ATTR_A[Path via ISP-A: AS_PATH 65010; LOCAL_PREF 200]
+  ATTR_B[Path via ISP-B: AS_PATH 65020; LOCAL_PREF 100; MED 50]
 
-  A1 --> ATTR1 --> E1
-  B1 --> ATTR2 --> E2
+  ISP_A --> ATTR_A --> E1
+  ISP_B --> ATTR_B --> E2
 ```
+
+**Rendering notes (BGP):**
+
+* Removed `subgraph` blocks and any edge labels; only basic nodes and arrows remain.
+* Attributes shown as separate annotation nodes for GitHub compatibility.
+* If needed for older renderers, replace `---` with `-->` for all links.
 
 **Figure Notes (BGP):**
 
