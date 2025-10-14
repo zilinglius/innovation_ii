@@ -148,19 +148,35 @@ EIGRP, a Cisco proprietary **advanced distance-vector** protocol, combines featu
 
 ```mermaid
 flowchart LR
-  subgraph Net[Example Network]
-    A[[A]] -- 100Mbps/1ms --> B[[B]]
-    B -- 100Mbps/2ms --> D[[D]]
-    A -- 10Mbps/10ms --> C[[C]]
-    C -- 100Mbps/2ms --> D
+  subgraph Topology
+    A[A] --> B[B]
+    B --> D[D]
+    A --> C[C]
+    C --> D
   end
 
-  note1[(Successor at A to D: A→B→D, FD=3ms)]
-  note2[(Feasible Successor at A: A→C→D if AD(C)<FD)]
+  M1[Link A-B: 100Mb, 1ms]
+  M2[Link B-D: 100Mb, 2ms]
+  M3[Link A-C: 10Mb, 10ms]
+  M4[Link C-D: 100Mb, 2ms]
 
-  A --> note1
-  A --> note2
+  A --> M1
+  B --> M2
+  A --> M3
+  C --> M4
+
+  S[Successor at A to D: path A-B-D, FD = 3ms]
+  F[Feasible successor candidate at A: path A-C-D if AD via C < FD]
+
+  A --> S
+  A --> F
 ```
+
+**Rendering notes (EIGRP):**
+
+* Edge labels were moved into standalone nodes (M1–M4) for GitHub safety.
+* Only basic `flowchart` syntax is used; no styles, classes, or Unicode arrows.
+* If rendering still fails in a restricted environment, replace `subgraph` with a plain list of nodes.
 
 **Figure Notes (EIGRP):**
 
