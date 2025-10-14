@@ -66,27 +66,33 @@ OSPF is a **link-state** routing protocol. Each router floods **Link-State Adver
 
 ```mermaid
 flowchart TB
-  subgraph A0[Area 0 (Backbone)]
-    Rb1[[ABR Rb1]] --- Rb2[[ABR Rb2]]
-    DR((DR))
-    BDR((BDR))
+  subgraph Area0_Backbone
+    direction LR
+    Rb1[ABR Rb1] --- Rb2[ABR Rb2]
+    DR[DR] --- BDR[BDR]
     Rb1 --- DR
-    Rb1 --- BDR
     Rb2 --- DR
-    Rb2 --- BDR
   end
 
-  subgraph A1[Area 1]
-    Ra1[[Ra1]] --- Ra2[[Ra2]] --- Ra3[[Ra3]]
+  subgraph Area1
+    direction LR
+    Ra1[Ra1] --- Ra2[Ra2] --- Ra3[Ra3]
   end
 
-  subgraph A2[Area 2]
-    Rc1[[Rc1]] --- Rc2[[Rc2]] --- Rc3[[Rc3]]
+  subgraph Area2
+    direction LR
+    Rc1[Rc1] --- Rc2[Rc2] --- Rc3[Rc3]
   end
 
   Rb1 --- Ra2
   Rb2 --- Rc2
 ```
+
+**Rendering notes:**
+
+* Uses only `flowchart` + `subgraph` + default node shapes (no classes, no styles, no quotes).
+* `direction LR` inside subgraphs avoids nested layout quirks on GitHub.
+* If a repo uses an older Mermaid renderer, replace `---` with `--` (both render as plain edges).
 
 ### LSA & Neighbor Exchange (Simplified)
 
