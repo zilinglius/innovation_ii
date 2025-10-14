@@ -3,92 +3,192 @@
 ## Overview
 Routing protocols let routers exchange reachability information and build forwarding tables automatically. They fall into interior gateway protocols (IGPs) for intra-domain routing and exterior gateway protocols (EGPs) for inter-domain routing.
 
-## Routing Information Protocol (RIP)
-- **Type**: Distance-vector IGP using hop-count (maximum 15).
-- **Operation**: Periodic full-table updates every 30 seconds; split horizon, poison reverse, and holddown timers mitigate loops.
-- **Pros**: Simple configuration, low resource requirements.
-- **Cons**: Slow convergence, poor scalability, limited metric granularity.
-- **Typical Use**: Small, flat topologies or lab demonstrations.
+# Routing Protocols Detailed Explanation
 
-## Open Shortest Path First (OSPF)
-- **Type**: Link-state IGP running Dijkstra’s SPF algorithm.
-- **Hierarchy**: Areas (backbone Area 0 plus non-backbone areas) reduce flooding scope; ABRs summarize routes between areas.
-- **Packet Types**: Hello for neighbor discovery; DBD, LSR, and LSU for LSA exchange.
-- **Metric**: Cost based on interface bandwidth, allowing fine-grained tuning.
-- **Pros**: Fast convergence, supports VLSM, authentication, and route tagging.
-- **Cons**: More complex design, requires careful area and LSA planning.
-- **Typical Use**: Enterprise networks and service-provider cores.
+## 1. Routing Information Protocol (RIP)
 
-## Enhanced Interior Gateway Routing Protocol (EIGRP)
-- **Type**: Cisco-originated advanced distance-vector protocol.
-- **Metric**: Composite of bandwidth and delay by default (load and reliability optional).
-- **Algorithm**: Diffusing Update Algorithm (DUAL) keeps loop-free successors and feasible successors for quick failover.
-- **Pros**: Rapid convergence, reduced bandwidth consumption via partial updates.
-- **Cons**: Historically vendor-specific, limited multi-vendor support.
-- **Typical Use**: Cisco-centric environments that need fast convergence.
+### Working Principle
 
-## Intermediate System to Intermediate System (IS-IS)
-- **Type**: Link-state IGP operating directly over Layer 2.
-- **Hierarchy**: Level 1 (intra-area) and Level 2 (inter-area) routing; wide metrics support large-scale design.
-- **Extensions**: Multi-Topology IS-IS, IPv6 support via TLVs.
-- **Pros**: Scales well, minimal reliance on IP before adjacency.
-- **Cons**: Smaller talent pool, TLV-based configuration can feel opaque.
-- **Typical Use**: Large service-provider backbones and MPLS cores.
+RIP is a **distance-vector** routing protocol that relies on hop count as its sole metric (maximum 15 hops). Each router periodically (every 30 seconds) broadcasts its entire routing table to its neighbors. RIP prevents routing loops using techniques such as **split horizon**, **poison reverse**, and **holddown timers**.
 
-## Border Gateway Protocol (BGP)
-- **Type**: Path-vector EGP controlling inter-domain routing.
-- **Key Concepts**: Attributes such as AS_PATH, NEXT_HOP, LOCAL_PREF, MED, and COMMUNITIES drive policy; eBGP (between ASes) and iBGP (within an AS).
-- **Convergence**: Event-driven updates; route reflectors or confederations prevent full-mesh requirements.
-- **Pros**: Policy-rich, scales to internet-sized tables.
-- **Cons**: Complex policy design, slower convergence, vulnerable to route hijacks without safeguards.
-- **Typical Use**: ISP peering and large enterprises with multi-homing.
+* **Metric**: Hop count (max 15)
+* **Update Mechanism**: Periodic full-table broadcast every 30 seconds
+* **Loop Prevention**: Split horizon, poison reverse, holddown
+* **Advantages**: Simple and lightweight
+* **Limitations**: Slow convergence and poor scalability
 
-## Illustrative Topologies
-- **RIP Starter Lab**
-  ```text
-  10.0.1.0/24          10.0.2.0/24          10.0.3.0/24
-      |                    |                    |
-     R1 ------------------ R2 ------------------ R3
-               (hop count propagates end-to-end)
-  ```
-- **OSPF Two-Area Design**
-  ```text
-        Area 0 (Backbone)
-     Rb1 ----------- Rb2
-      | \             / |
-      |  \           /  |
-      |   \         /   |
-  Area 1   \       /   Area 2
-   Ra1--Ra2--Ra3  Rc1--Rc2--Rc3
-  (ABRs: Rb1, Rb2 summarizing intra-area routes)
-  ```
-- **BGP Dual-Homing Scenario**
-  ```text
-                AS 65010 (ISP-A)
-                 /           \
-          eBGP  /             \  eBGP
-              R1 --- iBGP --- R2
-                 \           /
-                AS 65020 (ISP-B)
-  (Enterprise AS 65100 chooses exit via LOCAL_PREF and MED)
-  ```
+### Flow Diagram
 
-## Comparative Notes
-IGPs aim for fast convergence inside an administrative domain, optimize for speed and resource usage, and coexist with BGP for edge policy control. BGP emphasizes policy enforcement and scalability across domains. Choose protocols according to network size, vendor mix, and operational requirements—often combining an IGP (OSPF, IS-IS, or EIGRP) with BGP at the edges.
+```mermaid
+sequenceDiagram
+    participant R1 as Router 1
+    participant R2 as Router 2
+    participant R3 as Router 3
 
-## Lab Exercises
-1. **Namespace RIP Lab**
-   - Provision three namespaces (`ns1`, `ns2`, `ns3`) in a line using `ip netns` and connect them with /24 veth pairs mirroring the RIP starter topology.
-   - Install FRRouting or `bird` (if available) inside each namespace; configure `router rip`, set `network 10.0.x.0/24`, and enable `redistribute connected`.
-   - Verify convergence with `ip netns exec ns1 vtysh -c "show ip rip"` and ensure hop counts remain within limits.
-2. **OSPF Area Boundary Exercise**
-   - Reuse the `exeriments/01/ns_bridge.sh` pattern to create two core namespaces acting as ABRs (`ns-backbone-1`, `ns-backbone-2`) and four leaf namespaces split into Area 1 and Area 2.
-   - Run FRR OSPFv2 inside each namespace; place backbone interfaces in Area 0 and leaf interfaces in their respective areas.
-   - Capture `show ip ospf interface` and `show ip ospf database` outputs to confirm LSAs stay within their areas and summarize routes on ABRs.
-3. **BGP Policy Lab**
-   - Spin up four namespaces to emulate an enterprise AS with two upstream providers; configure loopback addresses as router IDs.
-   - Establish eBGP sessions between the enterprise edge nodes and each provider, then use `LOCAL_PREF` and `MED` adjustments to steer traffic.
-   - Validate policy by tracing routes (`show ip bgp`) and testing reachability with `ip netns exec <ns> traceroute`.
+    R1->>R2: Sends full routing table (every 30s)
+    R2->>R3: Propagates updated hop counts
+    R3-->>R2: Updates local routing table
+    Note over R1,R3: Each node stores next-hop and hop count
+```
+
+---
+
+## 2. Open Shortest Path First (OSPF)
+
+### Working Principle
+
+OSPF is a **link-state** routing protocol. Each router floods **Link-State Advertisements (LSAs)** describing its interfaces and neighbors. Every router builds an identical **Link-State Database (LSDB)** and runs **Dijkstra's SPF algorithm** to compute shortest paths.
+
+* **Hierarchy**: Backbone Area 0 and non-backbone areas connected via ABRs
+* **Key Packets**: Hello, DBD, LSR, LSU, LSAck
+* **Metric**: Cost (inversely proportional to bandwidth)
+* **Advantages**: Fast convergence, VLSM support, authentication
+* **Limitations**: Design complexity due to area planning
+
+### Area Structure Diagram
+
+```mermaid
+graph TD
+    subgraph Area0["Area 0 (Backbone)"]
+        Rb1((Rb1)) --- Rb2((Rb2))
+    end
+    subgraph Area1
+        Ra1((Ra1)) --- Ra2((Ra2)) --- Ra3((Ra3))
+    end
+    subgraph Area2
+        Rc1((Rc1)) --- Rc2((Rc2)) --- Rc3((Rc3))
+    end
+    Rb1 --- Ra2
+    Rb2 --- Rc2
+    style Area0 fill:#eaf6ff,stroke:#4a90e2
+```
+
+### SPF Computation Flow
+
+```mermaid
+flowchart TD
+    A[Collect LSAs] --> B[Build Topology Graph]
+    B --> C[Run Dijkstra Algorithm]
+    C --> D[Construct Shortest Path Tree]
+    D --> E[Install Routes into RIB]
+```
+
+---
+
+## 3. Enhanced Interior Gateway Routing Protocol (EIGRP)
+
+### Working Principle
+
+EIGRP, a Cisco proprietary **advanced distance-vector** protocol, combines features of distance-vector and link-state mechanisms. It uses the **Diffusing Update Algorithm (DUAL)** to guarantee loop-free and rapid convergence.
+
+* **Metric**: Composite of bandwidth and delay (optionally load/reliability)
+* **Algorithm**: DUAL maintains successor (primary) and feasible successor (backup) routes
+* **Update Mechanism**: Partial updates on topology change
+* **Advantages**: Fast convergence, efficient bandwidth use
+* **Limitations**: Historically Cisco-only
+
+### DUAL Mechanism
+
+```mermaid
+flowchart LR
+    A[Successor Route] --> B[Feasible Successor]
+    B --> C[Immediate failover upon failure]
+    C --> D[Loop-free recalculation avoided]
+```
+
+---
+
+## 4. Intermediate System to Intermediate System (IS-IS)
+
+### Working Principle
+
+IS-IS is a **link-state routing protocol** that operates at **Layer 2** of the OSI model. It uses **TLV (Type-Length-Value)** structures for extensibility and supports both IPv4 and IPv6 through Multi-Topology extensions.
+
+* **Levels**: Level 1 (intra-area) and Level 2 (inter-area)
+* **Encapsulation**: Runs directly over Layer 2 (no IP dependency)
+* **Advantages**: High scalability, minimal reliance on IP
+* **Limitations**: Smaller operator base, TLV complexity
+
+### Hierarchical Topology
+
+```mermaid
+graph TD
+    subgraph L2["Level-2 (Backbone)"]
+        R4((R4)) --- R5((R5)) --- R6((R6))
+    end
+    subgraph L1A["Level-1 Area A"]
+        R1((R1)) --- R2((R2))
+    end
+    subgraph L1B["Level-1 Area B"]
+        R3((R3)) --- R7((R7))
+    end
+    R2 --- R4
+    R3 --- R5
+    style L2 fill:#f9f9e0,stroke:#d4b106
+```
+
+---
+
+## 5. Border Gateway Protocol (BGP)
+
+### Working Principle
+
+BGP is a **path-vector** protocol designed for **inter-domain routing**. Instead of computing shortest paths, BGP uses **policy-based decisions** guided by **path attributes** such as AS_PATH, NEXT_HOP, LOCAL_PREF, MED, and COMMUNITY.
+
+* **eBGP**: Between autonomous systems (ASes)
+* **iBGP**: Within a single AS
+* **Attributes**: Control routing preference and path selection
+* **Advantages**: Highly scalable, flexible policy control
+* **Limitations**: Slow convergence, complex policies
+
+### Topology Diagram
+
+```mermaid
+graph TD
+    subgraph AS65010["AS 65010 (ISP-A)"]
+        A1((A1)) --- A2((A2))
+    end
+    subgraph AS65100["AS 65100 (Enterprise)"]
+        E1((E1)) --- E2((E2))
+    end
+    subgraph AS65020["AS 65020 (ISP-B)"]
+        B1((B1)) --- B2((B2))
+    end
+    E1 ---|eBGP| A1
+    E2 ---|eBGP| B1
+    E1 ---|iBGP| E2
+    Note over E1,E2: Routing controlled via LOCAL_PREF & MED policies
+```
+
+---
+
+## 6. Comparative Summary
+
+| Protocol | Type                     | Metric            | Convergence | Hierarchy | Typical Use            |
+| -------- | ------------------------ | ----------------- | ----------- | --------- | ---------------------- |
+| RIP      | Distance Vector          | Hop count         | Slow        | No        | Small networks         |
+| OSPF     | Link State               | Cost (bandwidth)  | Fast        | Yes       | Enterprise & ISP cores |
+| EIGRP    | Advanced Distance Vector | Bandwidth + Delay | Fast        | Partial   | Cisco networks         |
+| IS-IS    | Link State               | Wide metric       | Fast        | Yes       | Provider backbones     |
+| BGP      | Path Vector              | Policy attributes | Slow        | AS-level  | Inter-domain routing   |
+
+---
+
+## 7. Lab Applications
+
+1. **Namespace RIP Lab**: Create three namespaces linked linearly and run RIP within FRRouting.
+2. **OSPF Area Boundary Exercise**: Two ABRs connecting two non-backbone areas to Area 0.
+3. **BGP Policy Lab**: Simulate dual-homed enterprise network and tune route selection with LOCAL_PREF and MED.
+
+---
+
+## 8. References
+
+* RFC 1058 (RIP)
+* RFC 2328 (OSPFv2)
+* RFC 5308 (IS-IS IPv6)
+* RFC 4271 (BGP)
+* Cisco EIGRP Whitepaper
 
 ## Further Study
 Review RFC 1058 (RIP), RFC 2328 (OSPFv2), RFC 5308 (IS-IS IPv6), RFC 4271 (BGP), and Cisco’s EIGRP whitepaper. For lab practice, use Linux network namespaces, FRRouting, or virtual routers (e.g., Cisco CSR1000v) to observe adjacency formation, SPF runs, and convergence behavior firsthand.
