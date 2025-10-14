@@ -1,8 +1,5 @@
 # Routing Protocols Detailed Explanation
 
-## Overview
-Routing protocols let routers exchange reachability information and build forwarding tables automatically. They fall into interior gateway protocols (IGPs) for intra-domain routing and exterior gateway protocols (EGPs) for inter-domain routing.
-
 ## 1. Routing Information Protocol (RIP)
 
 ### Working Principle
@@ -36,16 +33,12 @@ flowchart LR
   R1 --- R2
   R2 --- R3
 
-  %% Distance vectors as simple labels
-  %% (GitHub-safe: use text nodes instead of edge labels)
   DV1[(R1 tells R2: C=2 hops)]
   DV2[(R2 tells R3: A=2 hops)]
+  PR[(Poison Reverse: R2 says A=∞ back to R1)]
 
   R1 --> DV1 --> R2
   R2 --> DV2 --> R3
-
-  %% Poison reverse illustration
-  PR[(Poison Reverse: R2 says A=∞ back to R1)]
   R2 --> PR --> R1
 ```
 
@@ -75,8 +68,8 @@ OSPF is a **link-state** routing protocol. Each router floods **Link-State Adver
 flowchart TB
   subgraph A0[Area 0 (Backbone)]
     Rb1[[ABR Rb1]] --- Rb2[[ABR Rb2]]
-    DR((DR)):::role
-    BDR((BDR)):::role
+    DR((DR))
+    BDR((BDR))
     Rb1 --- DR
     Rb1 --- BDR
     Rb2 --- DR
@@ -93,8 +86,6 @@ flowchart TB
 
   Rb1 --- Ra2
   Rb2 --- Rc2
-
-  classDef role fill:#fff3cd,stroke:#d39e00;
 ```
 
 ### LSA & Neighbor Exchange (Simplified)
@@ -242,16 +233,13 @@ flowchart LR
     B1[[B1]]
   end
 
-  %% eBGP
   E1 --> A1
   E2 --> B1
 
-  %% iBGP
   E1 --- E2
 
-  %% Attribute annotations as standalone nodes (GitHub-safe)
-  ATTR1[(Path via ISP-A: AS_PATH "65010", LOCAL_PREF=200)]
-  ATTR2[(Path via ISP-B: AS_PATH "65020", LOCAL_PREF=100, MED=50)]
+  ATTR1[(Path via ISP-A: AS_PATH 65010, LOCAL_PREF=200)]
+  ATTR2[(Path via ISP-B: AS_PATH 65020, LOCAL_PREF=100, MED=50)]
 
   A1 --> ATTR1 --> E1
   B1 --> ATTR2 --> E2
