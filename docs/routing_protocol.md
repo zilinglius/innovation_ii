@@ -144,20 +144,25 @@ BGP is a **path-vector** protocol designed for **inter-domain routing**. Instead
 ### Topology Diagram
 
 ```mermaid
-graph TD
-    subgraph AS65010["AS 65010 (ISP-A)"]
-        A1((A1)) --- A2((A2))
-    end
-    subgraph AS65100["AS 65100 (Enterprise)"]
-        E1((E1)) --- E2((E2))
-    end
-    subgraph AS65020["AS 65020 (ISP-B)"]
-        B1((B1)) --- B2((B2))
-    end
-    E1 ---|eBGP| A1
-    E2 ---|eBGP| B1
-    E1 ---|iBGP| E2
-    Note over E1,E2: Routing controlled via LOCAL_PREF & MED policies
+flowchart LR
+   subgraph ISP_A["AS 65010 (ISP-A)"]
+   A1((A1)) --- A2((A2))
+   end
+   subgraph ENT["AS 65100 (Enterprise)"]
+   E1((E1)) --- E2((E2))
+   end
+   subgraph ISP_B["AS 65020 (ISP-B)"]
+   B1((B1)) --- B2((B2))
+   end
+
+
+   %% eBGP sessions to upstream ISPs
+   E1 --> A1
+   E2 --> B1
+
+
+   %% iBGP session within enterprise AS
+   E1 --- E2
 ```
 
 ---
