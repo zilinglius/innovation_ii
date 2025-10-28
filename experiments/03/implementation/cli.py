@@ -1,5 +1,5 @@
 """
-Simple interactive CLI used to inspect the running OSPF process during labs.
+实验期间用于观察协议状态的简易交互式 CLI。
 """
 
 from __future__ import annotations
@@ -17,6 +17,7 @@ class CliShell:
     self.router = router
     self._running = threading.Event()
     self._running.set()
+    # 命令解析表，便于扩展更多调试指令。
     self._commands = {
         "show": self._cmd_show,
         "send": self._cmd_send,
@@ -39,12 +40,12 @@ class CliShell:
       command = tokens[0]
       handler = self._commands.get(command)
       if handler is None:
-        LOGGER.warning("unknown command: %s", command)
+        LOGGER.warning("未知命令: %s", command)
         continue
       try:
         handler(tokens[1:])
       except Exception:  # pragma: no cover - interactive diagnostics
-        LOGGER.exception("command failed")
+        LOGGER.exception("命令执行失败")
 
   def stop(self) -> None:
     self._running.clear()
@@ -53,7 +54,7 @@ class CliShell:
   def _cmd_show(self, args: Iterable[str]) -> None:
     sub = list(args)
     if not sub:
-      LOGGER.info("usage: show <neighbors|lsdb|routes>")
+      LOGGER.info("用法: show <neighbors|lsdb|routes>")
       return
     topic = sub[0]
     if topic == "neighbors":
@@ -63,27 +64,27 @@ class CliShell:
     elif topic == "routes":
       self._show_routes()
     else:
-      LOGGER.warning("unsupported show topic: %s", topic)
+      LOGGER.warning("不支持的 show 子命令: %s", topic)
 
   def _cmd_send(self, args: Iterable[str]) -> None:
     sub = list(args)
     if len(sub) != 2 or sub[0] != "hello":
-      LOGGER.info("usage: send hello <interface>")
+      LOGGER.info("用法: send hello <interface>")
       return
     iface = sub[1]
     iface_state = self.router.interfaces.get(iface)
     if iface_state is None:
-      LOGGER.warning("interface not found: %s", iface)
+      LOGGER.warning("接口不存在: %s", iface)
       return
     try:
       self.router.send_hello(iface_state)
     except Exception:  # pragma: no cover - diagnostics
-      LOGGER.exception("failed to send hello")
+      LOGGER.exception("发送 Hello 失败")
     else:
-      LOGGER.info("hello sent on %s", iface)
+      LOGGER.info("%s 已发送 Hello", iface)
 
   def _cmd_quit(self, _: Iterable[str]) -> None:
-    LOGGER.info("exiting CLI")
+    LOGGER.info("退出 CLI")
     self.stop()
 
   def _cmd_help(self, _: Iterable[str]) -> None:
@@ -93,7 +94,7 @@ class CliShell:
   def _show_neighbors(self) -> None:
     neighbors = self.router.get_neighbors()
     if not neighbors:
-      LOGGER.info("no neighbors recorded")
+      LOGGER.info("暂无邻居记录")
       return
     for key in sorted(neighbors):
       entry = neighbors[key]
@@ -106,7 +107,7 @@ class CliShell:
   def _show_lsdb(self) -> None:
     lsdb = self.router.get_lsdb()
     if not lsdb:
-      LOGGER.info("lsdb empty")
+      LOGGER.info("LSDB 为空")
       return
     for key in sorted(lsdb):
       entry = lsdb[key]
@@ -122,7 +123,7 @@ class CliShell:
   def _show_routes(self) -> None:
     routes = self.router.get_routes()
     if not routes:
-      LOGGER.info("routing table empty")
+      LOGGER.info("路由表为空")
       return
     for prefix in sorted(routes):
       entry = routes[prefix]

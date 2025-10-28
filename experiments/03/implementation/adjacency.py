@@ -1,11 +1,9 @@
 """
-Neighbor state handling for the teaching OSPF implementation.
+教学版 OSPF 的邻接状态管理。
 
-The state machine is intentionally simplified while keeping terminology close
-to OSPF.  Hello exchanges transition peers through the usual phases and we
-collapse the database exchange steps (ExStart/Exchange/Loading) into a direct
-promotion to Full once bidirectional connectivity is confirmed.  This keeps the
-lab focused on the link state flooding and SPF logic.
+状态机做了适度简化，但保留了 OSPF 的关键阶段命名。通过 Hello
+报文驱动 Down→Init→Two-Way→Full 的转换，并将 ExStart/Exchange/
+Loading 合并为一次跃迁，方便学生把精力放在 LSA 泛洪与 SPF 上。
 """
 
 from __future__ import annotations
@@ -43,37 +41,38 @@ class Adjacency:
       dead_interval: float,
   ) -> bool:
     """
-    Update state based on the fields contained in a received Hello packet.
+    处理收到的 Hello 报文，根据对端携带的参数更新邻接状态。
 
-    Returns ``True`` when the adjacency state changed and callers should trigger
-    further actions (e.g. LSDB synchronisation).
+    返回值:
+      bool: 若状态发生变化，返回 True 以提示上层采取后续动作。
     """
     changed = False
     neighbors: Iterable[str] = message.get("neighbors", [])
 
-    # Refresh timers according to peer settings.
+    # 同步对端的 Dead Interval，并记录最近一次 Hello 的时间戳。
     remote_dead = message.get("dead_interval")
     self.dead_timer = float(remote_dead) if isinstance(remote_dead, (int, float)) and remote_dead > 0 else float(dead_interval)
     self.last_hello = now
     self.hello_options = dict(message.get("options") or {})
 
-    # Transition sequence roughly following RFC 2328 section 10.
+    # 按 RFC 2328 的流程推进状态。初次收到报文时从 Down → Init。
     if self.state == NeighborState.DOWN:
       self.state = NeighborState.INIT
       changed = True
 
     if local_router_id in neighbors:
-      # Bidirectional communication established.
+      # 出现在对端邻居列表里，说明链路已实现双向通信。
       if self.state in {NeighborState.DOWN, NeighborState.INIT}:
         self.state = NeighborState.TWO_WAY
         changed = True
 
-    # On point-to-point links we can directly advance to Full.
+    # 本实验仅关注点到点拓扑，可直接升至 Full。
     if self.state == NeighborState.TWO_WAY:
       if (message.get("options") or {}).get("p2p", True):
         self.state = NeighborState.FULL
         changed = True
 
+    # 记录对端的 DR/BDR 信息，便于在广播网络实验中扩展。
     dr = message.get("dr")
     if dr != self.dr:
       self.dr = dr
@@ -97,7 +96,7 @@ class Adjacency:
       options: Optional[Dict[str, Any]] = None,
   ) -> Dict[str, Any]:
     """
-    Compose the payload for a Hello message sent over this adjacency.
+    构造发送给邻居的 Hello 报文负载，包含必须协商字段与邻居列表。
     """
     payload = {
         "network_mask": network_mask,
@@ -115,9 +114,7 @@ class Adjacency:
 
   def tick(self, now: float) -> bool:
     """
-    Periodic maintenance – declare the neighbor down when the Dead timer expires.
-
-    Returns ``True`` when the state transitioned to Down.
+    周期性检测邻居是否超时。若超过 Dead Interval，则将状态切回 Down。
     """
     if self.state == NeighborState.DOWN:
       return False

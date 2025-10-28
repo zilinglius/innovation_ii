@@ -67,7 +67,7 @@ class LinkStateDatabase:
 
   def install(self, lsa: Lsa) -> bool:
     """
-    Insert or update ``lsa`` and return ``True`` when the database changed.
+    将 LSA 插入或更新到数据库，当 LSDB 发生变化时返回 True。
     """
     key = lsa.fingerprint()
     current = self._lsas.get(key)
@@ -93,7 +93,7 @@ class LinkStateDatabase:
 
   def age(self, seconds: int) -> Iterable[Lsa]:
     """
-    Age every LSA.  Expired LSAs are removed and returned for flooding.
+    为每条 LSA 增加 age，超过刷新时间的条目会被删除并返回以供泛洪。
     """
     if seconds <= 0:
       return []
@@ -118,13 +118,13 @@ class LinkStateDatabase:
 
   def snapshot(self) -> Dict[Tuple[str, str], Lsa]:
     """
-    Return a shallow copy of the database contents.
+    返回 LSDB 的浅拷贝，避免外部直接修改内部状态。
     """
     return dict(self._lsas)
 
   def to_message_payload(self, lsa: Lsa) -> Dict[str, object]:
     """
-    Serialize an LSA for transport inside an LSU.
+    将内存中的 LSA 转换为 LSU 可携带的 JSON 结构。
     """
     return {
         "header": {
@@ -141,7 +141,7 @@ class LinkStateDatabase:
   @staticmethod
   def from_message_payload(payload: Dict[str, object]) -> Lsa:
     """
-    Convert the LSU JSON representation back into an :class:`Lsa`.
+    将 LSU 报文中的 JSON 字段还原为 Lsa 对象。
     """
     header_dict = dict(payload.get("header") or {})
     return Lsa(

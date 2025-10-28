@@ -1,9 +1,8 @@
 """
-Encoding helpers for the simplified OSPF protocol messages.
+教学版 OSPF 协议的报文编解码工具。
 
-The real protocol uses raw IP packets.  For the lab we rely on UDP and JSON to
-keep things debuggable and tool friendly while still enforcing a clear message
-structure and validation rules.
+正式协议使用裸 IP 封装，本实验为方便调试改用 UDP + JSON：既能
+直观观测内容，又能在保持结构化约束的同时快速实现校验逻辑。
 """
 
 from __future__ import annotations
@@ -24,15 +23,15 @@ class MessageType(str, Enum):
 
 
 class MessageError(ValueError):
-  """Base class for message related issues."""
+  """协议报文相关错误的基类。"""
 
 
 class MessageValidationError(MessageError):
-  """Raised when a message fails structural validation."""
+  """消息违反格式约束时抛出，用于提示编码方修复。"""
 
 
 class MessageDecodeError(MessageError):
-  """Raised when decoding bytes into a :class:`Message` fails."""
+  """外部数据无法成功解析为 Message 实例时抛出的异常。"""
 
 
 @dataclass
@@ -46,7 +45,7 @@ class Message:
 
   def dumps(self) -> bytes:
     """
-    Serialize the message as UTF-8 encoded JSON ready for transport.
+    将消息编码为 UTF-8 JSON，便于通过 UDP 发送。
     """
     _ensure_non_empty("router_id", self.router_id)
     _ensure_non_empty("area_id", self.area_id)
@@ -76,7 +75,7 @@ class Message:
   @classmethod
   def loads(cls, data: bytes) -> "Message":
     """
-    Parse JSON encoded ``data`` back into a :class:`Message` instance.
+    从 UDP 载荷中恢复 Message 实例，包含基本的结构与校验检查。
     """
     if not isinstance(data, (bytes, bytearray, memoryview)):
       raise MessageDecodeError("data must be bytes-like")
@@ -140,7 +139,7 @@ class Message:
 
 def build_hello(router_id: str, area_id: str, **kwargs: Any) -> Message:
   """
-  Convenience helper to assemble a Hello message from keyword arguments.
+  构造 Hello 消息的辅助函数，自动填充基础字段。
   """
   payload = dict(kwargs)
   payload.setdefault("neighbors", [])

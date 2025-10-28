@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Entry point wrapping the fully implemented OSPF teaching stack.
+教学版 OSPF 协议的可执行入口，便于在 namespace 或单进程模式下运行。
 """
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ from .router import Router
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
   parser = argparse.ArgumentParser(
-      description="Complete OSPF-like routing process used in experiments/03.",
+      description="experiments/03 完整版 OSPF 实验进程入口。",
   )
   parser.add_argument("--router", required=True, help="Router ID in dotted decimal form, e.g. 1.1.1.1")
   parser.add_argument("--config", default="../topo.sample.yaml", help="Topology definition file (YAML)")
@@ -39,7 +39,7 @@ def load_config(path: Path) -> Dict[str, Any]:
   if not path.exists():
     raise FileNotFoundError(f"config file not found: {path}")
   if yaml is None:
-    raise RuntimeError("PyYAML not available, please install it or provide a JSON topology.")
+    raise RuntimeError("未安装 PyYAML，可执行 `pip install pyyaml` 或改用 JSON 拓扑文件。")
   with path.open("r", encoding="utf-8") as stream:
     data = yaml.safe_load(stream)
   if not isinstance(data, dict):
@@ -78,14 +78,14 @@ def main(argv: list[str]) -> int:
   cli = CliShell(router=router)
   cli_thread = threading.Thread(target=cli.run, name="cli", daemon=True)
 
-  logging.info("starting router %s", args.router)
+  logging.info("启动路由器进程 %s", args.router)
   router.bootstrap()
   cli_thread.start()
 
   try:
     loop.run()
   except KeyboardInterrupt:
-    logging.warning("interrupt received, shutting down")
+    logging.warning("收到中断信号，开始清理")
   finally:
     with contextlib.suppress(Exception):
       loop.stop()

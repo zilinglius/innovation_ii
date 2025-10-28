@@ -1,9 +1,11 @@
 """
-Routing process implementation for the simplified OSPF lab.
+教学版 OSPF 路由进程的主体实现。
 
-The process reads topology definitions from the YAML file used by the teaching
-material, discovers neighbours through Hello exchanges, maintains a Link State
-Database, floods LSAs, and runs SPF to derive a forwarding table.
+该实现负责：
+1. 解析拓扑配置，初始化接口与邻居； 
+2. 通过 Hello 报文维护邻接状态并感知拓扑变化；
+3. 管理本地 LSDB，完成 LSA 的生成、安装与泛洪；
+4. 定期运行 SPF 计算最短路径树，生成实验用的转发表视图。
 """
 
 from __future__ import annotations
@@ -54,7 +56,7 @@ class InterfaceState:
 
 class Router:
   """
-  Main OSPF-like routing process used in the lab environment.
+  用于实验环境的简化版 OSPF 路由器实现。
   """
 
   def __init__(
@@ -92,15 +94,16 @@ class Router:
 
   # ---------------------------------------------------------------- lifecycle
   def bootstrap(self) -> None:
-    LOGGER.debug("bootstrap router %s", self.router_id)
+    LOGGER.debug("启动初始化流程，路由器 %s", self.router_id)
     self._bind_socket()
     self._load_interfaces()
     self._originate_router_lsa()
     self.run_spf()
+    # 周期性检查邻居状态与 LSDB 老化。
     self.loop.schedule(timers.NEIGHBOR_TICK, self._tick_neighbors, repeat=True)
 
   def shutdown(self) -> None:
-    LOGGER.debug("shutdown router %s", self.router_id)
+    LOGGER.debug("关闭路由器 %s，释放资源", self.router_id)
     if self._socket_unregister:
       try:
         self._socket_unregister()
@@ -132,8 +135,9 @@ class Router:
 
     sock.bind((bind_ip, self._local_port))
     self._socket = sock
+    # 将 UDP 套接字注册到事件循环，收到报文时进入回调。
     self._socket_unregister = self.loop.register_socket(sock, self._on_socket_readable)
-    LOGGER.info("router %s listening on %s:%s", self.router_id, bind_ip, self._local_port)
+    LOGGER.info("路由器 %s 监听地址 %s:%s", self.router_id, bind_ip, self._local_port)
 
   def _load_interfaces(self) -> None:
     routers_cfg = self.config.get("routers")
@@ -196,7 +200,7 @@ class Router:
       )
 
       LOGGER.info(
-          "interface %s configured ip=%s cost=%s neighbors=%s",
+          "接口 %s 已加载，ip=%s cost=%s neighbors=%s",
           iface_cfg.name,
           iface_cfg.ip,
           iface_cfg.cost,
@@ -205,13 +209,14 @@ class Router:
 
   # ------------------------------------------------------------------ timers
   def _tick_neighbors(self) -> None:
+    """周期性执行的维护任务：更新邻居状态并老化 LSDB。"""
     now = time.time()
     any_down = False
     for iface_state in self.interfaces.values():
       for adjacency in iface_state.adjacency.values():
         if adjacency.tick(now):
           LOGGER.warning(
-              "neighbor %s on %s timed out",
+              "邻居 %s 在接口 %s 上超时",
               adjacency.router_id,
               iface_state.config.name,
           )
@@ -222,48 +227,51 @@ class Router:
 
     expired = list(self.lsdb.age(int(timers.NEIGHBOR_TICK)))
     if expired:
-      LOGGER.debug("lsdb aged %d lsas", len(expired))
+      LOGGER.debug("LSDB 老化移除 %d 条 LSA", len(expired))
       self._schedule_spf()
 
   # --------------------------------------------------------------- messaging
   def _on_socket_readable(self, sock: socket.socket) -> None:
+    """事件循环回调：套接字可读时解析并分发协议报文。"""
     try:
       data, addr = sock.recvfrom(65535)
     except OSError as exc:
-      LOGGER.error("recv failed: %s", exc)
+      LOGGER.error("接收报文失败: %s", exc)
       return
     try:
       msg = message.Message.loads(data)
     except message.MessageError as exc:
-      LOGGER.warning("discarding invalid message: %s", exc)
+      LOGGER.warning("收到非法报文，已丢弃: %s", exc)
       return
 
     if msg.area_id != self.area_id:
-      LOGGER.debug("ignoring message from different area %s", msg.area_id)
+      LOGGER.debug("忽略不同 Area (%s) 的报文", msg.area_id)
       return
 
     if msg.router_id == self.router_id:
-      LOGGER.debug("ignoring self-originated message")
+      LOGGER.debug("忽略自身发送的报文")
       return
 
     self.process_message(msg, src=(addr[0], addr[1]))
 
   def process_message(self, msg: message.Message, src: Tuple[str, int]) -> None:
+    """根据报文类型调用相应处理逻辑。"""
     iface_state = self._resolve_interface_for_neighbor(msg.router_id, src[0])
     if iface_state is None:
-      LOGGER.warning("received message from unknown neighbor %s (%s)", msg.router_id, src)
+      LOGGER.warning("收到未知邻居 %s 的报文，来源 %s", msg.router_id, src)
       return
 
-    LOGGER.debug("received %s from %s via %s", msg.msg_type.value, msg.router_id, iface_state.config.name)
+    LOGGER.debug("通过接口 %s 收到 %s 来自 %s", iface_state.config.name, msg.msg_type.value, msg.router_id)
 
     if msg.msg_type == message.MessageType.HELLO:
       self._handle_hello(iface_state, msg, src_ip=src[0])
     elif msg.msg_type == message.MessageType.LINK_STATE_UPDATE:
       self._handle_lsu(msg)
     else:
-      LOGGER.info("message type %s not implemented in simplified stack", msg.msg_type.value)
+      LOGGER.info("当前实验未实现消息类型 %s", msg.msg_type.value)
 
   def _handle_hello(self, iface_state: InterfaceState, msg: message.Message, src_ip: str) -> None:
+    """处理 Hello 报文，推进邻接状态并在必要时触发 LSDB 同步。"""
     adjacency = iface_state.adjacency.get(msg.router_id)
     if adjacency is None:
       adjacency = Adjacency(
@@ -279,7 +287,7 @@ class Router:
       neighbor_cfg = iface_state.neighbors.get(msg.router_id)
       if neighbor_cfg and neighbor_cfg.addr != src_ip and not self.single_process:
         LOGGER.debug(
-            "updating neighbor %s address on %s to %s",
+            "更新邻居 %s 在接口 %s 上的地址为 %s",
             msg.router_id,
             iface_state.config.name,
             src_ip,
@@ -296,7 +304,7 @@ class Router:
     )
     if changed:
       LOGGER.info(
-          "neighbor %s on %s transitioned %s -> %s",
+          "邻居 %s 接口 %s 状态 %s -> %s",
           adjacency.router_id,
           iface_state.config.name,
           prev_state.value,
@@ -308,9 +316,10 @@ class Router:
       self._originate_router_lsa()
 
   def _handle_lsu(self, msg: message.Message) -> None:
+    """处理 Link State Update 报文，安装其中的 LSA 并继续泛洪。"""
     lsas_raw = msg.payload.get("lsas", [])
     if not isinstance(lsas_raw, list):
-      LOGGER.warning("malformed LSU payload from %s", msg.router_id)
+      LOGGER.warning("邻居 %s 发来畸形 LSU 负载", msg.router_id)
       return
     installed: List[Lsa] = []
     for raw in lsas_raw:
@@ -319,17 +328,18 @@ class Router:
       try:
         lsa = LinkStateDatabase.from_message_payload(raw)
       except Exception:
-        LOGGER.exception("failed to decode LSA from %s", msg.router_id)
+        LOGGER.exception("解析邻居 %s 的 LSA 失败", msg.router_id)
         continue
       if self.lsdb.install(lsa):
         installed.append(lsa)
 
     if installed:
-      LOGGER.info("installed %d lsas from %s", len(installed), msg.router_id)
+      LOGGER.info("安装来自邻居 %s 的 %d 条 LSA", msg.router_id, len(installed))
       self._flood_lsas(installed, exclude=msg.router_id)
       self._schedule_spf()
 
   def send_hello(self, iface_state: InterfaceState) -> None:
+    """在指定接口上广播 Hello，维持邻居感知。"""
     hello_interval = int(iface_state.config.hello_interval or self._default_hello)
     dead_interval = int(iface_state.config.dead_interval or self._default_dead)
     known_neighbors = [
@@ -353,8 +363,9 @@ class Router:
       self._send_message(neighbor, msg)
 
   def _send_message(self, neighbor: NeighborConfig, msg: message.Message) -> None:
+    """通过 UDP 套接字向邻居发送消息，支持单进程测试或 namespace 环境。"""
     if self._socket is None:
-      LOGGER.warning("socket not initialised, drop message")
+      LOGGER.warning("套接字尚未初始化，无法发送报文")
       return
     data = msg.dumps()
     dest_ip = neighbor.addr
@@ -365,9 +376,10 @@ class Router:
     try:
       self._socket.sendto(data, (dest_ip, dest_port))
     except OSError as exc:
-      LOGGER.error("failed to send %s to %s:%s - %s", msg.msg_type.value, dest_ip, dest_port, exc)
+      LOGGER.error("发送 %s 至 %s:%s 失败: %s", msg.msg_type.value, dest_ip, dest_port, exc)
 
   def _flood_lsas(self, lsas: Iterable[Lsa], *, exclude: Optional[str] = None) -> None:
+    """将更新后的 LSA 泛洪给所有邻居，可选排除来源邻居。"""
     payload_lsas = [self.lsdb.to_message_payload(lsa) for lsa in lsas]
     if not payload_lsas:
       return
@@ -390,6 +402,7 @@ class Router:
         self._send_message(neighbor, msg)
 
   def _send_full_lsdb(self, neighbor_id: str) -> None:
+    """在邻接升至 Full 时推送完整 LSDB，辅助快速收敛。"""
     snapshot = self.lsdb.snapshot().values()
     if not snapshot:
       return
@@ -410,6 +423,7 @@ class Router:
 
   # ------------------------------------------------------------------- LSDB
   def _originate_router_lsa(self) -> None:
+    """生成本路由器的 Router LSA，描述本地接口与相邻路由器。"""
     links = []
     networks = []
     for iface_state in self.interfaces.values():
@@ -448,12 +462,13 @@ class Router:
         payload=payload,
     )
     if self.lsdb.install(lsa):
-      LOGGER.debug("originated router lsa seq=%s", self._self_sequence)
+      LOGGER.debug("生成自有 Router LSA，序列号 %s", self._self_sequence)
       self._flood_lsas([lsa])
       self._schedule_spf()
 
   # -------------------------------------------------------------------- SPF
   def _schedule_spf(self) -> None:
+    """触发 SPF 计算的调度器，带初始延迟以合并频繁更新。"""
     if self._spf_scheduled:
       return
     delay = timers.SPF_INITIAL_DELAY
@@ -466,6 +481,7 @@ class Router:
     self.loop.schedule(delay, run)
 
   def run_spf(self) -> None:
+    """运行 Dijkstra 算法，生成最新的转发表视图。"""
     snapshot = self.lsdb.snapshot()
     graph: Dict[str, Dict[str, int]] = {}
     net_records: List[Tuple[str, str, int]] = []
@@ -541,10 +557,11 @@ class Router:
       }
 
     self.routes = routes
-    LOGGER.info("spf computed %d routes", len(routes))
+    LOGGER.info("SPF 计算完成，共生成 %d 条路由", len(routes))
 
   # --------------------------------------------------------------- utilities
   def get_neighbors(self) -> Dict[str, Dict[str, object]]:
+    """供 CLI 使用的邻居快照。"""
     snapshot: Dict[str, Dict[str, object]] = {}
     for ifname, state in self.interfaces.items():
       for rid, adj in state.adjacency.items():
@@ -557,6 +574,7 @@ class Router:
     return snapshot
 
   def get_lsdb(self) -> Dict[str, object]:
+    """以易读格式返回 LSDB 内容。"""
     view: Dict[str, object] = {}
     for key, lsa in self.lsdb.snapshot().items():
       view[f"{key[0]}:{key[1]}"] = {
@@ -568,9 +586,11 @@ class Router:
     return view
 
   def get_routes(self) -> Dict[str, object]:
+    """返回当前计算出的转发表。"""
     return dict(self.routes)
 
   def _resolve_interface_for_neighbor(self, router_id: str, src_ip: Optional[str]) -> Optional[InterfaceState]:
+    """根据邻居 Router ID 或报文源地址推断接入的接口。"""
     entries = self._neighbor_index.get(router_id)
     if entries:
       return entries[0][0]
@@ -582,6 +602,7 @@ class Router:
     return None
 
   def _resolve_first_hop(self, hop: Optional[str]) -> Tuple[Optional[InterfaceState], Optional[NeighborConfig]]:
+    """将首跳路由器映射到对应的接口与邻居配置。"""
     if hop is None:
       return None, None
     entries = self._neighbor_index.get(hop)

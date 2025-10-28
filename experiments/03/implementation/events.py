@@ -1,15 +1,12 @@
 """
-Minimal selector based event loop used by the teaching OSPF stack.
+基于 `selectors` 的迷你事件循环，供教学版 OSPF 协议使用。
 
-The implementation keeps the API intentionally tiny – only what is required by
-the lab exercises is provided:
+仅实现实验所需的最核心能力：
+- ``schedule``：注册一次性/周期性定时任务；
+- ``register_socket``：监听套接字可读事件；
+- ``run`` / ``stop``：驱动与终止主循环。
 
-- ``schedule`` registers one-shot or periodic callbacks.
-- ``register_socket`` integrates datagram IO with the timer queue.
-- ``run`` / ``stop`` start and terminate the loop.
-
-The loop is single threaded; handlers should avoid blocking to keep timers
-accurate.
+事件循环是单线程模型，回调中应避免阻塞操作，以免影响定时器精度。
 """
 
 from __future__ import annotations
@@ -37,7 +34,7 @@ class _ScheduledTask:
 
 class EventLoop:
   """
-  Lightweight scheduler that multiplexes timers and socket read events.
+  轻量级调度器，用于复用定时器与套接字读事件。
   """
 
   def __init__(self) -> None:
