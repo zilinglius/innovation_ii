@@ -64,7 +64,7 @@ class EventLoop:
       self,
       sock: socket.socket,
       callback: Callable[[socket.socket], None],
-  ) -> None:
+  ) -> Callable[[], None]:
     """
     注册套接字读事件。
 
@@ -73,7 +73,16 @@ class EventLoop:
       - 调用 selector.register，并在事件触发时执行回调；
       - 设计卸载机制（如返回一个取消函数）。
     """
-    raise NotImplementedError("TODO: implement socket registration")
+    sock.setblocking(False)
+    self._selector.register(sock, selectors.EVENT_READ, callback)
+
+    def unregister() -> None:
+      try:
+        self._selector.unregister(sock)
+      except KeyError:
+        pass
+
+    return unregister
 
   def run(self) -> None:
     self._running = True

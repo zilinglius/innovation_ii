@@ -9,7 +9,10 @@ Link State Database 管理。
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+import json
+import zlib
+from copy import deepcopy
+from dataclasses import dataclass, field, replace
 from typing import Dict, Iterable, Tuple
 
 
@@ -48,7 +51,28 @@ class LinkStateDatabase:
       - 更新 age/checksum；
       - 返回布尔值指示是否需要继续泛洪。
     """
-    raise NotImplementedError("TODO: implement LSA installation logic")
+    key = lsa.fingerprint()
+    current = self._lsas.get(key)
+
+    # 构造待存储的 LSA 副本，归零 age 并重新计算校验和。
+    payload_copy = deepcopy(lsa.payload)
+    base_header = replace(lsa.header, age=0, checksum=0)
+    checksum = _compute_checksum(base_header, payload_copy)
+    candidate = Lsa(
+        header=replace(base_header, checksum=checksum),
+        payload=payload_copy,
+    )
+
+    if current is not None:
+      if candidate.header.sequence < current.header.sequence:
+        return False
+      if candidate.header.sequence == current.header.sequence:
+        if candidate.header.checksum == current.header.checksum:
+          # 新的 LSA 与现有完全一致，无需更新。
+          return False
+
+    self._lsas[key] = candidate
+    return True
 
   def age(self, seconds: int) -> Iterable[Lsa]:
     """
@@ -66,3 +90,22 @@ class LinkStateDatabase:
     提供 LSDB 快照给 SPF 过程或 CLI。
     """
     return dict(self._lsas)
+
+
+def _compute_checksum(header: LsaHeader, payload: Dict[str, object]) -> int:
+  """
+  简易校验和，方便在实验中比较 LSA 是否发生变更。
+  """
+  data = {
+      "header": {
+          "lsa_type": header.lsa_type,
+          "lsa_id": header.lsa_id,
+          "advertising_router": header.advertising_router,
+          "sequence": header.sequence,
+          "age": header.age,
+          "checksum": 0,
+      },
+      "payload": payload,
+  }
+  encoded = json.dumps(data, sort_keys=True, separators=(",", ":")).encode("utf-8")
+  return zlib.crc32(encoded) & 0xFFFFFFFF
