@@ -238,7 +238,7 @@ ip netns exec $SENDER_NS chrt -f 80 taskset -c 3 \
    plt.show()
    ```
 5. **记录系统状态**  
-   - `ip -n ns1a exec ethtool -c $SENDER_IF` → 中断合并参数。  
+   - `ip -n ns1 exec ethtool -c $SENDER_IF` → 中断合并参数。  
    - `taskset -pc <PID>`、`chrt -p <PID>` → 佐证绑核/调度策略。  
    - `ip netns exec ns1a sysctl net.core.wmem_max` → 缓冲调优。
 
