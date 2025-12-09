@@ -59,6 +59,7 @@ graph TD
 - 粗粒度成本模型：总时间近似
   - $$T_{\text{total}} \approx T_{\text{comp}} + \sum_{i,j}\left(\frac{D_{ij}}{\text{bw}(i,j)} + \text{RTT}(i,j)\right) + T_{\text{sync}}$$
   - 直觉：谁占据最大一跳的“数据量/带宽”或 P99 RTT，谁主导 barrier。
+  - 符号说明： $T_{\text{comp}}$ （纯计算时间）、 $D_{ij}$ （节点 $i$ 到 $j$ 的数据量）、 $\text{bw}(i,j)$ （两节点间有效带宽）、 $\text{RTT}(i,j)$ （往返时延）、 $T_{\text{sync}}$ （屏障/同步时间）。
 - Shuffle/AllReduce 拆分：
   - Shuffle 阶段： $$T_{\text{shuffle}} \approx \max_j \sum_i \frac{\text{flow}_{ij}}{\text{bw}(i,j)}$$ 可把机架内/跨机架分开估计，对跨机架部分设置上限预算。
   - 分层 AllReduce：机架内 reduce 时间 $T_\text{rack}$，跨机架/跨 AZ 树型时间 $T_\text{inter}$，总时间 $$T \approx T_\text{rack} + T_\text{inter}$$；异构带宽下可用“不等分片”让快链路多分担。
