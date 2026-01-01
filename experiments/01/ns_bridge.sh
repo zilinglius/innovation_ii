@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+#安全设置
 
 # 需要 root。支持 ./script_bridges_in_ns.sh down 清理
 # 拓扑（桥放在对应 ns 中）：
 #   ns1 内部：brL —— 接口：ns1 自身的 lgw0(三层口)，lsw0(桥口)，以及三条叶子上行 lv{i}br
 #   ns3 内部：brR —— 接口：ns3 自身的 rgw0(三层口)，rsw0(桥口)，以及三条叶子上行 rv{i}br
+# lgw0就只是负责查看发到哪里和从哪里发来，不会与外界联通；只有lvbr（唯一与外界联通）会照着lgw0发送，或者
+# 接受后发给lgw0；lsw0就只负责和内部主机联通（与lgw0进行相互传送）
 
 NS1=ns1; NS2=ns2; NS3=ns3
 LNS=(ns1a ns1b ns1c)
@@ -28,7 +31,9 @@ RSW=rsw0   # 接到 BRR 的桥口
 
 # 左/右 侧叶子上行（进 ns1/ns3 一端命名 *_br；叶子 ns 一端命名 *_ns）
 LV_NS=(lv1_ns lv2_ns lv3_ns)
+# 左侧叶子节点的接口名
 LV_BR=(lv1_br lv2_br lv3_br)
+# 连接到 brL 的接口名, 每个叶子节点通过 veth对 连接到对应的桥：
 RV_NS=(rv1_ns rv2_ns rv3_ns)
 RV_BR=(rv1_br rv2_br rv3_br)
 
@@ -105,6 +110,7 @@ ip netns exec "$NS1" ip link add "$LGW" type veth peer name "$LSW"
 ip netns exec "$NS1" ip link set "$LSW" master "$BRL"
 ip netns exec "$NS1" ip link set "$LSW" up
 ip netns exec "$NS1" ip link set "$LGW" up
+# 实现 bridge - lsw - lgw 的连接
 
 echo "[*] 在 ns3 内创建桥 $BRR，并准备 ns3 自身入桥的 veth 对..."
 ip netns exec "$NS3" ip link add "$BRR" type bridge
@@ -126,6 +132,10 @@ for i in 0 1 2; do
   ip netns exec "$NS1" ip link set "${LV_BR[$i]}" up
 done
 
+# ns1a(lv1_ns) <--> lv1_br <--> brL <--> lsw0 <--> lgw0
+# ns1b(lv2_ns) <--> lv2_br <--> brL <--> lsw0 <--> lgw0  
+# ns1c(lv3_ns) <--> lv3_br <--> brL <--> lsw0 <--> lgw0
+
 echo "[*] 右侧三叶子：将叶子上行的另一端移入 ns3 并接入 brR..."
 for i in 0 1 2; do
   ip link add "${RV_BR[$i]}" type veth peer name "${RV_NS[$i]}"
@@ -134,6 +144,8 @@ for i in 0 1 2; do
   ip netns exec "$NS3" ip link set "${RV_BR[$i]}" master "$BRR"
   ip netns exec "$NS3" ip link set "${RV_BR[$i]}" up
 done
+
+#到这里构建完成
 
 echo "[*] 启动各 ns 的 lo..."
 for ns in "$NS1" "$NS2" "$NS3" "${LNS[@]}" "${RNS[@]}"; do
@@ -153,6 +165,8 @@ for i in 0 1 2; do
   ip -n "$ns" addr add "${LAN_L_LEAVES[$i]}/24" dev "${LV_NS[$i]}"
   ip -n "$ns" link set "${LV_NS[$i]}" up
 done
+
+#只有lsw0不需要分配ip
 
 echo "[*] 配置 ns3/右侧 LAN 地址..."
 ip -n "$NS3" addr add "${LAN_R_GW}/24" dev "$RGW"
@@ -195,6 +209,13 @@ set -e
 cat <<EOF
 
 [*] 部署完成（桥已放入对应 ns）！
+
+大致思路：
+先取名
+再建联系
+最后进行IP分配
+开始运行
+
 
 ns1 内：
   bridge $BRL
