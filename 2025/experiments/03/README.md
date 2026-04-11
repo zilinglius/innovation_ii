@@ -1,67 +1,110 @@
-# 精简版 OSPF 实验框架
+# OSPF-Like 路由协议实验指导书
 
-## 背景
-本框架用于在 `experiments/03` 目录下完成类似 OSPF 的链路状态路由协议实验。结构上参考 OSPF v2，保留核心阶段：邻居发现、LSA 泛洪、SPF 计算、路由安装。学生需在预置骨架中补齐关键逻辑。
+## 实验目标
+- 理解链路状态型路由协议的关键阶段：邻居发现、LSA 泛洪、最短路径计算、转发表安装。
+- 掌握如何在 Linux network namespace 环境下调试分布式路由器进程。
+- 学会使用提供的框架代码与工具脚本，实现一个精简版的 OSPF 类协议。
 
-## 快速开始
-1. **准备拓扑**  
-   使用提供的 namespace 脚本之一：
+## 背景知识
+1. **OSPF 工作原理概览**  
+   OSPF 属于链路状态协议（Link State Protocol），所有路由器维护对整个拓扑一致的视图。每个节点采集自身链路代价并向全网泛洪，所有节点据此独立运行 SPF（Shortest Path First）算法生成最优路由，最终达到“每台路由器计算出的全网拓扑一致”的目标。这种分布式模式减少了环路并加快收敛，适用于中大型自治系统。
+2. **工作流程分解**  
+   - *邻居发现*：接口周期性发送 Hello 数据包，匹配 Area ID、Hello/Dead 定时器等协商字段。双方互相出现在对方的邻居列表后，状态由 Down→Init→Two-Way，满足条件的邻接对继续升迁至 Full。  
+   - *邻接建立*：双方互换 Database Description（DD）报文以同步 LSDB 摘要，缺失条目通过 Link State Request（LSR）/Link State Update（LSU）补齐，完成后发送 Link State Ack（LSAck）确认。  
+   - *LSA 泛洪*：任何链路变化都会生成新的 LSA（内含序列号、Age、Checksum），沿邻接关系全网传播。路由器在 LSDB 中比较序列号，只接受更新鲜的 LSA，并在必要时继续泛洪。  
+   - *SPF 计算与转发表安装*：LSDB 更新后触发 SPF 计时器，运行 Dijkstra 获得到各节点的最短路径与下一跳，再写入路由表或内部 FIB 结构。  
+   - *DR/BDR 机制*：在广播网络上，通过指定 DR/BDR 降低邻接数量，减少泛洪开销（本实验可视需求实现或忽略）。
+3. **实验中的简化**  
+   - 不考虑 Area/ABR/ASBR，仅实现单域。
+   - 使用自定义 LSA 结构，字段与 OSPF 类似但更精简。
+   - 仅支持 IPv4 前缀，忽略多播/认证等高级特性。
+4. **Linux network namespace 复习**  
+   前置脚本 `experiments/01/ns.sh` 和 `experiments/01/ns_bridge.sh` 可快速创建用于测试的五节点拓扑或桥接拓扑。通过 `sudo bash <script>` 启动，`sudo bash <script> down` 清理。必要时使用：
    ```bash
-   sudo bash experiments/01/ns.sh
-   # 或
-   sudo bash experiments/01/ns_bridge.sh
+   ip netns list
+   ip -n <ns> addr
    ```
-   记录每个 namespace 的接口与 IP。
 
-2. **安装依赖**  
-   Python 标准库即可运行框架，如需额外工具（如 `rich` 日志），可自行添加。
+## 实验环境
+- 操作系统：推荐使用支持 network namespace 的 Linux。
+- Python 环境：使用 `uv` 管理虚拟环境与依赖（配置指定为 Python 3.14.3）。
+- 需要 `sudo` 权限运行 namespace 脚本。
 
-3. **启动路由器进程**  
-   在某个 namespace 内：
+## 目录结构
+```text
+experiments/03/
+├── pyproject.toml            ← 依赖和项目配置 (使用 uv)
+├── uv.lock                   ← 锁定的依赖版本
+├── .python-version           ← 要求的 Python 版本
+├── ospf_lab_guide.md         ← 本指导书
+├── README.md                 ← 实验任务与起步说明
+├── main.py                   ← 协议主入口进程
+├── topo.sample.yaml          ← 示例拓扑描述
+├── ospf/                     ← OSPF 核心模块包
+│   ├── __init__.py
+│   ├── adjacency.py
+│   ├── cli.py
+│   ├── events.py
+│   ├── lsdb.py
+│   ├── message.py
+│   ├── router.py
+│   └── timers.py
+└── tools/
+    └── capture.sh            ← 辅助抓包脚本
+```
+
+## 实验任务拆解
+1. **阅读框架代码**  
+   先通读 `README.md` 与 `main.py`，了解 CLI 参数及组件分工，再阅读 `ospf/` 目录下各模块的注释与 TODO。
+2. **实现邻居发现**  
+   - 在 `adjacency.py` 的 `process_hello` 与 `build_hello` 中填充逻辑。  
+   - 维护邻居状态机（Down → Init → 2-Way → Full）。
+3. **完成 LSA 流程**  
+   - 在 `message.py` 定义 LSA 序列号、校验与泛洪逻辑。  
+   - 在 `lsdb.py` 中实现 LSDB 插入、老化与一致性校验。
+4. **最短路径计算**  
+   - 在 `router.py` 里实现 `run_spf`，对 LSDB 运行 Dijkstra，生成转发表。  
+   - 更新本地路由（可以写入 namespace 的 `ip route`，或在框架内维护虚拟转发表）。
+5. **事件与定时器**  
+   - `events.py` 提供事件循环骨架；补齐发动 Hello、LSA 重传、超时检测的调度逻辑。  
+   - `timers.py` 提供默认时间常量，可根据实际调试调整。
+6. **命令行与调试**  
+   - `cli.py` 暴露实时查看邻居、LSDB、路由表的命令，需补齐输出。  
+   - 使用 `tools/capture.sh` 配合 `tcpdump` 抓包观察协议消息。
+
+## 实验步骤建议
+1. **环境初始化**  
+   在 `experiments/03/` 目录下执行 `uv sync`，这会安装所需依赖（如 `pyyaml`）并创建虚拟环境（`.venv/`）。
+2. **准备拓扑**  
+   依靠前置实验（如 `experiments/01/` 中的 `ns.sh` / `ns_bridge.sh`）创建 namespace 环境，并记录每个 namespace 绑定的接口与 IP。
+3. **运行路由器实例**  
+   进入 `experiments/03/` 目录，在每个 namespace 内使用被 `uv` 创建好的虚拟环境执行代码。注意由于涉及到 sudo 提权和 namespace，建议使用 `.venv` 中 Python 解释器的直接路径：
    ```bash
-   sudo ip netns exec r1 python experiments/01/ospf_lab/main.py \
-     --router 1.1.1.1 \
-     --config experiments/01/ospf_lab/topo.sample.yaml \
+   sudo ip netns exec <ns> .venv/bin/python main.py \
+     --router <router-id> \
+     --config topo.sample.yaml \
      --log-level debug
    ```
-   多开若干终端分别进入其余 namespace。`router` 参数建议使用 OSPF 的 dotted-decimal Router ID。
+   也可在单机不使用 namespace 时结合 `--single-process` 进行多进程免网络测试（见 README 说明）。
+3. **验证邻居关系**  
+   使用 CLI 命令（例如 `show neighbors`）或观察日志，确认邻居成功从 Down 到 Full。
+4. **验证 LSDB 与路由表**  
+   - 运行 `show lsdb` 比对每个节点的 LSA 集。  
+   - 使用 `show routes` 或 `ip -n <ns> route` 查看转发表是否一致。
+5. **连通性测试**  
+   使用 `ping` 或 `traceroute` 验证任意两端主机连通性。必要时配合 `capture.sh` 抓包定位问题。
+6. **撰写实验报告**  
+   至少包含：邻居建立日志截屏、LSDB 输出、路由表验证、最短路径推导、测试命令列表、问题及解决过程。
 
-4. **观察运行状态**  
-   在进程标准输入输入命令（见 `ospf/cli.py`），例如：
-   ```
-   > show neighbors
-   > show lsdb
-   > show routes
-   ```
+## 实验提示
+- 尽量先在单进程模式调通逻辑，再搬到 namespace 环境。
+- 关注定时器取值，Hello/Dead 间隔失衡会导致邻居频繁抖动。
+- 使用 `shellcheck` 检查新增的 shell 脚本；Python 部分可选用 `python -m compileall` 快速语法检查。
+- 遇到协议死锁时，可开启 `--log-level trace`（需自行实现细粒度日志输出）。
 
-5. **清理环境**  
-   完成实验后运行：
-   ```bash
-   sudo bash experiments/01/ns.sh down
-   ```
+## 拓展思考
+- 为 LSA 加入广播域成本，尝试生成多条等价路径。
+- 加入简单认证字段验证邻居合法性。
+- 将路由表同步到 Linux 内核，结合 `ip netns exec <ns> ip route` 直接验证转发。
 
-## 代码结构
-- `main.py`：解析参数，加载拓扑，初始化事件循环与路由器。
-- `ospf/adjacency.py`：邻居状态机与 Hello 处理。
-- `ospf/message.py`：协议数据单元编码/解码。
-- `ospf/lsdb.py`：Link State Database 管理。
-- `ospf/router.py`：路由器主体，协调邻居、LSDB、转发表。
-- `ospf/events.py`：事件循环与定时器调度。
-- `ospf/cli.py`：交互式命令行接口。
-- `ospf/timers.py`：默认定时器配置。
-- `topo.sample.yaml`：示例拓扑配置，描述接口、成本与初始对等体。
-- `tools/capture.sh`：协助在 namespace 内抓取协议报文。
-
-## 建议实现顺序
-1. 在单进程模式下（不进入 namespace，只用 loopback）跑通逻辑。
-2. 完成 Hello 与邻居状态转换，确保 `show neighbors` 输出正确。
-3. 实现 LSA 生成与泛洪，能在所有节点看到相同的 LSDB。
-4. 在 `run_spf` 中实现 Dijkstra，生成最短路径树并写入路由表。
-5. 增强 CLI、日志与错误处理，便于调试。
-
-## 实验要求提示
-- 所有新增 shell 脚本需包含 `set -Eeuo pipefail`。
-- Python 代码应保留注释中的 TODO 提示，由学生补齐。
-- 保持日志与 CLI 输出清晰，方便撰写实验报告。
-
-祝学习顺利！
+祝调试顺利，玩得开心！

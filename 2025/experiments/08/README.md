@@ -15,14 +15,16 @@
 
 ## 2. 预备知识与工具
 - 熟悉：`ip netns`、`tc netem`、`ping`；可选 `iperf3`。
-- 需安装：`python3`。
+- 需安装：`uv`（Python 管理工具）。
 
 ## 3. 目录与资源
-```
+```text
 docs/topology_aware_distributed_framework.md
 experiments/08/ns_topology_aware.sh
 experiments/08/topology_aware_scheduler_sim.py
 experiments/08/run_topology_aware_lab.sh
+experiments/08/pyproject.toml                     # 依赖配置 (uv)
+experiments/08/README.md                          # 本指导书
 ```
 
 ---
@@ -62,12 +64,21 @@ flowchart LR
 
 ---
 
+## 4.5 Python 环境初始化
+在进行任何执行之前，进入工作目录并初始化虚拟环境：
+```bash
+cd experiments/08
+uv sync
+```
+
+---
+
 ## 5. 环境准备（可选：使用命名空间“测量”近/远链路）
 > 如果你当前环境不方便运行 Linux network namespace，可跳过本节，直接使用“仿真参数”完成实验。
 
 1. **拉起拓扑**
    ```bash
-   sudo bash experiments/08/ns_topology_aware.sh
+   sudo bash ns_topology_aware.sh
    ip netns list
    ```
 2. **基础连通性检查**
@@ -121,12 +132,12 @@ flowchart LR
 
 ### 7.1 生成示例配置
 ```bash
-python3 experiments/08/topology_aware_scheduler_sim.py init --outdir experiments/08/examples
+uv run python topology_aware_scheduler_sim.py init --outdir examples
 ```
 示例配置默认包含“数据倾斜 + 资源不均衡”（左侧 rack 节点更少），用于触发“仅亲和 vs 网络评分”的取舍。
 
 ### 7.2 将第 6 步测量值写入仿真配置（关键）
-第 6 步得到的 `ping/iperf3` 数据不会被仿真器自动读取；你需要把测量结果**手动写入**仿真配置文件 `experiments/08/examples/topology.json`，让第 7 步仿真使用“实测的近/远网络条件”。
+第 6 步得到的 `ping/iperf3` 数据不会被仿真器自动读取；你需要把测量结果**手动写入**仿真配置文件 `examples/topology.json`，让第 7 步仿真使用“实测的近/远网络条件”。
 
 **映射关系**
 - `logs/ping_intra_rack.txt`（如 `l1 -> l2`）→ `links.intra.latency_ms`（单位 ms）
@@ -136,7 +147,7 @@ python3 experiments/08/topology_aware_scheduler_sim.py init --outdir experiments
   - 如果你也测了同机架吞吐，可同步更新 `links.intra.bandwidth_gbps`（不测也可用默认值）。
 
 **你需要修改的文件与字段**
-- 文件：`experiments/08/examples/topology.json`
+- 文件：`examples/topology.json`
 - 字段：
   - `links.intra.latency_ms`：填“同机架”延迟（来自第 6 步 `ping_intra_rack`）
   - `links.inter.latency_ms`：填“跨机架”延迟（来自第 6 步 `ping_inter_rack`）
@@ -147,32 +158,32 @@ python3 experiments/08/topology_aware_scheduler_sim.py init --outdir experiments
 
 也可以直接用一键脚本跑完三种调度并把输出写入 `logs/`：
 ```bash
-bash experiments/08/run_topology_aware_lab.sh
+bash run_topology_aware_lab.sh
 ```
 
 ### 7.3 用“网络透明”随机调度跑一遍（基线）
 ```bash
-python3 experiments/08/topology_aware_scheduler_sim.py run \
-  --topology experiments/08/examples/topology.json \
-  --job experiments/08/examples/job.json \
+uv run python topology_aware_scheduler_sim.py run \
+  --topology examples/topology.json \
+  --job examples/job.json \
   --scheduler random \
   --seed 1
 ```
 
 ### 7.4 启用机架亲和（rack-aware）
 ```bash
-python3 experiments/08/topology_aware_scheduler_sim.py run \
-  --topology experiments/08/examples/topology.json \
-  --job experiments/08/examples/job.json \
+uv run python topology_aware_scheduler_sim.py run \
+  --topology examples/topology.json \
+  --job examples/job.json \
   --scheduler rack_local \
   --seed 1
 ```
 
 ### 7.5 启用网络评分（代价模型选点）
 ```bash
-python3 experiments/08/topology_aware_scheduler_sim.py run \
-  --topology experiments/08/examples/topology.json \
-  --job experiments/08/examples/job.json \
+uv run python topology_aware_scheduler_sim.py run \
+  --topology examples/topology.json \
+  --job examples/job.json \
   --scheduler score \
   --seed 1
 ```
@@ -184,7 +195,7 @@ python3 experiments/08/topology_aware_scheduler_sim.py run \
 ---
 
 ## 8. 对照实验：改变跨机架条件，观察收益变化
-1. 编辑 `experiments/08/examples/topology.json`（或自行另存），分别构造两组对照：
+1. 编辑 `examples/topology.json`（或自行另存），分别构造两组对照：
    - A：跨机架 `bandwidth_gbps` 较高、`latency_ms` 较低（“拓扑差异小”）
    - B：跨机架 `bandwidth_gbps` 较低、`latency_ms` 较高（“拓扑差异大”）
 2. 对 A/B 两组，分别运行三种 `--scheduler` 并记录 `makespan` 与 `cross_rack_mb`。
@@ -206,7 +217,7 @@ python3 experiments/08/topology_aware_scheduler_sim.py run \
 ## 10. 清理（仅命名空间实验需要）
 ```bash
 ip netns exec torL tc qdisc del dev vethLRa root || true
-sudo bash experiments/08/ns_topology_aware.sh down
+sudo bash ns_topology_aware.sh down
 ```
 
 ---

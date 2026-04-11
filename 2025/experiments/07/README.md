@@ -11,36 +11,42 @@
 
 ## 2. 预备知识与工具
 - 熟悉 Bash、`ip netns`、`tc netem`、`iperf3`、`ping`。
-- 需安装：`python3`, `iperf3`, `tcpdump`（可选）。
+- 需安装：`uv`（Python 管理工具）、`iperf3`、`tcpdump`（可选）。
 
 ## 3. 目录与资源
-```
+```text
 docs/network_impact_distributed_frameworks.md    # 背景阅读
 experiments/07/ns_framework_topo.sh              # Driver + PS + 3 Worker 拓扑
 experiments/07/framework_network_sim.py          # 作业时间模拟器（ps/allreduce/shuffle）
-experiments/07/network_impact_lab_guide.md       # 本指导书
+experiments/07/README.md                         # 本指导书
+experiments/07/pyproject.toml                    # 依赖配置 (uv)
 ```
 
 ## 4. 环境准备
-1. **拉起拓扑**（创建 Driver/PS/Worker 命名空间与桥）
+1. **进入目录并初始化 Python 环境**
    ```bash
-   sudo bash experiments/07/ns_framework_topo.sh
+   cd experiments/07
+   uv sync
+   ```
+2. **拉起拓扑**（创建 Driver/PS/Worker 命名空间与桥）
+   ```bash
+   sudo bash ns_framework_topo.sh
    ip netns list
    ```
    看到 `drv/ps/w1/w2/w3` 即为成功。
-2. **准备日志目录**（集中保存 ping/iperf 输出，便于后续对比）
+3. **准备日志目录**（集中保存 ping/iperf 输出，便于后续对比）
    ```bash
    mkdir -p logs
    ```
-3. **接口速览**（示例，确保地址分配符合预期）  
+4. **接口速览**（示例，确保地址分配符合预期）  
    `ps: vps_ns (10.10.0.20/24)` ← Root 侧 `vps` 接入桥 `brfw`  
    `drv: vdrv_ns (10.10.0.10/24)`；`w1/w2/w3` 依次为 `vw1_ns/vw2_ns/vw3_ns` (10.10.0.11/12/13)。
-4. **连通性检查**（验证命名空间与 IP 是否可达）
+5. **连通性检查**（验证命名空间与 IP 是否可达）
    ```bash
    ip netns exec drv ping -c 4 10.10.0.20   # Driver -> PS
    ip netns exec w1 ping -c 4 10.10.0.13    # Worker1 -> Worker3
    ```
-5. **记录基础状态**（基线配置快照，为后续“前后对比”）
+6. **记录基础状态**（基线配置快照，为后续“前后对比”）
    ```bash
    ip netns exec ps sysctl net.ipv4.ip_forward
    ip netns exec ps tc qdisc show
@@ -80,7 +86,7 @@ experiments/07/network_impact_lab_guide.md       # 本指导书
 3. **代入模拟器（Shuffle 模式）**（把“无瓶颈”和“有限瓶颈”两组测量值分别跑一遍，观察 Stage 时间的变化）
    > 将 `ping` p50 值填入 `--latency-ms`，`iperf3` 平均带宽（Gbps）填入 `--bandwidth-gbps`；若想贴合尾部，可把 `--tail-extra-ms` 设为约 `p99 - p50`。先用“无 netem”基线跑一遍，再用“有 netem”结果跑一遍作对比。
    ```bash
-   python3 experiments/07/framework_network_sim.py shuffle \
+   uv run python framework_network_sim.py shuffle \
      --workers 12 \
      --latency-ms <ping_p50_ms> \
      --bandwidth-gbps <iperf_avg_gbps> \
@@ -95,7 +101,7 @@ experiments/07/network_impact_lab_guide.md       # 本指导书
 2. **运行模拟**
    > 用当前测得的 `ping` p50/`iperf3` 带宽替换占位符；如需模拟长尾，把 `--tail-extra-ms` 设成 `(p99 - p50)` 的量级。先记录无瓶颈，再记录限速/抖动后的结果。
    ```bash
-   python3 experiments/07/framework_network_sim.py ps \
+   uv run python framework_network_sim.py ps \
      --workers 8 \
      --latency-ms <ping_p50_ms> \
      --bandwidth-gbps <iperf_avg_gbps> \
@@ -114,7 +120,7 @@ experiments/07/network_impact_lab_guide.md       # 本指导书
 2. **模拟 AllReduce**
    > 继续使用最新的 RTT/带宽测量值填充命令；需要模拟尾部时，同样可以用 `--tail-extra-ms ≈ (p99 - p50)`。比较“无 netem vs 有 netem”的 p99 差异。
    ```bash
-   python3 experiments/07/framework_network_sim.py allreduce \
+   uv run python framework_network_sim.py allreduce \
      --workers 16 \
      --latency-ms <ping_p50_ms> \
      --bandwidth-gbps <iperf_avg_gbps> \
@@ -140,5 +146,5 @@ experiments/07/network_impact_lab_guide.md       # 本指导书
 ## 11. 清理
 ```bash
 tc qdisc del dev vps root || true
-sudo bash experiments/07/ns_framework_topo.sh down
+sudo bash ns_framework_topo.sh down
 ```

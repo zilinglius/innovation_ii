@@ -1,7 +1,9 @@
 #define _GNU_SOURCE
 #include <arpa/inet.h>
 #include <errno.h>
+#ifdef __linux__
 #include <linux/net_tstamp.h>
+#endif
 #include <netinet/in.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -80,6 +82,7 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
   }
 
+#ifdef __linux__
   int ts_flags = SOF_TIMESTAMPING_RX_SOFTWARE | SOF_TIMESTAMPING_SOFTWARE |
                  SOF_TIMESTAMPING_SYS_HARDWARE | SOF_TIMESTAMPING_RAW_HARDWARE;
   if (setsockopt(fd, SOL_SOCKET, SO_TIMESTAMPING, &ts_flags,
@@ -88,6 +91,15 @@ int main(int argc, char **argv) {
     close(fd);
     return EXIT_FAILURE;
   }
+#elif defined(__APPLE__) || defined(__FreeBSD__)
+  int ts_flags = 1;
+  if (setsockopt(fd, SOL_SOCKET, SO_TIMESTAMP, &ts_flags,
+                 sizeof(ts_flags)) != 0) {
+    perror("setsockopt(SO_TIMESTAMP)");
+    close(fd);
+    return EXIT_FAILURE;
+  }
+#endif
 
   int enable = 1;
   setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable));
@@ -134,20 +146,45 @@ int main(int argc, char **argv) {
       return EXIT_FAILURE;
     }
 
+    uint64_t realtime_ns = 0;
+
+#ifdef __linux__
     struct timespec stamp[3];
     memset(stamp, 0, sizeof(stamp));
+#endif
+
     for (struct cmsghdr *cm = CMSG_FIRSTHDR(&msg); cm;
          cm = CMSG_NXTHDR(&msg, cm)) {
+#ifdef __linux__
       if (cm->cmsg_level == SOL_SOCKET &&
           cm->cmsg_type == SO_TIMESTAMPING &&
           cm->cmsg_len >= CMSG_LEN(sizeof(stamp))) {
         memcpy(&stamp, CMSG_DATA(cm), sizeof(stamp));
+        // Fallback to software if raw HW ts isn't available
+        if (stamp[2].tv_sec != 0 || stamp[2].tv_nsec != 0) {
+          realtime_ns = ts_to_ns(&stamp[2]);
+        } else {
+          realtime_ns = ts_to_ns(&stamp[0]);
+        }
         break;
       }
+#elif defined(__APPLE__) || defined(__FreeBSD__)
+      if (cm->cmsg_level == SOL_SOCKET &&
+          cm->cmsg_type == SO_TIMESTAMP &&
+          cm->cmsg_len >= CMSG_LEN(sizeof(struct timeval))) {
+        struct timeval tv;
+        memcpy(&tv, CMSG_DATA(cm), sizeof(tv));
+        realtime_ns = (uint64_t)tv.tv_sec * 1000000000ull + (uint64_t)tv.tv_usec * 1000ull;
+        break;
+      }
+#endif
     }
     struct timespec mono_now;
+#ifdef CLOCK_MONOTONIC_RAW
     clock_gettime(CLOCK_MONOTONIC_RAW, &mono_now);
-    uint64_t realtime_ns = ts_to_ns(&stamp[2]);
+#else
+    clock_gettime(CLOCK_MONOTONIC, &mono_now);
+#endif
     uint64_t mono_ns = ts_to_ns(&mono_now);
     size_t payload_len = (size_t)n;
     size_t wire_len = payload_len + 42;  // rough Ethernet/IP/UDP header estimate

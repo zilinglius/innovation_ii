@@ -1,10 +1,9 @@
 #define _GNU_SOURCE
 #include <arpa/inet.h>
 #include <errno.h>
+#ifdef __linux__
 #include <linux/net_tstamp.h>
-#include <netinet/ether.h>
-#include <netinet/ip.h>
-#include <netinet/udp.h>
+#endif
 #include <pcap/pcap.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -15,8 +14,14 @@
 #include <time.h>
 #include <unistd.h>
 
+#ifdef __linux__
 #ifndef SO_TXTIME
 #error "This sample requires SO_TXTIME support (Linux 5.4+)."
+#endif
+#endif
+
+#ifndef CLOCK_TAI
+#define CLOCK_TAI CLOCK_REALTIME
 #endif
 
 struct replay_packet {
@@ -83,7 +88,7 @@ static void sleep_until(clockid_t clk, uint64_t target_ns, uint64_t guard_ns) {
     }
     uint64_t remaining = target_ns - guard_ns - now_ns;
     struct timespec req = ns_to_timespec(remaining);
-    clock_nanosleep(clk, 0, &req, NULL);
+    nanosleep(&req, NULL);
   }
 }
 
@@ -212,37 +217,46 @@ int main(int argc, char **argv) {
       pcap_close(pcap);
       return EXIT_FAILURE;
     }
-    if (hdr->caplen < sizeof(struct ether_header)) {
+    if (hdr->caplen < 14) { // Ethernet header size
       continue;
     }
-    const struct ether_header *eth =
-        (const struct ether_header *)data;
-    if (ntohs(eth->ether_type) != ETHERTYPE_IP) {
+    uint16_t ether_type = (data[12] << 8) | data[13];
+    // Allow basic IPv4 (0x0800)
+    if (ether_type != 0x0800) {
       continue;
     }
-    size_t offset = sizeof(struct ether_header);
-    if (hdr->caplen < offset + sizeof(struct iphdr)) {
+    size_t offset = 14;
+    if (hdr->caplen < offset + 20) { // Min IPv4 header
       continue;
     }
-    const struct iphdr *iph = (const struct iphdr *)(data + offset);
-    size_t ip_header_len = (size_t)iph->ihl * 4;
-    if (iph->version != 4 || ip_header_len < sizeof(struct iphdr)) {
+    
+    // Parse IPv4 header bytes
+    const uint8_t *ip_hdr_data = data + offset;
+    int ip_version = ip_hdr_data[0] >> 4;
+    size_t ip_header_len = (ip_hdr_data[0] & 0x0F) * 4;
+    int protocol = ip_hdr_data[9];
+
+    if (ip_version != 4 || ip_header_len < 20) {
       continue;
     }
-    if (iph->protocol != IPPROTO_UDP) {
+    if (protocol != IPPROTO_UDP) {
       continue;
     }
     offset += ip_header_len;
-    if (hdr->caplen < offset + sizeof(struct udphdr)) {
+    
+    // Parse UDP header bytes
+    if (hdr->caplen < offset + 8) { // UDP header size
       continue;
     }
-    const struct udphdr *udph = (const struct udphdr *)(data + offset);
-    uint16_t udp_len = ntohs(udph->len);
-    if (udp_len < sizeof(struct udphdr)) {
+    const uint8_t *udp_hdr_data = data + offset;
+    uint16_t udp_len = (udp_hdr_data[4] << 8) | udp_hdr_data[5];
+    
+    if (udp_len < 8) {
       continue;
     }
-    size_t payload_len = udp_len - sizeof(struct udphdr);
-    offset += sizeof(struct udphdr);
+    size_t payload_len = udp_len - 8;
+    offset += 8;
+    
     if (hdr->caplen < offset + payload_len) {
       continue;
     }
@@ -291,6 +305,7 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
   }
 
+#ifdef __linux__
   struct sock_txtime txtime_cfg = {
       .clockid = cfg.clock_id,
       .flags = SOF_TXTIME_REPORT_ERRORS,
@@ -302,6 +317,10 @@ int main(int argc, char **argv) {
     close(fd);
     return EXIT_FAILURE;
   }
+#else
+  // On non-Linux platforms, SO_TXTIME is unavailable. We rely purely on sleep_until()
+  // which will provide best-effort software timing but without kernel HW offload.
+#endif
 
   struct sockaddr_in remote = {
       .sin_family = AF_INET,
@@ -339,6 +358,7 @@ int main(int argc, char **argv) {
         .iov_base = packets[i].payload,
         .iov_len = packets[i].len,
     };
+#ifdef __linux__
     char cbuf[CMSG_SPACE(sizeof(uint64_t))];
     memset(cbuf, 0, sizeof(cbuf));
     struct msghdr msg = {
@@ -354,6 +374,16 @@ int main(int argc, char **argv) {
     cm->cmsg_type = SCM_TXTIME;
     cm->cmsg_len = CMSG_LEN(sizeof(uint64_t));
     memcpy(CMSG_DATA(cm), &target_ns, sizeof(target_ns));
+#else
+    struct msghdr msg = {
+        .msg_name = &remote,
+        .msg_namelen = sizeof(remote),
+        .msg_iov = &iov,
+        .msg_iovlen = 1,
+        .msg_control = NULL,
+        .msg_controllen = 0,
+    };
+#endif
 
     if (sendmsg(fd, &msg, 0) < 0) {
       perror("sendmsg");
