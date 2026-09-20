@@ -1,176 +1,36 @@
-# Network & Distributed Systems Lab
+# 云网融合创新实践（Innovation II）
 
-A comprehensive collection of Linux network namespace labs for exploring networking fundamentals, routing protocols, and distributed systems concepts. All labs use Bash + `iproute2` for reproducible experiments on any modern Linux host.
+本科生课程 **《云网融合创新实践》** 的讲义与配套实验。课程从计算机网络基础出发，利用 Linux 内核的网络虚拟化能力（network namespace、veth、bridge、`tc netem`）在单机上搭建可复现的网络实验，逐步深入到路由协议、精确定时与延迟测量，以及网络对分布式计算框架的影响。
 
-## Prerequisites
+## 仓库结构
 
-- Linux kernel >= 3.8 (5.x recommended) with `iproute2`, `iputils-ping`, `bridge-utils`, and `tcpdump`
-- Root access via `sudo`; always launch labs from the repository root
-- Optional: `shellcheck`, `iperf3`, `gcc` + `libpcap-dev`, `python3`
-
-See `2025/experiments/01/ns_setup_guide.md` for environment setup and module checks (`veth`, `bridge`).
-
-## Repository Structure
-
-| Path | Purpose |
+| 路径 | 说明 |
 | --- | --- |
-| `2025/experiments/01/` | Base labs: static routing, bridges, network namespaces |
-| `2025/experiments/02/` | Routing protocol design notes (RIP/OSPF/ISIS/EIGRP/BGP) |
-| `2025/experiments/03/` | OSPF-like simulator framework (Python implementation skeleton) |
-| `2025/experiments/04/` | UDP transmission timing lab with C helpers |
-| `2025/experiments/05/` | Network tail latency analysis |
-| `2025/experiments/06/` | Barrier synchronization simulation |
-| `2025/experiments/07/` | Network impact on distributed frameworks |
-| `2025/experiments/08/` | Topology-aware scheduling simulation |
-| `2025/docs/` | Background reading on networking, routing, timing, and distributed systems |
+| [`2026/`](2026/README.md) | **当前学期**：讲义（`docs/`）与实验（`experiments/`），大纲与进度见其中的 README |
+| [`2025/`](2025/README.md) | 去年内容的归档：9 篇讲义与 8 个实验，含各实验的快速上手命令 |
+| [`AGENTS.md`](AGENTS.md) | 写作、脚本与协作规范（同时供 AI 助手读取） |
 
-## Quick Start
+## 从哪里开始
 
-### Base Network Namespace Lab
+- 选课同学：从 [`2026/README.md`](2026/README.md) 的课程大纲进入，第一讲是 [计算机网络基础与 Linux 网络虚拟化](2026/docs/network.md)。
+- 想提前动手：可以先做 [2025 的实验 01](2025/experiments/01/ns_setup_guide.md)（namespace 环形拓扑与网桥）。
 
-Five-namespace ring topology (ns1 -> ns2 -> ns3 -> ns4 -> ns5 -> ns1):
+## 实验环境
+
+- 任意现代 Linux 主机或虚拟机（内核 ≥ 3.8，推荐 5.x 及以上），具备 `sudo` 权限
+- 必需：`iproute2`、`iputils-ping`、`bridge-utils`、`tcpdump`
+- 可选：`shellcheck`、`iperf3`、`gcc` + `libpcap-dev`、`python3` / [`uv`](https://docs.astral.sh/uv/)
+- macOS / Windows 用户请使用 Linux 虚拟机或云主机
+- 所有实验命令默认从**仓库根目录**执行
+
+快速验证环境（搭建并拆除一个五节点环形拓扑）：
 
 ```bash
 sudo bash 2025/experiments/01/ns.sh
-ip netns list
-ip netns exec ns1 ping -c1 10.0.23.2
+sudo ip netns exec ns1 ping -c1 10.0.23.2
 sudo bash 2025/experiments/01/ns.sh down
 ```
 
-### Bridge Lab
+## 说明
 
-Bridge-centric topology with leaf namespaces:
-
-```bash
-sudo bash 2025/experiments/01/ns_bridge.sh
-ip netns exec ns1a ping -c1 10.0.3.11
-sudo bash 2025/experiments/01/ns_bridge.sh down
-```
-
-## Lab Guide
-
-### Lab 1: Network Namespace Basics (`2025/experiments/01/`)
-
-- **ns.sh**: Five-node ring with static routes
-- **ns_bridge.sh**: Software bridges with leaf namespaces
-- **ns_setup_guide.md**: Setup, troubleshooting, and verification
-
-### Lab 2: Routing Protocols (`2025/experiments/02/`)
-
-Design notes and scaffolds for:
-- RIP (Routing Information Protocol)
-- OSPF (Open Shortest Path First)
-- IS-IS (Intermediate System to Intermediate System)
-- EIGRP (Enhanced Interior Gateway Routing Protocol)
-- BGP (Border Gateway Protocol)
-
-### Lab 3: OSPF Simulator (`2025/experiments/03/`)
-
-Minimal OSPF-like framework for students to implement:
-- Neighbor discovery and adjacency
-- LSA flooding
-- Link State Database
-- SPF calculation (Dijkstra)
-
-```bash
-sudo bash 2025/experiments/01/ns.sh
-sudo ip netns exec r1 python3 2025/experiments/03/main.py --router 1.1.1.1 --config 2025/experiments/03/topo.sample.yaml
-```
-
-### Lab 4: UDP Timing (`2025/experiments/04/`)
-
-Precise UDP transmission timing experiments using:
-- `SO_TXTIME` with ETF qdisc
-- Hardware timestamping
-- C helpers for timestamp collection
-
-### Lab 5: Tail Latency (`2025/experiments/05/`)
-
-Inject and measure network tail latency using `tc netem`:
-
-```bash
-sudo bash 2025/experiments/01/ns.sh
-ip netns exec ns2 tc qdisc add dev veth23a root netem delay 5ms 2ms 25%
-# Analyze with iperf3, ping, tcpdump
-```
-
-### Lab 6: Barrier Simulation (`2025/experiments/06/`)
-
-Python simulator for studying barrier synchronization patterns in distributed systems.
-
-### Lab 7: Network Impact on Distributed Frameworks (`2025/experiments/07/`)
-
-Simulate how network conditions affect:
-- Shuffle operations
-- Parameter Server push/pull
-- Ring AllReduce
-
-```bash
-sudo bash 2025/experiments/07/ns_framework_topo.sh
-python3 2025/experiments/07/framework_network_sim.py shuffle --workers 12 --latency-ms 5 --bandwidth-gbps 1
-```
-
-### Lab 8: Topology-Aware Scheduling (`2025/experiments/08/`)
-
-Compare scheduling strategies:
-- `random`: Network-oblivious placement
-- `rack_local`: Rack affinity
-- `score`: Network cost model-based scheduling
-
-```bash
-sudo bash 2025/experiments/08/ns_topology_aware.sh
-python3 2025/experiments/08/topology_aware_scheduler_sim.py init --outdir 2025/experiments/08/examples
-bash 2025/experiments/08/run_topology_aware_lab.sh
-```
-
-## Background Reading
-
-| Document | Topics |
-| --- | --- |
-| `2025/docs/network.md` | Linux networking fundamentals |
-| `2025/docs/route.md` | Static routing |
-| `2025/docs/routing_protocol.md` | Routing protocol theory |
-| `2025/docs/udp_app_send_timing.md` | UDP timing theory |
-| `2025/docs/timestamped_packet_transmission.md` | Packet timestamping |
-| `2025/docs/network_latency_long_tail.md` | Tail latency analysis |
-| `2025/docs/network_impact_distributed_frameworks.md` | Network effects on distributed systems |
-| `2025/docs/topology_aware_distributed_framework.md` | Topology-aware scheduling |
-| `2025/docs/compute_constellation.md` | Compute constellation patterns |
-
-## Development Guidelines
-
-See `AGENTS.md` for:
-- Project structure conventions
-- Coding style (Bash with `set -Eeuo pipefail`)
-- Testing and verification guidelines
-- Commit message conventions
-
-### Script Conventions
-
-- Use `set -Eeuo pipefail` guard in all Bash scripts
-- Two-space indentation
-- Constants: uppercase with prefixes (`V12A`, `LAN_L_GW`)
-- Functions: lowercase snake_case (`exists_ns`)
-- Keep scripts beside their documentation
-
-### Verification
-
-```bash
-bash -n 2025/experiments/01/ns.sh
-shellcheck 2025/experiments/01/ns.sh
-sudo bash 2025/experiments/01/ns.sh
-# ... verify connectivity ...
-sudo bash 2025/experiments/01/ns.sh down
-```
-
-## Contributing
-
-1. Mirror existing code style and conventions
-2. Document at least one round-trip test for new links/bridges
-3. Include troubleshooting steps with relevant `ip`/`ping`/`tcpdump` output
-4. Use short, verb-led commit subjects: `add leaf bridges`, `fix topology aware`
-5. Reference issues and note regressions explicitly in PRs
-
-## License
-
-This is an educational repository for network and distributed systems labs.
+本仓库为教学用途。发现问题欢迎提 issue 或 PR，规范见 [`AGENTS.md`](AGENTS.md)。
