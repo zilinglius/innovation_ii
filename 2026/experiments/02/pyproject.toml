@@ -1,0 +1,12 @@
+[project]
+name = "lab02-lsrd"
+version = "1.0.0"
+description = "Lab 2：让网络自己找路——链路状态路由守护进程 lsrd（LSR-lite v1）"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+# 只用标准库：套接字、select、json、subprocess、heapq。
+# 环境准备：cd 2026/experiments/02 && uv sync
+# 离线测试：uv run python -m unittest -v
+# 守护进程由 run.sh 以 .venv/bin/python -m lsrd 启动（需要 root 与 network namespace）。
