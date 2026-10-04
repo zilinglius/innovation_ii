@@ -1,0 +1,9 @@
+[project]
+name = "lab03-classroom"
+version = "1.0.0"
+description = "第五讲课堂观察：数据中心路径、容量与虚拟网络"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+
+# 定量 TCP 传输只使用 Python 标准库；路由复用 Lab 2 的独立环境。

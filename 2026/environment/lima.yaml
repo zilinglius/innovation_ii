@@ -1,0 +1,14 @@
+# 课程使用完整 Ubuntu 内核；在 Mac 上通过 Apple Virtualization.framework 运行。
+minimumLimaVersion: 2.0.0
+base:
+  - template:_images/ubuntu-24.04
+vmType: vz
+cpus: 4
+memory: 4GiB
+disk: 30GiB
+mountType: virtiofs
+mounts: []
+# 由 lima.sh 只读挂载当前仓库，实验在 VM 的 /workspace 独立副本中运行。
+containerd:
+  system: false
+  user: false
