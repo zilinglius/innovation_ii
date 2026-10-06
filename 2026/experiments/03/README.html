@@ -1,7 +1,6 @@
-<!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="generator" content="由 2026/experiments/03/README.md 生成（sha256 e996399552c27d7dc775bc758d131bbd485ba1b423726cb6db613104d69641fe）；版式参考 2026/docs/link_state_router.html；请改 Markdown 源文件后重新生成">
-<title>Lab 3 课堂观察：看见路径、容量与虚拟网络</title><style>
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="generator" content="2026/tools/build_lab3_html.py；源文 sha256 ab3627b30831c1a5bc881fc0256077c6986872384b7851e1bbd06ff6c568e857；更新 2026-10-06">
+<title>Lab 3 · 搭一个迷你数据中心</title><style>
 /* ==========================================================================
    云网融合创新实践 · 讲义样式
    设计要点：
@@ -356,8 +355,8 @@ svg .frame-k { fill: none; stroke: var(--ink-2); stroke-width: 1.2; }
 @page {
   size: A4;
   margin: 17mm 18mm 18mm;
-  @top-left { content: "云网融合创新实践 · Lab 3 · 课堂观察"; font: 8pt "IBM Plex Sans", "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; color: #6b7686; }
-  @top-right { content: "路径、容量与虚拟网络"; font: 8pt "IBM Plex Sans", "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; color: #6b7686; }
+  @top-left { content: "云网融合创新实践 · Lab 3"; font: 8pt "IBM Plex Sans", "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; color: #6b7686; }
+  @top-right { content: "搭一个迷你数据中心"; font: 8pt "IBM Plex Sans", "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; color: #6b7686; }
   @bottom-center { content: counter(page) " / " counter(pages); font: 8pt "IBM Plex Mono", Menlo, Consolas, monospace; color: #6b7686; }
 }
 @page :first {
@@ -447,155 +446,927 @@ svg .frame-k { fill: none; stroke: var(--ink-2); stroke-width: 1.2; }
   .colophon { margin-top: 28pt; padding-top: 8pt; font-size: 7pt; }
 }
 
+/* ==========================================================================
+   代码讲义的附加样式（Lab 3起；配置模块写 EXTRA_CSS = ["python.css"] 才会追加到 style.css 之后，
+   已生成的其它讲义不含这一段，因此不必重新生成）
+   - Python 代码块：只区分注释、字符串、关键字三类，颜色都取自中性的 ink 色阶——
+     “有含义的颜色只按协议层次取”的规矩不破。
+   - 小节标题末尾的“【跟做】/【演示】/【说明】”做成标题旁的小标签。
+   ========================================================================== */
+.code.py .str { color: var(--ink-2); }
+h3 .h3-tag {
+  display: inline-block; font: 600 10.5px/1 var(--font-mono); letter-spacing: .06em; white-space: nowrap;
+  padding: 3px 6px; margin-left: 10px; border-radius: 2px; border: 1px solid var(--rule-2); color: var(--ink-3); vertical-align: .2em;
+}
+@media print {
+  h3 .h3-tag { font-size: 6.5pt; padding: 2pt 4pt; margin-left: 6pt; }
+}
+
+
+@media print { .code { break-inside:auto; } .fig svg { min-width:0; } }
+
+.fig-body { max-width:100%; border-radius:8px; }
+.fig-body:focus-visible { outline:2px solid var(--l3); outline-offset:4px; }
+.fig .lab-diagram { min-width:700px; }
+.lab-diagram text { font-size:13px; }
+.lab-diagram .d-title { font-size:16px; font-weight:600; }
+.lab-diagram .d-label { font-size:14px; font-weight:600; }
+.lab-diagram .d-small { font-size:12px; fill:var(--ink-2); }
+.lab-diagram .d-mono { font-family:var(--font-mono); font-size:13px; }
+.lab-diagram .d-panel { fill:var(--bg); stroke:var(--rule-2); stroke-width:1; }
+.lab-diagram .d-band { fill:var(--l3-bg); }
+.lab-diagram .d-rule { stroke:var(--rule); stroke-width:1; }
+.lab-diagram .d-link { fill:none; stroke:var(--l3); stroke-width:1.7; }
+.lab-diagram .d-candidate { fill:none; stroke:var(--l3-line); stroke-width:2; }
+.lab-diagram .d-halo { fill:none; stroke:var(--bg); stroke-width:6; }
+.lab-diagram .d-flow { fill:none; stroke:var(--l4); stroke-width:2.6; }
+.lab-diagram .d-tenant { fill:none; stroke:var(--l2); stroke-width:2.6; }
+.lab-diagram .d-dash { stroke-dasharray:7 5; }
+.lab-diagram .d-idle { fill:var(--surface); stroke:var(--rule-2); stroke-width:1.2; stroke-dasharray:4 4; }
+.lab-diagram .d-namespace { fill:none; stroke:var(--rule-2); stroke-width:1.2; stroke-dasharray:5 4; }
+.fig-scroll-hint { display:none; }
+@media screen and (max-width:740px) {
+  .fig-scroll-hint { display:block; margin:0 0 8px; color:var(--ink-2); font-size:12px; }
+}
+@media print {
+  .fig .lab-diagram { min-width:0; width:100%; }
+  .fig-scroll-hint { display:none; }
+}
 </style></head><body><div class="layout">
-<nav class="toc no-print" aria-label="目录"><div class="toc-course">云网融合创新实践 · LAB 03<b>课堂观察</b></div>
-<ol class="toc-mods"><li data-target="top"><a href="#top"><span class="n">00</span><span>实验导读</span></a></li><li data-target="m1"><a href="#m1"><span class="n">01</span><span>实验目标</span></a></li><li data-target="m2"><a href="#m2"><span class="n">02</span><span>预备知识与工具</span></a></li><li data-target="m3"><a href="#m3"><span class="n">03</span><span>目录与资源</span></a></li><li data-target="m4"><a href="#m4"><span class="n">04</span><span>实验步骤与预期输出</span></a></li><li data-target="m5"><a href="#m5"><span class="n">05</span><span>故障排查</span></a></li><li data-target="m6"><a href="#m6"><span class="n">06</span><span>思考题</span></a></li><li data-target="m7"><a href="#m7"><span class="n">07</span><span>提交要求与后续衔接</span></a></li></ol>
-<div class="toc-foot"><button type="button" class="btn-print js-print">打印 / 存为 PDF</button><p class="print-hint">版式按 A4 纵向设计，自带页眉与页码；打印对话框里请关掉浏览器自己的“页眉和页脚”。</p></div></nav>
-<main class="doc" id="top"><header class="masthead"><div class="mast-eyebrow"><span>上海交通大学 · 云网融合创新实践</span><span class="lec">2026 · LAB 03 · 课堂观察</span></div>
-<h1>看见路径、容量<br>与虚拟网络</h1><p class="mast-sub">Classroom Experiments: Paths, Capacity &amp; VXLAN</p><div class="legend"><span><i class="k-l2"></i>二层 · 交换与隔离</span><span><i class="k-l3"></i>三层 · 路由与多路径</span><span><i class="k-l4"></i>四层 · 连接与传输</span></div><div class="lead"><span class="lead-label">实验导读</span><p>本目录提供<a class="xref" href="../../docs/datacenter_network.html">第 05 讲</a>穿插使用的课堂观察脚本。它把 Lab 2 的 <code>lsrd</code> 放到 2 spine × 4 leaf × 8 host 拓扑上，让学生先预测、再观察、最后解释。<strong>当前交付的是课堂演示与拓扑原型；完整 Lab 3 的分层作业、验收与后续接口仍待完善。</strong></p>
+<nav class="toc no-print" aria-label="目录"><div class="toc-course">云网融合创新实践 · LAB 03<b>搭一个迷你数据中心</b></div><ol class="toc-mods"><li data-target="top"><a href="#top"><span class="n">00</span><span>实验导读</span></a></li><li data-target="m1"><a href="#m1"><span class="n">01</span><span>实验目标</span></a><ol class="toc-sub"></ol></li><li data-target="m2"><a href="#m2"><span class="n">02</span><span>预备知识与工具</span></a><ol class="toc-sub"></ol></li><li data-target="m3"><a href="#m3"><span class="n">03</span><span>目录与资源</span></a><ol class="toc-sub"><li><a href="#m3-s1">3.1 文件</a></li><li><a href="#m3-s2">3.2 实验床与地址约定</a></li><li><a href="#m3-s3">3.3 测量口径</a></li></ol></li><li data-target="m4"><a href="#m4"><span class="n">04</span><span>课堂观察回顾（第 05 讲已完成）</span></a><ol class="toc-sub"></ol></li><li data-target="m5"><a href="#m5"><span class="n">05</span><span>实验步骤</span></a><ol class="toc-sub"><li><a href="#m5-s1">基础任务</a></li><li><a href="#m5-s2">任务 1　补全 topo.sh：机架与上联</a></li><li><a href="#m5-s3">任务 2　连通性自检（TODO 3）与逐链路验证</a></li><li><a href="#m5-s4">任务 3　收敛比：先分散路径，再改变容量</a></li><li><a href="#m5-s5">任务 4　复现课堂对照：交换与路由的边界</a></li><li><a href="#m5-s6">进阶任务</a></li><li><a href="#m5-s7">任务 5　哈希碰撞：同路与分路</a></li><li><a href="#m5-s8">任务 6　双租户 VXLAN（选做）</a></li><li><a href="#m5-s9">挑战任务</a></li><li><a href="#m5-s10">任务 7　按目标连接核对 VXLAN 外层源端口</a></li><li><a href="#m5-s11">任务 8　封装开销：近似模型与实测边界</a></li></ol></li><li data-target="m6"><a href="#m6"><span class="n">06</span><span>故障排查</span></a><ol class="toc-sub"></ol></li><li data-target="m7"><a href="#m7"><span class="n">07</span><span>思考题</span></a><ol class="toc-sub"></ol></li><li data-target="m8"><a href="#m8"><span class="n">08</span><span>提交要求</span></a><ol class="toc-sub"><li><a href="#m8-s1">维护与验证</a></li></ol></li></ol><div class="toc-foot"><button class="btn-print js-print" type="button">打印 / 存为 PDF</button><p class="print-hint">A4 纵向；请关闭浏览器自己的页眉和页脚。</p></div></nav>
+<main class="doc" id="top"><header class="masthead"><div class="mast-eyebrow"><span>上海交通大学 · 云网融合创新实践</span><span class="lec">2026 · LAB 03</span></div><h1>搭一个<br>迷你数据中心</h1><p class="mast-sub">Build a Mini Data Center: Clos Fabric, ECMP &amp; VXLAN</p><div class="legend"><span><i class="k-l2"></i>二层 · 交换与隔离</span><span><i class="k-l3"></i>三层 · 路由与多路径</span><span><i class="k-l4"></i>四层 · 连接与传输</span></div><div class="lead"><span class="lead-label">实验导读</span><blockquote>
+<p>对应第 05 讲　｜　建议用时 1 周（基础约 3 小时；进阶任务 5 约 1.5 小时、任务 6 约 2 小时；挑战任务 7、8 各约 1.5 小时）　｜　产出：2 spine × 4 leaf × 8 host 的数据中心实验床——Lab 4 至 Lab 9 都在它上面跑</p>
+</blockquote>
+<p>第 05 讲的课堂观察里，你已经在一张<strong>给定的</strong> leaf-spine 实验床上预测、观察、解释过六组现象。本实验把这张&quot;老师给的实验床&quot;变成&quot;你自己搭的实验床&quot;：把课堂脚本里的拓扑整理成你自己的 <code>topo.sh</code>，接入你在 Lab 2 写的路由守护进程，再把课堂上看到的现象亲手做出来、量出来——收敛比、哈希与上联、VXLAN 租户。这张实验床一旦稳定，后续实验都直接复用，<strong>约定比跑通更重要</strong>。</p>
+<p>任务分三层：<strong>基础</strong>人人完成；<strong>进阶</strong>拉开区分度；<strong>挑战</strong>为综合项目铺路。进阶任务 6 与挑战任务 7、8 是同一条 VXLAN 链——任务 6 没做，7、8 就没有前提——时间紧可以整条跳过，这也是全课程预留的缓冲点。</p>
 </div></header>
-<section class="module" id="m1"><header class="module-head"><div class="module-eyebrow"><span class="module-no">01</span><span class="tag">课堂实验</span></div><h2>实验目标</h2></header>
-<ol>
-<li>从真实抓包区分同机架交换和跨机架路由。</li>
-<li>区分 ECMP 的下一跳集合、实际连接分布和接收端吞吐。</li>
-<li>保持数据量不变，分别改变接收端分布或上联容量，观察完成时间变化。</li>
-<li>对照租户侧与 underlay 抓包识别 VXLAN；用正反例理解 VNI 隔离与 MTU 边界。</li>
+<section class="module" id="m1"><header class="module-head"><div class="module-eyebrow"><span class="module-no">01</span><span class="tag">LAB 3</span></div><h2>实验目标</h2></header><ol>
+<li>把课堂观察用的拓扑整理成自己维护的 <code>topo.sh</code>：节点名、接口名、地址、限速与课堂约定完全一致，支持 <code>up</code> / <code>check</code> / <code>rate</code> / <code>show</code> / <code>down</code>，重复搭建与清理可恢复到明确状态。</li>
+<li>接入自己实现的 <code>lsrd --ecmp</code>，逐链路验证连通，确认检查跨机架路由有两个下一跳。</li>
+<li>按同一方向计算收敛比，结合路径上的共享链路推导吞吐上界与完成时间下界，再用测量检查。</li>
+<li>量化哈希对完成时间的影响：同路与分路的流传同样的数据量，比较完成时间与理论下界；并搞清&quot;换端口能不能把流搬到另一条上联&quot;。</li>
+<li>（进阶）在 underlay 上自建双租户 VXLAN，验证隔离性；用测量说明&quot;网络隔离不等于带宽保证&quot;。</li>
+<li>（挑战）验证 VTEP 的外层源端口策略如何决定 overlay 与 underlay ECMP 的关系；建立&quot;封装开销&quot;的测量口径。</li>
 </ol>
-</section>
-<section class="module" id="m2"><header class="module-head"><div class="module-eyebrow"><span class="module-no">02</span><span class="tag">课堂实验</span></div><h2>预备知识与工具</h2></header>
-<p>学生自行准备 Ubuntu Linux，具有 <code>sudo</code> 权限；至少 4 核、4 GB。需要 <code>iproute2</code>、<code>ping</code>、<code>traceroute</code>、<code>tcpdump</code>、<code>iperf3</code>、<code>ethtool</code>、Python 3.12 和 <code>uv</code>；内核支持 namespace、veth、bridge、HTB、fq 与 VXLAN。</p>
-<p>学生跟做时，先完成 Lab 2 的路由实现与 <code>--ecmp</code> 进阶任务。默认 <code>up</code> 加载学生的 <code>02/lsrd</code>，原始骨架的 TODO 会阻止路由就绪。教师演示和备课验证可显式执行 <code>up --reference</code>，单独加载 <code>02/reference/lsrd</code>；它不会覆盖学生文件。教师也可先搭好网络，让学生只做观察与预测。</p>
-</section>
-<section class="module" id="m3"><header class="module-head"><div class="module-eyebrow"><span class="module-no">03</span><span class="tag">课堂实验</span></div><h2>目录与资源</h2></header>
-<div class="table-wrap"><table>
-<thead>
-<tr>
-<th>资源</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><a class="xref" href="classroom.sh">classroom.sh</a></td>
-<td>拓扑、路由器启动、课堂观察和幂等清理</td>
-</tr>
-<tr>
-<td><a class="xref" href="transfer.py">transfer.py</a></td>
-<td>定量 TCP 传输；接收端读到 EOF 后回执，确认每流 30 MB 全部到达</td>
-</tr>
-<tr>
-<td><code>pyproject.toml</code> / <code>uv.lock</code></td>
-<td>本实验的独立 Python 环境，只用标准库</td>
-</tr>
-<tr>
-<td><a class="xref" href="../02/README.html">Lab 2</a></td>
-<td>路由守护进程、Python 锁文件及参考实现</td>
-</tr>
-<tr>
-<td><code>/run/course05/</code></td>
-<td>本脚本的资源登记、PID 与控制套接字</td>
-</tr>
-<tr>
-<td><code>/tmp/course05-results/</code></td>
-<td>iperf3 JSON、SYN 路径证据、抓包文本与路由日志；清理拓扑后仍保留</td>
-</tr>
-</tbody></table></div>
-<p>leaf 为 <code>r1</code>–<code>r4</code>，spine 为 <code>r5</code>、<code>r6</code>；机架 <span class="katex"><math class="math" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>i</mi></mrow><annotation encoding="application/x-tex">i</annotation></semantics></math></span> 使用 <code>10.0.i.0/24</code>，bridge <code>bri</code> 地址 <code>.1</code>，<code>hia</code> / <code>hib</code> 为 <code>.11</code> / <code>.12</code>，host 接口为 <code>eth0</code>。leaf 侧 host 端口名如 <code>r1-h1a</code>。上联端口名如 <code>r1-r5</code> 与 <code>r5-r1</code>。</p>
-<div class="table-wrap"><table>
-<thead>
-<tr>
-<th>leaf</th>
-<th>到 r5：leaf / spine 地址</th>
-<th>到 r6：leaf / spine 地址</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>r1</td>
-<td><code>10.1.0.1/30</code> / <code>10.1.0.2/30</code></td>
-<td><code>10.1.1.1/30</code> / <code>10.1.1.2/30</code></td>
-</tr>
-<tr>
-<td>r2</td>
-<td><code>10.1.2.1/30</code> / <code>10.1.2.2/30</code></td>
-<td><code>10.1.3.1/30</code> / <code>10.1.3.2/30</code></td>
-</tr>
-<tr>
-<td>r3</td>
-<td><code>10.1.4.1/30</code> / <code>10.1.4.2/30</code></td>
-<td><code>10.1.5.1/30</code> / <code>10.1.5.2/30</code></td>
-</tr>
-<tr>
-<td>r4</td>
-<td><code>10.1.6.1/30</code> / <code>10.1.6.2/30</code></td>
-<td><code>10.1.7.1/30</code> / <code>10.1.7.2/30</code></td>
-</tr>
-</tbody></table></div>
-<p>host 接入口的两个方向限 100 Mbit/s；leaf–spine 链路的两个方向可切换为 100 或 50 Mbit/s。只修改实验 namespace 的 sysctl、offload 与队列，不改变 Ubuntu 主机的外部网卡。</p>
-</section>
-<section class="module" id="m4"><header class="module-head"><div class="module-eyebrow"><span class="module-no">04</span><span class="tag">课堂实验</span></div><h2>实验步骤与预期输出</h2></header>
-<p>以下命令全部从仓库根目录执行；先结束并清理 Lab 1/2。遇到其他实验占用同名 namespace，本脚本会拒绝搭建。</p>
-<div class="code cmd"><span class="code-tag">bash</span><pre><code><span class="ln"><span class="c step"><span class="step-n"># 1.</span> 按锁文件准备路由器与课堂传输的独立 Python 环境</span></span><span class="ln">uv sync --project 2026/experiments/02 --frozen</span><span class="ln">uv sync --project 2026/experiments/03 --frozen</span><span class="ln"></span><span class="ln"><span class="c step"><span class="step-n"># 2.</span> 使用自己完成的 lsrd 搭建课堂拓扑</span></span><span class="ln"><span class="su">sudo</span> bash 2026/experiments/03/classroom.sh up</span><span class="ln"></span><span class="ln"><span class="c step"><span class="step-n"># 3.</span> 检查每条上联、机架接入和跨机架的往返连通性</span></span><span class="ln"><span class="su">sudo</span> bash 2026/experiments/03/classroom.sh check</span></code></pre></div>
-<p>教师明确选择参考实现时，将第 2 步替换为：</p>
-<div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="ln"><span class="c step"><span class="step-n"># 1.</span> 教师演示：单独加载参考实现，学生 TODO 保持原样</span></span><span class="ln"><span class="su">sudo</span> bash 2026/experiments/03/classroom.sh up --reference</span></code></pre></div>
-<p>就绪时 6 台路由器均形成 Full 邻接；<code>r1</code> 到 <code>10.0.3.0/24</code> 的内核路由包含两个下一跳：</p>
-<div class="code out short"><span class="code-tag">预期输出</span><pre><code><span class="ln">10.0.3.0/24 proto 200 metric 20</span><span class="ln">    nexthop via 10.1.0.2 dev r1-r5 weight 1</span><span class="ln">    nexthop via 10.1.1.2 dev r1-r6 weight 1</span></code></pre></div>
-<p>按讲义所在位置运行对应观察：</p>
-<div class="code cmd"><span class="code-tag">bash</span><pre><code><span class="ln"><span class="c step"><span class="step-n"># 1.</span> 流量矩阵：两流各 30 MB，分散接收与集中接收</span></span><span class="ln"><span class="su">sudo</span> bash 2026/experiments/03/classroom.sh matrix</span><span class="ln"></span><span class="ln"><span class="c step"><span class="step-n"># 2.</span> 拓扑与路径：同机架、跨机架抓包，再追踪跨机架跳数</span></span><span class="ln"><span class="su">sudo</span> bash 2026/experiments/03/classroom.sh locality</span><span class="ln"></span><span class="ln"><span class="c step"><span class="step-n"># 3.</span> ECMP：每条上联 50 Mbit/s，比较 1 条与 8 条数据连接</span></span><span class="ln"><span class="su">sudo</span> bash 2026/experiments/03/classroom.sh ecmp</span><span class="ln"></span><span class="ln"><span class="c step"><span class="step-n"># 4.</span> 收敛比：相同两流、相同数据量，上联从 100 降为 50 Mbit/s</span></span><span class="ln"><span class="su">sudo</span> bash 2026/experiments/03/classroom.sh capacity</span><span class="ln"></span><span class="ln"><span class="c step"><span class="step-n"># 5.</span> VXLAN：同 VNI 往返、内外层抓包、相同 IP 的隔离反例</span></span><span class="ln"><span class="su">sudo</span> bash 2026/experiments/03/classroom.sh vxlan</span><span class="ln"></span><span class="ln"><span class="c step"><span class="step-n"># 6.</span> MTU：1422 B 的 ICMP 数据可发送，1423 B 超过租户接口边界</span></span><span class="ln"><span class="su">sudo</span> bash 2026/experiments/03/classroom.sh mtu</span></code></pre></div>
+</section><section class="module" id="m2"><header class="module-head"><div class="module-eyebrow"><span class="module-no">02</span><span class="tag">LAB 3</span></div><h2>预备知识与工具</h2></header><p><strong>先读</strong>：</p>
 <ul>
-<li><code>locality</code> 应看到同机架请求从 <code>r1-h1b</code> 发出，跨机架请求从 <code>r1-r5</code> 或 <code>r1-r6</code> 发出；跨机架 traceroute 依次经过源 leaf、一个 spine、目的 leaf、目的 host。</li>
-<li><code>ecmp</code> 用 iperf3 JSON 中的数据连接端口筛选 SYN 抓包，排除控制连接，输出每条连接的路径及各组收到的应用字节。观察期间路由与哈希策略保持稳定；一次 8 条流不保证 4:4，若未用到两条路径，应重跑并记录这一结果。</li>
-<li><code>matrix</code> 与 <code>capacity</code> 用临时策略路由固定 <code>h1a</code> 经 <code>r5</code>、<code>h1b</code> 经 <code>r6</code>，排除 ECMP 碰撞这一变量；抓包核对实际业务路径，结束后删除临时策略。<code>ecmp</code> 观察不固定路径。两流各传十进制 30 MB，合计 60 MB；<code>transfer.py</code> 在接收端确认全部数据到达后才结束客户端。共同计时窗口用单调时钟，从并发启动客户端到两客户端结束，包含建连与结束开销。</li>
-<li><code>vxlan</code> 为 A / B 分别建 VNI 100 / 200，租户端点为 <code>t1a</code> / <code>t3a</code>、<code>t1b</code> / <code>t3b</code>，两租户都用 <code>192.168.10.11</code> 与 <code>.12</code>。关闭 A 的远端接口后，A 应无法 ping <code>.12</code>，B 仍能 ping 相同地址；脚本随后恢复 A。</li>
-<li><code>mtu</code> 的第二次 ping 预期报 <code>message too long, mtu=1450</code>。报错发生在源租户接口，不能把它记录成远端丢包。</li>
+<li><a href="../../docs/datacenter_network.md">第 05 讲</a>全文：2.2 节拓扑与地址约定、2.5 节同机架/跨机架抓包、模块三（ECMP）、模块四（收敛比）、模块五（VXLAN）以及 6.6 节&quot;从课堂实践走向 Lab 3&quot;。</li>
+<li><a href="../02/README.md">Lab 2 指导书</a>任务 8：<strong>你的 <code>lsrd</code> 必须实现 <code>--ecmp</code></strong>（并列首跳装成内核 multipath 路由）。没有它，本实验所有&quot;两个下一跳&quot;的观察都不成立——<code>topo.sh</code> 的就绪断言会替你检查这一点。</li>
 </ul>
-<p>每组观察都先写预测，再记录路径和测量口径；参考数据与验证范围见<a class="xref" href="../../docs/datacenter_network.html">第五讲</a>。链路速率是教学限速，应用有效速率受协议开销、启动和共享 CPU 影响。</p>
-<p>2026-10-04 已在 Ubuntu 24.04、Linux 6.8 ARM64、4 核／4 GB 的备课沙箱中显式使用参考路由实现验证全部六组观察：各上联往返、8 台 host 接入与跨机架往返，SYN 数据路径，60 MB 接收确认，两个 VNI 的正反例，以及 MTU 边界。Bash 语法与 ShellCheck 通过，重复搭建和重复清理通过；学生自行完成的路由实现仍需按同一检查入口验证。</p>
-<div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="ln"><span class="c step"><span class="step-n"># 1.</span> 完成所有观察后，统一清理拓扑、路由器、抓包和业务进程</span></span><span class="ln"><span class="su">sudo</span> bash 2026/experiments/03/classroom.sh down</span><span class="ln"></span><span class="ln"><span class="c step"><span class="step-n"># 2.</span> 重复清理应成功；检查没有课堂 namespace 残留</span></span><span class="ln"><span class="su">sudo</span> bash 2026/experiments/03/classroom.sh down</span><span class="ln">ip netns list</span></code></pre></div>
-</section>
-<section class="module" id="m5"><header class="module-head"><div class="module-eyebrow"><span class="module-no">05</span><span class="tag">课堂实验</span></div><h2>故障排查</h2></header>
+<p><strong>环境</strong>：与课堂观察相同——Linux（<code>sudo</code>）、<code>iproute2</code>、<code>iputils-ping</code>、<code>traceroute</code>、<code>tcpdump</code>、<code>ethtool</code>、<code>iperf3</code>、Python 3.12 与 <code>uv</code>；内核支持 namespace、veth、bridge、HTB、fq 与 VXLAN。先检查 VXLAN 模块：</p>
+<div class="code cmd"><span class="code-tag">bash</span><pre><code># 1. 内核应能创建 VXLAN 设备；报错则 sudo modprobe vxlan，或安装 linux-modules-extra-$(uname -r)
+sudo ip link add vxprobe0 type vxlan id 1 dstport 4789 &amp;&amp; sudo ip link del vxprobe0
+</code></pre></div>
+<p><strong>准备 Python 环境</strong>（路由器复用 Lab 2 的环境，传输工具用本实验的环境）：</p>
+<div class="code cmd"><span class="code-tag">bash</span><pre><code># 1. 按各自锁文件初始化两个实验的独立环境
+uv sync --project 2026/experiments/02 --frozen
+uv sync --project 2026/experiments/03 --frozen
+</code></pre></div>
+<p><strong>约定</strong>：以下所有命令<strong>从仓库根目录执行</strong>，需要 root 的步骤显式写了 <code>sudo</code>。与 Lab 2 不同，学生拓扑的验收靠 <code>topo.sh check</code>、抓包对账和测量记录；教师维护用的测量分类测试见 <code>tests/</code>。任务连续复用同一张拓扑；执行 <code>down</code> 后需要重新 <code>up</code> 并重建 overlay。<code>down</code> 保留结果目录；重启主机可能清除 <code>/tmp</code>，需要长期保存时另行复制。</p>
+</section><section class="module" id="m3"><header class="module-head"><div class="module-eyebrow"><span class="module-no">03</span><span class="tag">LAB 3</span></div><h2>目录与资源</h2></header><h3 id="m3-s1">3.1 文件</h3>
 <div class="table-wrap"><table>
 <thead>
 <tr>
-<th>现象</th>
-<th>检查</th>
+<th style="text-align:left">文件</th>
+<th style="text-align:left">说明</th>
 </tr>
 </thead>
-<tbody><tr>
-<td>提示 <code>r1</code> 等名称已被占用</td>
-<td>先按 Lab 1/2 指导书结束原任务并清理；本脚本不会自动删除其他实验资源</td>
+<tbody>
+<tr>
+<td style="text-align:left"><code>topo.sh</code></td>
+<td style="text-align:left"><strong>实验床，你要补全</strong>。TODO 1（机架接入）、TODO 2（leaf–spine 上联）、TODO 3（check 自检）。命令面：<code>up [--reference]</code> / <code>check</code> / <code>rate 50|100</code> / <code>show</code> / <code>down</code>。幂等。</td>
 </tr>
 <tr>
-<td>路由未就绪</td>
-<td>查看 <code>/tmp/course05-results/r*.log</code>；检查是否仍是学生 TODO、ECMP 是否完成、模块是否从正确目录加载</td>
+<td style="text-align:left"><code>classroom.sh</code></td>
+<td style="text-align:left">第 05 讲的课堂观察脚本，保持原样。它与你自己的 <code>topo.sh</code> 是两套独立资源（各自的登记目录），不能混用，也不要同时搭建。</td>
 </tr>
 <tr>
-<td><code>fq</code> 或 VXLAN 不支持</td>
-<td>安装当前 Ubuntu 内核匹配的模块；不能只安装用户态工具</td>
+<td style="text-align:left"><code>measure.py</code></td>
+<td style="text-align:left">重启本轮服务端、等待就绪、并发传输、共同计时、按五元组／VNI 分类抓包；不改变路由与限速。</td>
 </tr>
 <tr>
-<td>单流与多流吞吐接近</td>
-<td>查实际路径分布、host 接入口限速、CPU 负载和重传；先解释证据，再决定是否重跑</td>
+<td style="text-align:left"><code>overlay_down.sh</code></td>
+<td style="text-align:left">只清理任务 6 登记的租户资源；<code>topo.sh down</code> 自动调用。</td>
 </tr>
 <tr>
-<td>两流完成时间与理论下界不同</td>
-<td>区分应用字节与链路字节；共同窗口还包含建连、队列和结束开销</td>
+<td style="text-align:left"><code>transfer.py</code></td>
+<td style="text-align:left">定量 TCP 传输：客户端绑定源端口，服务端确认收到全部应用字节后回执。本实验的测量工具。</td>
 </tr>
 <tr>
-<td>强制中断后有业务进程</td>
-<td>使用 <code>down</code> 清理，再 <code>up</code> 重建；结果文件仍保留</td>
+<td style="text-align:left"><code>pyproject.toml</code>、<code>.python-version</code>、<code>uv.lock</code></td>
+<td style="text-align:left">本实验的 uv 环境（只用标准库）。</td>
 </tr>
-</tbody></table></div>
-</section>
-<section class="module" id="m6"><header class="module-head"><div class="module-eyebrow"><span class="module-no">06</span><span class="tag">课堂实验</span></div><h2>思考题</h2></header>
+<tr>
+<td style="text-align:left"><code>/run/lab03/</code></td>
+<td style="text-align:left"><code>topo.sh</code> 的资源登记、pid 与控制套接字</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>/tmp/lab03-results/</code></td>
+<td style="text-align:left">路由日志与各任务的测量输出；<code>down</code> 之后仍保留</td>
+</tr>
+</tbody>
+</table></div>
+<p>自查时可以显式执行 <code>up --reference</code> 加载 <a href="../02/README.md">Lab 2 的参考实现</a>，把&quot;拓扑问题&quot;和&quot;路由问题&quot;分开定位；<strong>提交与验收以你自己的 <code>lsrd</code> 为准</strong>。</p>
+<h3 id="m3-s2">3.2 实验床与地址约定</h3>
+<figure class="fig" id="fig-topology"><p class="fig-scroll-hint">左右滑动查看全图；键盘可聚焦图框后横向滚动。</p><div class="fig-body" tabindex="0" role="region" aria-label="图 1，可横向滚动"><svg class="lab-diagram" viewBox="0 0 760 612" role="img" aria-labelledby="topology-title topology-desc" xmlns="http://www.w3.org/2000/svg"><title id="topology-title">Lab 3 实验床：从 spine 到独立主机</title><desc id="topology-desc">两台 spine 分别用四条独立链路连接四台 leaf。每个机架的 leaf 与 bridge 共用一个 namespace，两个 host 各有独立 namespace。实线连接 r5，虚线连接 r6；交叉处不相连。主机接入双向固定 100 Mbit/s，上联双向可切换 100 与 50 Mbit/s。</desc><defs><marker id="topology-l2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" class="mk-l2"/></marker><marker id="topology-l3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" class="mk-l3"/></marker><marker id="topology-l4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" class="mk-l4"/></marker></defs><text x="24" y="26" text-anchor="start" class="d-label">2 SPINE  /  4 LEAF  /  8 HOST</text><text x="736" y="26" text-anchor="end" class="d-small">接线图 · 连线交叉处不相连</text><rect x="12" y="224" width="166" height="282" rx="8" class="zone"/><text x="95" y="408" text-anchor="middle" class="d-label">机架 1</text><rect x="24" y="260" width="142" height="126" rx="6" class="d-namespace"/><rect x="202" y="224" width="166" height="282" rx="8" class="zone"/><text x="285" y="408" text-anchor="middle" class="d-label">机架 2</text><rect x="214" y="260" width="142" height="126" rx="6" class="d-namespace"/><rect x="392" y="224" width="166" height="282" rx="8" class="zone"/><text x="475" y="408" text-anchor="middle" class="d-label">机架 3</text><rect x="404" y="260" width="142" height="126" rx="6" class="d-namespace"/><rect x="582" y="224" width="166" height="282" rx="8" class="zone"/><text x="665" y="408" text-anchor="middle" class="d-label">机架 4</text><rect x="594" y="260" width="142" height="126" rx="6" class="d-namespace"/><path d="M237.0,107 C237.0,163 83,185 83,294" class="d-halo"/><path d="M237.0,107 C237.0,163 83,185 83,294" class="d-link"/><path d="M249.0,107 C249.0,163 273,185 273,294" class="d-halo"/><path d="M249.0,107 C249.0,163 273,185 273,294" class="d-link"/><path d="M261.0,107 C261.0,163 463,185 463,294" class="d-halo"/><path d="M261.0,107 C261.0,163 463,185 463,294" class="d-link"/><path d="M273.0,107 C273.0,163 653,185 653,294" class="d-halo"/><path d="M273.0,107 C273.0,163 653,185 653,294" class="d-link"/><path d="M487.0,107 C487.0,163 107,185 107,294" class="d-halo"/><path d="M487.0,107 C487.0,163 107,185 107,294" class="d-link d-dash"/><path d="M499.0,107 C499.0,163 297,185 297,294" class="d-halo"/><path d="M499.0,107 C499.0,163 297,185 297,294" class="d-link d-dash"/><path d="M511.0,107 C511.0,163 487,185 487,294" class="d-halo"/><path d="M511.0,107 C511.0,163 487,185 487,294" class="d-link d-dash"/><path d="M523.0,107 C523.0,163 677,185 677,294" class="d-halo"/><path d="M523.0,107 C523.0,163 677,185 677,294" class="d-link d-dash"/><rect x="189" y="52" width="132" height="70" rx="6" class="d-namespace"/><text x="255" y="69" text-anchor="middle" class="d-small">spine namespace r5</text><ellipse cx="255" cy="92" rx="35" ry="17" class="n-l3"/><text x="255" y="97" text-anchor="middle" class="d-mono t-b t-l3">r5</text><rect x="439" y="52" width="132" height="70" rx="6" class="d-namespace"/><text x="505" y="69" text-anchor="middle" class="d-small">spine namespace r6</text><ellipse cx="505" cy="92" rx="35" ry="17" class="n-l3"/><text x="505" y="97" text-anchor="middle" class="d-mono t-b t-l3">r6</text><ellipse cx="95" cy="313" rx="34" ry="20" class="n-l3"/><text x="95" y="318" text-anchor="middle" class="d-mono t-b t-l3">r1</text><path d="M95,333 L95,345" class="wire ar-l2"/><rect x="63" y="345" width="64" height="27" rx="4" class="n-l2"/><text x="95" y="364" text-anchor="middle" class="d-mono t-b t-l2">br1</text><path d="M81,372 V398 H55 V422" class="wire ar-l2"/><rect x="20.0" y="421.5" width="70" height="45" rx="6" class="n-host"/><text x="55" y="440.5" text-anchor="middle" class="d-mono t-b">h1a</text><text x="55" y="457.5" text-anchor="middle" class="d-small">.11</text><path d="M109,372 V398 H135 V422" class="wire ar-l2"/><rect x="100.0" y="421.5" width="70" height="45" rx="6" class="n-host"/><text x="135" y="440.5" text-anchor="middle" class="d-mono t-b">h1b</text><text x="135" y="457.5" text-anchor="middle" class="d-small">.12</text><text x="95" y="488" text-anchor="middle" class="d-mono">10.0.1.0/24</text><ellipse cx="285" cy="313" rx="34" ry="20" class="n-l3"/><text x="285" y="318" text-anchor="middle" class="d-mono t-b t-l3">r2</text><path d="M285,333 L285,345" class="wire ar-l2"/><rect x="253" y="345" width="64" height="27" rx="4" class="n-l2"/><text x="285" y="364" text-anchor="middle" class="d-mono t-b t-l2">br2</text><path d="M271,372 V398 H245 V422" class="wire ar-l2"/><rect x="210.0" y="421.5" width="70" height="45" rx="6" class="n-host"/><text x="245" y="440.5" text-anchor="middle" class="d-mono t-b">h2a</text><text x="245" y="457.5" text-anchor="middle" class="d-small">.11</text><path d="M299,372 V398 H325 V422" class="wire ar-l2"/><rect x="290.0" y="421.5" width="70" height="45" rx="6" class="n-host"/><text x="325" y="440.5" text-anchor="middle" class="d-mono t-b">h2b</text><text x="325" y="457.5" text-anchor="middle" class="d-small">.12</text><text x="285" y="488" text-anchor="middle" class="d-mono">10.0.2.0/24</text><ellipse cx="475" cy="313" rx="34" ry="20" class="n-l3"/><text x="475" y="318" text-anchor="middle" class="d-mono t-b t-l3">r3</text><path d="M475,333 L475,345" class="wire ar-l2"/><rect x="443" y="345" width="64" height="27" rx="4" class="n-l2"/><text x="475" y="364" text-anchor="middle" class="d-mono t-b t-l2">br3</text><path d="M461,372 V398 H435 V422" class="wire ar-l2"/><rect x="400.0" y="421.5" width="70" height="45" rx="6" class="n-host"/><text x="435" y="440.5" text-anchor="middle" class="d-mono t-b">h3a</text><text x="435" y="457.5" text-anchor="middle" class="d-small">.11</text><path d="M489,372 V398 H515 V422" class="wire ar-l2"/><rect x="480.0" y="421.5" width="70" height="45" rx="6" class="n-host"/><text x="515" y="440.5" text-anchor="middle" class="d-mono t-b">h3b</text><text x="515" y="457.5" text-anchor="middle" class="d-small">.12</text><text x="475" y="488" text-anchor="middle" class="d-mono">10.0.3.0/24</text><ellipse cx="665" cy="313" rx="34" ry="20" class="n-l3"/><text x="665" y="318" text-anchor="middle" class="d-mono t-b t-l3">r4</text><path d="M665,333 L665,345" class="wire ar-l2"/><rect x="633" y="345" width="64" height="27" rx="4" class="n-l2"/><text x="665" y="364" text-anchor="middle" class="d-mono t-b t-l2">br4</text><path d="M651,372 V398 H625 V422" class="wire ar-l2"/><rect x="590.0" y="421.5" width="70" height="45" rx="6" class="n-host"/><text x="625" y="440.5" text-anchor="middle" class="d-mono t-b">h4a</text><text x="625" y="457.5" text-anchor="middle" class="d-small">.11</text><path d="M679,372 V398 H705 V422" class="wire ar-l2"/><rect x="670.0" y="421.5" width="70" height="45" rx="6" class="n-host"/><text x="705" y="440.5" text-anchor="middle" class="d-mono t-b">h4b</text><text x="705" y="457.5" text-anchor="middle" class="d-small">.12</text><text x="665" y="488" text-anchor="middle" class="d-mono">10.0.4.0/24</text><text x="24" y="539" text-anchor="start" class="d-small">上联：8 条点到点链路 · 双向 100 / 50 Mbit/s</text><text x="24" y="562" text-anchor="start" class="d-small">接入：每台 host 双向固定 100 Mbit/s；host 各有独立 namespace</text><path d="M26,588 L61,588" class="d-link"/><text x="69" y="592" text-anchor="start" class="d-small">连接 r5</text><path d="M180,588 L215,588" class="d-link d-dash"/><text x="223" y="592" text-anchor="start" class="d-small">连接 r6</text><rect x="354" y="580" width="16" height="16" rx="3" class="n-l2"/><text x="380" y="592" text-anchor="start" class="d-small">机架内 bridge</text><rect x="550" y="580" width="24" height="16" rx="2" class="d-namespace"/><text x="584" y="592" text-anchor="start" class="d-small">namespace 边界</text></svg></div><figcaption><b>图 1：</b><span>从上到下读 spine、leaf namespace、独立 host namespace。每个 leaf 分别连接 r5、r6，共八条点到点上联；实线／虚线只用于区分连接哪台 spine，交叉处不相连。机架内的 bridge 与 leaf 在同一 namespace，主机各自独立。上联双向可切换 100／50 Mbit/s，主机接入双向固定 100 Mbit/s。</span></figcaption></figure>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th style="text-align:left">项目</th>
+<th style="text-align:left">约定</th>
+<th style="text-align:left">与已有实验的关系</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">leaf / spine</td>
+<td style="text-align:left">leaf 为 <code>r1</code>–<code>r4</code>，spine 为 <code>r5</code>、<code>r6</code>，均为 network namespace</td>
+<td style="text-align:left">延续 Lab 1、Lab 2 的路由器命名</td>
+</tr>
+<tr>
+<td style="text-align:left">机架网络</td>
+<td style="text-align:left">第 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mi>i</mi></mrow></math></span> 个机架用 <code>10.0.i.0/24</code>；网关 <code>br{i}</code> = <code>.1</code>；host <code>h{i}a</code>/<code>h{i}b</code> = <code>.11</code>/<code>.12</code>，接口 <code>eth0</code></td>
+<td style="text-align:left">延续 Lab 1、Lab 2 的机架地址与主机名</td>
+</tr>
+<tr>
+<td style="text-align:left">机架内网桥</td>
+<td style="text-align:left"><code>br1</code>–<code>br4</code>，网关地址放在 bridge 上</td>
+<td style="text-align:left"><code>lsrd</code> 用 <code>--passive</code> 通告它，不在网桥上建邻</td>
+</tr>
+<tr>
+<td style="text-align:left">上联</td>
+<td style="text-align:left">每个 leaf 两条，<code>10.1.0.0/30</code>–<code>10.1.7.0/30</code>；leaf <code>.1</code>、spine <code>.2</code>，第 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mi>k</mi></mrow></math></span> 条链路 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mi>k</mi><mo>&#x0003D;</mo><mn>2</mn><mo stretchy="false">&#x00028;</mo><mtext>leaf</mtext><mo>&#x02212;</mo><mn>1</mn><mo stretchy="false">&#x00029;</mo><mo>&#x0002B;</mo><mo stretchy="false">&#x00028;</mo><mtext>spine</mtext><mo>&#x02212;</mo><mn>5</mn><mo stretchy="false">&#x00029;</mo></mrow></math></span></td>
+<td style="text-align:left">与课堂脚本完全一致</td>
+</tr>
+</tbody>
+</table></div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th style="text-align:left">leaf</th>
+<th style="text-align:left">到 r5</th>
+<th style="text-align:left">到 r6</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">r1</td>
+<td style="text-align:left"><code>10.1.0.1/30</code> / <code>10.1.0.2/30</code></td>
+<td style="text-align:left"><code>10.1.1.1/30</code> / <code>10.1.1.2/30</code></td>
+</tr>
+<tr>
+<td style="text-align:left">r2</td>
+<td style="text-align:left"><code>10.1.2.1/30</code> / <code>10.1.2.2/30</code></td>
+<td style="text-align:left"><code>10.1.3.1/30</code> / <code>10.1.3.2/30</code></td>
+</tr>
+<tr>
+<td style="text-align:left">r3</td>
+<td style="text-align:left"><code>10.1.4.1/30</code> / <code>10.1.4.2/30</code></td>
+<td style="text-align:left"><code>10.1.5.1/30</code> / <code>10.1.5.2/30</code></td>
+</tr>
+<tr>
+<td style="text-align:left">r4</td>
+<td style="text-align:left"><code>10.1.6.1/30</code> / <code>10.1.6.2/30</code></td>
+<td style="text-align:left"><code>10.1.7.1/30</code> / <code>10.1.7.2/30</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>限速：host 接入口两个方向固定 100 Mbit/s；leaf–spine 链路两个方向可切换 100 / 50 Mbit/s（<code>topo.sh rate</code>）。<strong>这张表就是 Lab 4–9 依赖的约定</strong>：节点名、接口名、地址与档位都在这里固化。</p>
+<h3 id="m3-s3">3.3 测量口径</h3>
+<p>与课堂一致的四个习惯，报告里要一直带着：</p>
+<ul>
+<li><strong>应用字节与链路字节分开</strong>：<code>transfer.py</code> 报告的是应用有效字节；链路上还有 TCP/IP 与封装开销。</li>
+<li><strong>MB 与 Mbit/s 分清</strong>：本实验的&quot;30 MB&quot;是十进制 30 000 000 字节；速率换算用 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mn>8</mn><mo>&#x000D7;</mo><mtext>字节</mtext><mo>&#x0002F;</mo><mtext>秒</mtext></mrow></math></span>。</li>
+<li><strong>共同窗口</strong>：从启动第一条客户端进程前，到观察到最后一条客户端成功退出；包含进程启动、建连、慢启动、完整回执与退出开销。助手每 5 ms 检查一次退出状态；每流应用速率另用客户端内部计时，二者不可混用。</li>
+<li><strong>SYN 抓包定路径</strong>：SYN 说明建连时的上联；只有路由、哈希与连接路径稳定时才可代表后续传输。测量助手同时统计目标连接的数据包出口，遇到多个出口不能强行归成一条路径。</li>
+</ul>
+<p>本文保留的课堂实测样例来自 2026-10-04 的 Ubuntu 24.04、Linux <code>6.8.0-142-generic</code>（ARM64、4 核 4 GB）备课沙箱；修订后任务的验证范围与日期见末尾“维护与验证”。理论下界与预期输出单独标注，不要求复现固定端口、路径比例或用时。</p>
+</section><section class="module" id="m4"><header class="module-head"><div class="module-eyebrow"><span class="module-no">04</span><span class="tag">LAB 3</span></div><h2>课堂观察回顾（第 05 讲已完成）</h2></header><p>课堂上用 <code>classroom.sh</code> 完成了六组观察。这里留一张速查表；现象与数据的带读在讲义对应小节，本实验的任务是<strong>在你自己的实验床上重建并扩展它们</strong>。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th style="text-align:left">观察</th>
+<th style="text-align:left">命令（课堂脚本）</th>
+<th style="text-align:left">现象一句话</th>
+<th style="text-align:left">讲义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">locality</td>
+<td style="text-align:left"><code>classroom.sh locality</code></td>
+<td style="text-align:left">同机架帧从网桥端口出，跨机架帧走上联；traceroute 4 跳</td>
+<td style="text-align:left">2.5 节</td>
+</tr>
+<tr>
+<td style="text-align:left">ecmp</td>
+<td style="text-align:left"><code>classroom.sh ecmp</code></td>
+<td style="text-align:left">单流被钉在一条 50 Mbit 上联，8 流聚合翻倍，但不保证 4:4</td>
+<td style="text-align:left">模块三</td>
+</tr>
+<tr>
+<td style="text-align:left">matrix</td>
+<td style="text-align:left"><code>classroom.sh matrix</code></td>
+<td style="text-align:left">总量相同，接收端集中后受 100 Mbit 接入口限制</td>
+<td style="text-align:left">模块四</td>
+</tr>
+<tr>
+<td style="text-align:left">capacity</td>
+<td style="text-align:left"><code>classroom.sh capacity</code></td>
+<td style="text-align:left">上联 200→100 Mbit/s，完成时间约增至两倍</td>
+<td style="text-align:left">模块四</td>
+</tr>
+<tr>
+<td style="text-align:left">vxlan</td>
+<td style="text-align:left"><code>classroom.sh vxlan</code></td>
+<td style="text-align:left">同 VNI 往返、异 VNI 隔离（相同 IP 互不干扰）</td>
+<td style="text-align:left">模块五</td>
+</tr>
+<tr>
+<td style="text-align:left">mtu</td>
+<td style="text-align:left"><code>classroom.sh mtu</code></td>
+<td style="text-align:left">内层 1422 B 可发，1423 B 被源租户接口拒绝</td>
+<td style="text-align:left">模块五</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>[!NOTE]
+<code>classroom.sh down</code> 只清理课堂脚本自己登记的资源。课堂的参考数据同样来自备课沙箱（见讲义&quot;材料状态&quot;），你在自己的实验床上测到的分布可能与它不同——先解释，再决定是否重跑。</p>
+</blockquote>
+</section><section class="module" id="m5"><header class="module-head"><div class="module-eyebrow"><span class="module-no">05</span><span class="tag">LAB 3</span></div><h2>实验步骤</h2></header><h3 id="m5-s1">基础任务</h3>
+<h4 id="m5-s2">任务 1　补全 topo.sh：机架与上联</h4>
+<p><code>topo.sh</code> 已经把与教学无关的部分写好了：namespace 登记与幂等清理（<code>new_ns</code>/<code>down</code>）、HTB+fq 限速封装（<code>limit_port</code>/<code>set_rate</code>）、路由器 sysctl、<code>lsrd</code> 启动、offload 关闭、就绪断言（<code>ready</code>）。你补三块：<strong>TODO 1</strong> 机架接入网、<strong>TODO 2</strong> 上联、<strong>任务 2 的 TODO 3</strong> 自检。</p>
+<p>先对照阅读 <code>classroom.sh</code> 的 <code>up()</code>，回答两个检查点（写进报告）：</p>
 <ol>
-<li>总数据量相同，为什么接收端从两台变一台之后会变慢？</li>
-<li>两条上联都存在，为什么一条连接仍只使用一条？流数相近是否代表字节数相近？</li>
-<li>VNI 不同的两个租户能够使用相同 IP，是否也各自拥有独立的物理带宽？</li>
+<li><code>new_ns</code> 比裸 <code>ip netns add</code> 多做了哪两件事？漏掉登记，<code>down</code> 时会发生什么？</li>
+<li>host 的 <code>eth0</code> 和 leaf 侧的接入端口<strong>两边都</strong>限速 100 Mbit/s，为什么一边不够？（提示：HTB 限的是 egress，想一想发与收两个方向。）</li>
 </ol>
+<p>然后补全 TODO 1 与 TODO 2。地址表见 3.2 节；上联<strong>不在</strong> TODO 里限速——<code>up()</code> 结尾的 <code>set_rate</code> 会按当前档位统一配置，这是为了任务中能整体切换。</p>
+<div class="code cmd"><span class="code-tag">bash</span><pre><code># 1. 每次改动后先做语法检查，不创建任何网络资源
+bash -n 2026/experiments/03/topo.sh
+</code></pre></div>
+<div class="code cmd"><span class="code-tag">bash</span><pre><code># 2. 搭建实验床（先清理再搭建，幂等），用你自己的 lsrd --ecmp 起路由
+sudo bash 2026/experiments/03/topo.sh up
+</code></pre></div>
+<div class="code out"><span class="code-tag">output</span><pre><code>[*] 全部 leaf–spine 链路两端 egress = 100 Mbit/s；host 接入口保持 100 Mbit/s。
+[*] 6 台路由器全部 Full；r1 的跨机架路由有两个下一跳。实验床就绪。
+[*] 下一步自检：sudo bash 2026/experiments/03/topo.sh check
+</code></pre></div>
+<p>就绪断言只看三件事：每台路由器的 Full 邻居数（leaf 2 个、spine 4 个）、LSDB 里 6 个节点、<code>r1</code> 去往 <code>10.0.3.0/24</code> 的路由有两个下一跳。断言不过，看 <code>/tmp/lab03-results/r*.log</code>；最常见的原因是 Lab 2 任务 8 的 ECMP 还没实现。</p>
+<h4 id="m5-s3">任务 2　连通性自检（TODO 3）与逐链路验证</h4>
+<p>补全 <code>check()</code>：8 条上联两端互 ping、8 台 host ping 网关、注释指定的三项跨机架 ping，全过后打印约定的 <code>[OK]</code> 行和 <code>r1</code> 的路由。</p>
+<div class="code cmd"><span class="code-tag">bash</span><pre><code># 3. 数据平面自检
+sudo bash 2026/experiments/03/topo.sh check
+</code></pre></div>
+<div class="code out"><span class="code-tag">output</span><pre><code>[OK] 8 条上联往返、8 台 host 网关可达、跨机架往返。
+10.0.3.0/24 proto 200 metric 20
+	nexthop via 10.1.0.2 dev r1-r5 weight 1
+	nexthop via 10.1.1.2 dev r1-r6 weight 1
+</code></pre></div>
+<div class="code cmd"><span class="code-tag">bash</span><pre><code># 4. 全网地址与路由总览
+sudo bash 2026/experiments/03/topo.sh show
+</code></pre></div>
+<div class="code out"><span class="code-tag">output</span><pre><code>== r1 ==
+br1              UP             10.0.1.1/24 fe80::44a1:ff:fe26:2d47/64
+r1-h1a@if2       UP             fe80::cb3:b0ff:fe2d:4bfd/64
+r1-h1b@if2       UP             fe80::70ab:2cff:fe98:520a/64
+r1-r5@if2        UP             10.1.0.1/30 fe80::2451:fcff:fed6:28aa/64
+r1-r6@if2        UP             10.1.1.1/30 fe80::e080:6ff:feba:3222/64
+10.0.1.0/24 dev br1 proto kernel scope link src 10.0.1.1
+10.0.2.0/24 proto 200 metric 20
+	nexthop via 10.1.0.2 dev r1-r5 weight 1
+	nexthop via 10.1.1.2 dev r1-r6 weight 1
+...
+10.1.0.0/30 dev r1-r5 proto kernel scope link src 10.1.0.1
+10.1.2.0/30 via 10.1.0.2 dev r1-r5 proto 200 metric 20
+10.1.3.0/30 via 10.1.1.2 dev r1-r6 proto 200 metric 20
+...
+</code></pre></div>
+<p>（地址列的 IPv6 链路本地地址每次不同，略。）</p>
+<p><strong>把两行放在一起看</strong>：去往<strong>机架前缀</strong>（<code>10.0.2.0/24</code> 等）的路由有两个下一跳——这是 ECMP；去往<strong>上联网段</strong>（<code>10.1.2.0/30</code>、<code>10.1.3.0/30</code>）的路由只有一个下一跳，而且 r2–r5 的网段经 r5、r2–r6 的网段经 r6。为什么？提示：这两个网段分别挂在哪台 spine 身上，绕另一台 spine 的 cost 是多少。</p>
+<div class="code cmd"><span class="code-tag">bash</span><pre><code># 5. 验证幂等：重复搭建与重复清理都不应报错；结束后重建，继续后面的任务
+sudo bash 2026/experiments/03/topo.sh down
+sudo bash 2026/experiments/03/topo.sh down
+sudo bash 2026/experiments/03/topo.sh up
+</code></pre></div>
+<h4 id="m5-s4">任务 3　收敛比：先分散路径，再改变容量</h4>
+<p><strong>问题</strong>：当四条流在发送侧与接收侧都不争用同一个上联出口时，上联从 100 降到 50 Mbit/s，通信完成时间怎样变化？</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th style="text-align:left">要素</th>
+<th style="text-align:left">本任务约定</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">数据量</td>
+<td style="text-align:left">四条流各 30 MB，共 120 MB，十进制应用字节</td>
+</tr>
+<tr>
+<td style="text-align:left">接收映射</td>
+<td style="text-align:left"><code>h1a→h3a</code>、<code>h1b→h3b</code>、<code>h2a→h4a</code>、<code>h2b→h4b</code></td>
+</tr>
+<tr>
+<td style="text-align:left">固定路径</td>
+<td style="text-align:left"><code>h1a/h2a</code> 经 r5，<code>h1b/h2b</code> 经 r6；接入均为 100 Mbit/s</td>
+</tr>
+<tr>
+<td style="text-align:left">唯一改变</td>
+<td style="text-align:left">全部 leaf–spine 链路两端的 egress 从 100 改成 50 Mbit/s</td>
+</tr>
+<tr>
+<td style="text-align:left">指标</td>
+<td style="text-align:left">每流完成时间、共同窗口、聚合应用有效速率</td>
+</tr>
+</tbody>
+</table></div>
+<figure class="fig" id="fig-capacity"><p class="fig-scroll-hint">左右滑动查看全图；键盘可聚焦图框后横向滚动。</p><div class="fig-body" tabindex="0" role="region" aria-label="图 2，可横向滚动"><svg class="lab-diagram" viewBox="0 0 760 664" role="img" aria-labelledby="capacity-title capacity-desc" xmlns="http://www.w3.org/2000/svg"><title id="capacity-title">容量对照：相同路径，只改变 fabric 容量</title><desc id="capacity-desc">上下两种条件的四行分别为 F1 到 F4，各传 30 MB。h1a 经 r1-r5-r3 到 h3a，h1b 经 r1-r6-r3 到 h3b，h2a 经 r2-r5-r4 到 h4a，h2b 经 r2-r6-r4 到 h4b。蓝色 fabric 区域由每段 100 改为 50 Mbit/s，接入始终为 100 Mbit/s。同名路由器在不同行表示同一设备。</desc><defs><marker id="capacity-l2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" class="mk-l2"/></marker><marker id="capacity-l3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" class="mk-l3"/></marker><marker id="capacity-l4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" class="mk-l4"/></marker></defs><rect x="8" y="8" width="744" height="276" rx="8" class="d-panel"/><rect x="24" y="24" width="28" height="28" rx="5" class="n-l3"/><text x="38" y="43" text-anchor="middle" class="d-label t-l3">A</text><text x="65" y="44" text-anchor="start" class="d-title">上联 100 Mbit/s</text><text x="728" y="43" text-anchor="end" class="d-small">固定：四条流各 30 MB</text><rect x="183" y="60" width="372" height="212" rx="6" class="d-band"/><text x="94" y="80" text-anchor="middle" class="d-small">发送端</text><text x="369" y="80" text-anchor="middle" class="d-label t-l3">FABRIC · 每段 100 Mbit/s</text><text x="666" y="80" text-anchor="middle" class="d-small">接收端</text><text x="29" y="116" text-anchor="middle" class="d-small">F1</text><path d="M142,111 L193,111" class="d-link" marker-end="url(#capacity-l3)"/><path d="M247,111 L342,111" class="d-link" marker-end="url(#capacity-l3)"/><path d="M396,111 L493,111" class="d-link" marker-end="url(#capacity-l3)"/><path d="M547,111 L619,111" class="d-link" marker-end="url(#capacity-l3)"/><rect x="52.0" y="97.0" width="90" height="28" rx="6" class="n-host"/><text x="97" y="116.0" text-anchor="middle" class="d-mono t-b">h1a</text><rect x="619.0" y="97.0" width="90" height="28" rx="6" class="n-host"/><text x="664" y="116.0" text-anchor="middle" class="d-mono t-b">h3a</text><ellipse cx="220" cy="111" rx="27" ry="17" class="n-l3"/><text x="220" y="116" text-anchor="middle" class="d-mono t-b t-l3">r1</text><ellipse cx="369" cy="111" rx="27" ry="17" class="n-l3"/><text x="369" y="116" text-anchor="middle" class="d-mono t-b t-l3">r5</text><ellipse cx="520" cy="111" rx="27" ry="17" class="n-l3"/><text x="520" y="116" text-anchor="middle" class="d-mono t-b t-l3">r3</text><text x="29" y="162" text-anchor="middle" class="d-small">F2</text><path d="M142,157 L193,157" class="d-link" marker-end="url(#capacity-l3)"/><path d="M247,157 L342,157" class="d-link" marker-end="url(#capacity-l3)"/><path d="M396,157 L493,157" class="d-link" marker-end="url(#capacity-l3)"/><path d="M547,157 L619,157" class="d-link" marker-end="url(#capacity-l3)"/><rect x="52.0" y="143.0" width="90" height="28" rx="6" class="n-host"/><text x="97" y="162.0" text-anchor="middle" class="d-mono t-b">h1b</text><rect x="619.0" y="143.0" width="90" height="28" rx="6" class="n-host"/><text x="664" y="162.0" text-anchor="middle" class="d-mono t-b">h3b</text><ellipse cx="220" cy="157" rx="27" ry="17" class="n-l3"/><text x="220" y="162" text-anchor="middle" class="d-mono t-b t-l3">r1</text><ellipse cx="369" cy="157" rx="27" ry="17" class="n-l3"/><text x="369" y="162" text-anchor="middle" class="d-mono t-b t-l3">r6</text><ellipse cx="520" cy="157" rx="27" ry="17" class="n-l3"/><text x="520" y="162" text-anchor="middle" class="d-mono t-b t-l3">r3</text><text x="29" y="208" text-anchor="middle" class="d-small">F3</text><path d="M142,203 L193,203" class="d-link" marker-end="url(#capacity-l3)"/><path d="M247,203 L342,203" class="d-link" marker-end="url(#capacity-l3)"/><path d="M396,203 L493,203" class="d-link" marker-end="url(#capacity-l3)"/><path d="M547,203 L619,203" class="d-link" marker-end="url(#capacity-l3)"/><rect x="52.0" y="189.0" width="90" height="28" rx="6" class="n-host"/><text x="97" y="208.0" text-anchor="middle" class="d-mono t-b">h2a</text><rect x="619.0" y="189.0" width="90" height="28" rx="6" class="n-host"/><text x="664" y="208.0" text-anchor="middle" class="d-mono t-b">h4a</text><ellipse cx="220" cy="203" rx="27" ry="17" class="n-l3"/><text x="220" y="208" text-anchor="middle" class="d-mono t-b t-l3">r2</text><ellipse cx="369" cy="203" rx="27" ry="17" class="n-l3"/><text x="369" y="208" text-anchor="middle" class="d-mono t-b t-l3">r5</text><ellipse cx="520" cy="203" rx="27" ry="17" class="n-l3"/><text x="520" y="208" text-anchor="middle" class="d-mono t-b t-l3">r4</text><text x="29" y="254" text-anchor="middle" class="d-small">F4</text><path d="M142,249 L193,249" class="d-link" marker-end="url(#capacity-l3)"/><path d="M247,249 L342,249" class="d-link" marker-end="url(#capacity-l3)"/><path d="M396,249 L493,249" class="d-link" marker-end="url(#capacity-l3)"/><path d="M547,249 L619,249" class="d-link" marker-end="url(#capacity-l3)"/><rect x="52.0" y="235.0" width="90" height="28" rx="6" class="n-host"/><text x="97" y="254.0" text-anchor="middle" class="d-mono t-b">h2b</text><rect x="619.0" y="235.0" width="90" height="28" rx="6" class="n-host"/><text x="664" y="254.0" text-anchor="middle" class="d-mono t-b">h4b</text><ellipse cx="220" cy="249" rx="27" ry="17" class="n-l3"/><text x="220" y="254" text-anchor="middle" class="d-mono t-b t-l3">r2</text><ellipse cx="369" cy="249" rx="27" ry="17" class="n-l3"/><text x="369" y="254" text-anchor="middle" class="d-mono t-b t-l3">r6</text><ellipse cx="520" cy="249" rx="27" ry="17" class="n-l3"/><text x="520" y="254" text-anchor="middle" class="d-mono t-b t-l3">r4</text><rect x="8" y="308" width="744" height="276" rx="8" class="d-panel"/><rect x="24" y="324" width="28" height="28" rx="5" class="n-l3"/><text x="38" y="343" text-anchor="middle" class="d-label t-l3">B</text><text x="65" y="344" text-anchor="start" class="d-title">上联 50 Mbit/s</text><text x="728" y="343" text-anchor="end" class="d-small">固定：四条流各 30 MB</text><rect x="183" y="360" width="372" height="212" rx="6" class="d-band"/><text x="94" y="380" text-anchor="middle" class="d-small">发送端</text><text x="369" y="380" text-anchor="middle" class="d-label t-l3">FABRIC · 每段 50 Mbit/s</text><text x="666" y="380" text-anchor="middle" class="d-small">接收端</text><text x="29" y="416" text-anchor="middle" class="d-small">F1</text><path d="M142,411 L193,411" class="d-link" marker-end="url(#capacity-l3)"/><path d="M247,411 L342,411" class="d-link" marker-end="url(#capacity-l3)"/><path d="M396,411 L493,411" class="d-link" marker-end="url(#capacity-l3)"/><path d="M547,411 L619,411" class="d-link" marker-end="url(#capacity-l3)"/><rect x="52.0" y="397.0" width="90" height="28" rx="6" class="n-host"/><text x="97" y="416.0" text-anchor="middle" class="d-mono t-b">h1a</text><rect x="619.0" y="397.0" width="90" height="28" rx="6" class="n-host"/><text x="664" y="416.0" text-anchor="middle" class="d-mono t-b">h3a</text><ellipse cx="220" cy="411" rx="27" ry="17" class="n-l3"/><text x="220" y="416" text-anchor="middle" class="d-mono t-b t-l3">r1</text><ellipse cx="369" cy="411" rx="27" ry="17" class="n-l3"/><text x="369" y="416" text-anchor="middle" class="d-mono t-b t-l3">r5</text><ellipse cx="520" cy="411" rx="27" ry="17" class="n-l3"/><text x="520" y="416" text-anchor="middle" class="d-mono t-b t-l3">r3</text><text x="29" y="462" text-anchor="middle" class="d-small">F2</text><path d="M142,457 L193,457" class="d-link" marker-end="url(#capacity-l3)"/><path d="M247,457 L342,457" class="d-link" marker-end="url(#capacity-l3)"/><path d="M396,457 L493,457" class="d-link" marker-end="url(#capacity-l3)"/><path d="M547,457 L619,457" class="d-link" marker-end="url(#capacity-l3)"/><rect x="52.0" y="443.0" width="90" height="28" rx="6" class="n-host"/><text x="97" y="462.0" text-anchor="middle" class="d-mono t-b">h1b</text><rect x="619.0" y="443.0" width="90" height="28" rx="6" class="n-host"/><text x="664" y="462.0" text-anchor="middle" class="d-mono t-b">h3b</text><ellipse cx="220" cy="457" rx="27" ry="17" class="n-l3"/><text x="220" y="462" text-anchor="middle" class="d-mono t-b t-l3">r1</text><ellipse cx="369" cy="457" rx="27" ry="17" class="n-l3"/><text x="369" y="462" text-anchor="middle" class="d-mono t-b t-l3">r6</text><ellipse cx="520" cy="457" rx="27" ry="17" class="n-l3"/><text x="520" y="462" text-anchor="middle" class="d-mono t-b t-l3">r3</text><text x="29" y="508" text-anchor="middle" class="d-small">F3</text><path d="M142,503 L193,503" class="d-link" marker-end="url(#capacity-l3)"/><path d="M247,503 L342,503" class="d-link" marker-end="url(#capacity-l3)"/><path d="M396,503 L493,503" class="d-link" marker-end="url(#capacity-l3)"/><path d="M547,503 L619,503" class="d-link" marker-end="url(#capacity-l3)"/><rect x="52.0" y="489.0" width="90" height="28" rx="6" class="n-host"/><text x="97" y="508.0" text-anchor="middle" class="d-mono t-b">h2a</text><rect x="619.0" y="489.0" width="90" height="28" rx="6" class="n-host"/><text x="664" y="508.0" text-anchor="middle" class="d-mono t-b">h4a</text><ellipse cx="220" cy="503" rx="27" ry="17" class="n-l3"/><text x="220" y="508" text-anchor="middle" class="d-mono t-b t-l3">r2</text><ellipse cx="369" cy="503" rx="27" ry="17" class="n-l3"/><text x="369" y="508" text-anchor="middle" class="d-mono t-b t-l3">r5</text><ellipse cx="520" cy="503" rx="27" ry="17" class="n-l3"/><text x="520" y="508" text-anchor="middle" class="d-mono t-b t-l3">r4</text><text x="29" y="554" text-anchor="middle" class="d-small">F4</text><path d="M142,549 L193,549" class="d-link" marker-end="url(#capacity-l3)"/><path d="M247,549 L342,549" class="d-link" marker-end="url(#capacity-l3)"/><path d="M396,549 L493,549" class="d-link" marker-end="url(#capacity-l3)"/><path d="M547,549 L619,549" class="d-link" marker-end="url(#capacity-l3)"/><rect x="52.0" y="535.0" width="90" height="28" rx="6" class="n-host"/><text x="97" y="554.0" text-anchor="middle" class="d-mono t-b">h2b</text><rect x="619.0" y="535.0" width="90" height="28" rx="6" class="n-host"/><text x="664" y="554.0" text-anchor="middle" class="d-mono t-b">h4b</text><ellipse cx="220" cy="549" rx="27" ry="17" class="n-l3"/><text x="220" y="554" text-anchor="middle" class="d-mono t-b t-l3">r2</text><ellipse cx="369" cy="549" rx="27" ry="17" class="n-l3"/><text x="369" y="554" text-anchor="middle" class="d-mono t-b t-l3">r6</text><ellipse cx="520" cy="549" rx="27" ry="17" class="n-l3"/><text x="520" y="554" text-anchor="middle" class="d-mono t-b t-l3">r4</text><text x="380" y="622" text-anchor="middle" class="d-small">不变：接入 100 Mbit/s、发送与接收映射、路径、总量 120 MB</text><text x="380" y="645" text-anchor="middle" class="d-label t-l3">改变：全部 leaf–spine 链路两端的容量档位</text></svg></div><figcaption><b>图 2：</b><span>两场景采用相同的四行路径布局；F1–F4 每条各传 30 MB。蓝色区域标明改变容量的 fabric，外侧 host 接入口始终为 100 Mbit/s。路径展开中的同名路由器表示同一设备，不是新增节点；四条流分别经过源 leaf r1/r2 与目的 leaf r3/r4。省略 bridge、ACK 回程和未使用的候选路径；A/B 改变全部 fabric 链路两个方向。</span></figcaption></figure>
+<p><strong>先预测</strong>：一个 leaf 的下联单向总容量是 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mn>2</mn><mo>&#x000D7;</mo><mn>100</mn></mrow></math></span>，上联是 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mn>2</mn><mo>&#x000D7;</mo><mn>100</mn></mrow></math></span> 或 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mn>2</mn><mo>&#x000D7;</mo><mn>50</mn></mrow></math></span>；全网也应按 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mn>8</mn><mo>&#x000D7;</mo><mn>100</mn></mrow></math></span> 对 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mn>8</mn><mo>&#x000D7;</mo><mn>100</mn></mrow></math></span> 或 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mn>8</mn><mo>&#x000D7;</mo><mn>50</mn></mrow></math></span> 计算，不能只在一侧把全双工翻倍。写出两档收敛比、每流完成时间下界与四流聚合速率上界。</p>
+<p><strong>测量助手怎样工作</strong>：<code>--flow h1a:h3a:40001:5201</code> 表示源节点、目的节点、TCP 源端口、服务端端口，IP 从 3.2 节约定表读取。助手在<strong>接收节点</strong>启动一次性 <code>transfer.py server</code>，用 <code>ss -ltn</code> 确认监听后启动客户端；每轮自动重启服务端。它只等待本轮客户端，在收到完整回执并退出后结束共同窗口，再停止自己的抓包与服务端。失败或 Ctrl+C 会清理本轮进程，但<strong>不会恢复你手工设置的路由和限速</strong>。</p>
+<p><code>--leaf r1 --leaf r2</code> 在四个源 leaf 出口上用 <code>tcpdump --immediate-mode -U -s 0 -Q out</code> 抓取完整 pcap。<code>-Q out</code> 限定发送方向，<code>-s 0</code> 保留完整报文，<code>--immediate-mode</code> 减少交付到抓包进程的缓冲等待。按目标五元组归组，不直接数所有 SYN，也不把多行文本当成多包。原始包、抓包丢失计数、服务端回执、每流 JSON 与 <code>summary.json</code> 都在本轮目录；抓包丢失或路径证据不完整时，不能给出确定性路径结论。</p>
+<div class="code cmd"><span class="code-tag">bash</span><pre><code># 6. 设置本次结果根路径；以后重跑需另取名称，助手拒绝覆盖已有轮次
+RUN=/tmp/lab03-results/run-$(date +%Y%m%d-%H%M%S)
+PY=2026/experiments/03/.venv/bin/python
+MEASURE=2026/experiments/03/measure.py
+</code></pre></div>
+<p>下面整个块在子 shell 中执行。正常退出、命令失败与 Ctrl+C 都删除本任务的钉路并恢复 100 档；发生断电等无法捕获的中断时，按第六节清理。</p>
+<div class="code cmd"><span class="code-tag">bash</span><pre><code># 7. 设置临时路径，完成两档对照；只等待测量工具，不等待其他终端的抓包
+(
+  set -Eeuo pipefail
+  restore_t3() {
+    for r in r1 r2; do
+      for table in 105 106; do
+        sudo ip -n &quot;$r&quot; rule del priority &quot;$table&quot; 2&gt;/dev/null || true
+        sudo ip -n &quot;$r&quot; route flush table &quot;$table&quot; 2&gt;/dev/null || true
+      done
+    done
+    sudo bash 2026/experiments/03/topo.sh rate 100
+  }
+  trap restore_t3 EXIT
+  trap &#x27;exit 130&#x27; INT
+  trap &#x27;exit 143&#x27; TERM
+  for rack in 1 2; do
+    k=$((2 * (rack - 1)))
+    sudo ip -n r$rack route add table 105 default via 10.1.$k.2 dev r$rack-r5 onlink
+    sudo ip -n r$rack route add table 106 default via 10.1.$((k + 1)).2 dev r$rack-r6 onlink
+    sudo ip -n r$rack rule add priority 105 from 10.0.$rack.11/32 lookup 105
+    sudo ip -n r$rack rule add priority 106 from 10.0.$rack.12/32 lookup 106
+  done
+  for rate in 100 50; do
+    sudo bash 2026/experiments/03/topo.sh rate &quot;$rate&quot;
+    base=$((40000 + (100 - rate) * 20))
+    sudo &quot;$PY&quot; &quot;$MEASURE&quot; --leaf r1 --leaf r2 --output &quot;$RUN/t3-r$rate&quot; \
+      --flow h1a:h3a:$((base+1)):5201 --flow h1b:h3b:$((base+3)):5203 \
+      --flow h2a:h4a:$((base+5)):5205 --flow h2b:h4b:$((base+7)):5207
+  done
+)
+</code></pre></div>
+<div class="code cmd"><span class="code-tag">bash</span><pre><code># 8. 查配置与真实报文：路径策略已恢复，抓包仍记录刚才的实际路径
+sudo ip -n r1 rule show
+sudo ip -n r2 rule show
+sudo tcpdump -n -r &quot;$RUN/t3-r100/r1-r5.pcap&quot; &#x27;tcp[13] &amp; 0x12 = 0x02&#x27;
+cat &quot;$RUN/t3-r100/summary.json&quot;
+</code></pre></div>
+<p><strong>预期字段（结构示意，数值以本轮为准）</strong>：<code>bytes</code> 应为 <code>120000000</code>；<code>wall_seconds</code> 是共同窗口；<code>shared_window_mbps = 8 × bytes / wall_seconds / 10^6</code>；各流 <code>received_bytes</code> 应为 <code>30000000</code>。<code>capture.syn_paths</code> 与 <code>capture.groups</code> 分别给建连出口与实际数据包统计。例如 <code>h1a</code> 应只在 <code>r1-r5</code> 留下目标连接，<code>h1b</code> 应在 <code>r1-r6</code>；也要核对 <code>r2</code> 的两条流。</p>
+<p>理论模型的核对答案：两档收敛比为 <strong>1:1 / 2:1</strong>，每流下界 <strong>2.4 / 4.8 s</strong>，四流应用速率上界 <strong>400 / 200 Mbit/s</strong>。这些上界忽略首部与启动成本，不能当作实测要求。用测得的窗口自行算聚合速率；实际与下界的差距可能包括首部、重传、启动、调度与接收确认，当前数据不能把各部分精确拆开。</p>
+<p><strong>修订后实测样例（2026-10-05，末尾所列沙箱）</strong>：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th style="text-align:left">档位</th>
+<th style="text-align:right">共同窗口</th>
+<th style="text-align:right">四流聚合应用速率</th>
+<th style="text-align:left">实际出口</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">100 Mbit/s</td>
+<td style="text-align:right">2.543 s</td>
+<td style="text-align:right">377.53 Mbit/s</td>
+<td style="text-align:left">r1-r5、r1-r6、r2-r5、r2-r6，各一流</td>
+</tr>
+<tr>
+<td style="text-align:left">50 Mbit/s</td>
+<td style="text-align:right">5.051 s</td>
+<td style="text-align:right">190.07 Mbit/s</td>
+<td style="text-align:left">与上一轮相同</td>
+</tr>
+</tbody>
+</table></div>
+<p>例如 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mn>8</mn><mo>&#x000D7;</mo><mn>120</mn><mo>&#x0002F;</mo><mn>2.543</mn><mo>&#x02248;</mo><mn>377.5</mn></mrow></math></span> Mbit/s；样例用原始精度计算，表内时间已四舍五入。两轮都收到 120 MB，路径保持分散，因此支持本轮容量约束的解释；仍不能把首部、启动和调度等差额拆成唯一原因。</p>
+<p><strong>附加诊断（选做）</strong>：保持 100 档及相同钉路，只把映射改回 <code>h1a→h3a</code>、<code>h1b→h4a</code>、<code>h2a→h3b</code>、<code>h2b→h4b</code>。在上述子 shell 的两档循环后增加一轮，换新源端口与目录。两条 a 流会汇合于 <code>r5→r3</code>，两条 b 流汇合于 <code>r6→r4</code>；每个共享出口承载 60 MB，整体下界升到 4.8 s，而收敛比仍是 1:1。这说明容量比必须与流量和实际路径一起读。</p>
+<h4 id="m5-s5">任务 4　复现课堂对照：交换与路由的边界</h4>
+<p>在自己的实验床上手敲 locality 观察。终端 1 先运行抓包，它最多等待 8 秒；终端 2 再产生请求。命令需要 root 写结果时用 <code>tee</code>，避免普通 shell 向 root 创建的目录重定向失败。</p>
+<div class="code cmd"><span class="code-tag">bash</span><pre><code># 9. 终端 1：同机架观察，收到一包就退出；无包时 timeout 返回 124
+sudo ip netns exec r1 timeout 8 tcpdump -n -l -i any -Q out -c 1 \
+  &#x27;icmp and src host 10.0.1.11 and dst host 10.0.1.12&#x27;
+</code></pre></div>
+<div class="code cmd"><span class="code-tag">bash</span><pre><code># 10. 终端 2：同机架请求
+sudo ip netns exec h1a ping -c 1 -W 2 10.0.1.12
+</code></pre></div>
+<p><strong>课堂实测节选</strong>：</p>
+<div class="code out"><span class="code-tag">output</span><pre><code>r1-h1b Out IP 10.0.1.11 &gt; 10.0.1.12: ICMP echo request, id 3870, seq 1, length 64
+</code></pre></div>
+<div class="code cmd"><span class="code-tag">bash</span><pre><code># 11. 终端 1：跨机架观察
+sudo ip netns exec r1 timeout 8 tcpdump -n -l -i any -Q out -c 1 \
+  &#x27;icmp and src host 10.0.1.11 and dst host 10.0.3.11&#x27;
+</code></pre></div>
+<div class="code cmd"><span class="code-tag">bash</span><pre><code># 12. 终端 2：跨机架请求与逐跳追踪
+sudo ip netns exec h1a ping -c 1 -W 2 10.0.3.11
+sudo ip netns exec h1a traceroute -n -I -q 1 -w 1 10.0.3.11
+</code></pre></div>
+<p>预期出口为 <code>r1-r5</code> 或 <code>r1-r6</code>；通常看到 <code>r1 → spine → r3 → h3a</code> 四行，最后一行是目的 host，bridge 不是 IP 跳。把两次出口、对应设备和 traceroute 中的地址写进报告。不同探测可走不同分支，不能要求 traceroute 与之前的 ping 同路，更不能由 RTT 推断带宽。</p>
+<h3 id="m5-s6">进阶任务</h3>
+<h4 id="m5-s7">任务 5　哈希碰撞：同路与分路</h4>
+<p><strong>5.1 先预测，再观察端口与路径</strong></p>
+<p>改变端口会改变部分哈希输入，但两个不同输入仍可能落到同一条路径；“换端口必换路”不是 ECMP 的保证。本机 namespace/veth 还可能携带内核已有的流哈希，不能直接将结果推广到独立物理交换机。</p>
+<div class="code cmd"><span class="code-tag">bash</span><pre><code># 13. 终端 1：自然 ECMP 的 SYN，观察源端口与 seq；等待 20 秒后自动停止
+sudo ip netns exec r1 timeout 20 tcpdump -n -l -S -i any -Q out \
+  &#x27;tcp dst port 5299 and tcp[13] &amp; 0x12 = 0x02&#x27;
+</code></pre></div>
+<div class="code cmd"><span class="code-tag">bash</span><pre><code># 14. 终端 2：新五元组的十次建连尝试；不设服务端，预期 Connection refused
+for i in $(seq 1 10); do
+  sudo ip netns exec h1a python3 - &lt;&lt;&#x27;PY&#x27;
+import socket
+with socket.socket() as s:
+    s.settimeout(0.4)
+    s.bind((&quot;10.0.1.11&quot;, 46001))
+    try:
+        s.connect((&quot;10.0.3.11&quot;, 5299))
+    except OSError as error:
+        print(type(error).__name__, error)
+PY
+  sleep 0.3
+done
+</code></pre></div>
+<p>另开一次 20 秒窗口，终端 1 将过滤式改为 <code>'udp dst port 5299'</code>，终端 2 运行下列命令。相同五元组发十个，再改一个端口；即使两组走同路，也应保留结果。</p>
+<div class="code cmd"><span class="code-tag">bash</span><pre><code># 15. 两组 UDP 探针；无 UDP 服务端，发送成功不代表应用收到
+for port in 46001 46002; do
+  sudo ip netns exec h1a python3 - &quot;$port&quot; &lt;&lt;&#x27;PY&#x27;
+import socket, sys, time
+with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+    s.bind((&quot;10.0.1.11&quot;, int(sys.argv[1])))
+    for i in range(10):
+        s.sendto(f&quot;probe-{i}&quot;.encode(), (&quot;10.0.3.11&quot;, 5299))
+        time.sleep(0.2)
+PY
+done
+</code></pre></div>
+<p>填写 <code>协议 / 五元组 / 尝试次数 / r5 与 r6 的观测 / 边界</code>。TCP SYN 重传不能当作新连接，结合源端口、绝对初始序号 <code>seq</code> 和尝试次数核对；不要直接把原始行数当连接数。若 TCP 相同五元组的新连接选路不同，说明本实验的哈希输入不止你看到的报文字段；这不证明单条连接在逐包轮流转发。Linux 6.8 的 <a href="https://github.com/torvalds/linux/blob/v6.8/net/ipv4/route.c"><code>fib_multipath_hash</code></a> 会复用已有 L4 哈希，<a href="https://github.com/torvalds/linux/blob/v6.8/include/net/sock.h">socket 哈希代码</a>提供实现线索，作为拓展而非基础实现要求。</p>
+<p><strong>5.2 并发测量，当场分类</strong></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th style="text-align:left">条件</th>
+<th style="text-align:left">保持相同</th>
+<th style="text-align:left">实际比较</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">同路 / 分路</td>
+<td style="text-align:left"><code>h1a→h3a</code>、<code>h1b→h3b</code> 各 30 MB；上联 50、接入 100 Mbit/s；无钉路</td>
+<td style="text-align:left">当轮连接的实际出口与共同窗口</td>
+</tr>
+</tbody>
+</table></div>
+<figure class="fig" id="fig-collision"><p class="fig-scroll-hint">左右滑动查看全图；键盘可聚焦图框后横向滚动。</p><div class="fig-body" tabindex="0" role="region" aria-label="图 3，可横向滚动"><svg class="lab-diagram" viewBox="0 0 760 678" role="img" aria-labelledby="collision-title collision-desc" xmlns="http://www.w3.org/2000/svg"><title id="collision-title">ECMP：跟踪两条流，看是否共享同一上联</title><desc id="collision-desc">上图 F1 与 F2 都经 r5，共享一条 50 Mbit/s 上联，合计 60 MB；下图 F1 经 r5、F2 经 r6，各承载 30 MB。节点位置完全相同。紫色实线为 F1，紫色虚线为 F2；细蓝线是候选路径。</desc><defs><marker id="collision-l2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" class="mk-l2"/></marker><marker id="collision-l3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" class="mk-l3"/></marker><marker id="collision-l4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" class="mk-l4"/></marker></defs><rect x="8" y="8" width="744" height="278" rx="8" class="d-panel"/><rect x="24" y="24" width="28" height="28" rx="5" class="n-l3"/><text x="38" y="43" text-anchor="middle" class="d-label t-l3">A</text><text x="65" y="44" text-anchor="start" class="d-title">同路示例</text><text x="728" y="43" text-anchor="end" class="d-small">固定：两条流各 30 MB；上联 50 Mbit/s</text><path d="M247,168 L353,118" class="d-candidate"/><path d="M407,118 L513,168" class="d-candidate"/><path d="M247,168 L353,224" class="d-candidate"/><path d="M407,224 L513,168" class="d-candidate"/><path d="M135,118 L193,162" class="d-flow" marker-end="url(#collision-l4)"/><path d="M247,162 L353,112" class="d-flow" marker-end="url(#collision-l4)"/><path d="M407,112 L513,162" class="d-flow" marker-end="url(#collision-l4)"/><path d="M567,162 L625,118" class="d-flow" marker-end="url(#collision-l4)"/><path d="M135,224 L193,174" class="d-flow d-dash" marker-end="url(#collision-l4)"/><path d="M247,174 L353,124" class="d-flow d-dash" marker-end="url(#collision-l4)"/><path d="M407,124 L513,174" class="d-flow d-dash" marker-end="url(#collision-l4)"/><path d="M567,174 L625,224" class="d-flow d-dash" marker-end="url(#collision-l4)"/><rect x="27.0" y="95.5" width="108" height="45" rx="6" class="n-host"/><text x="81" y="114.5" text-anchor="middle" class="d-mono t-b">h1a</text><text x="81" y="131.5" text-anchor="middle" class="d-small">F1 · 30 MB</text><rect x="625.0" y="95.5" width="108" height="45" rx="6" class="n-host"/><text x="679" y="114.5" text-anchor="middle" class="d-mono t-b">h3a</text><text x="679" y="131.5" text-anchor="middle" class="d-small">接收 F1</text><rect x="27.0" y="201.5" width="108" height="45" rx="6" class="n-host"/><text x="81" y="220.5" text-anchor="middle" class="d-mono t-b">h1b</text><text x="81" y="237.5" text-anchor="middle" class="d-small">F2 · 30 MB</text><rect x="625.0" y="201.5" width="108" height="45" rx="6" class="n-host"/><text x="679" y="220.5" text-anchor="middle" class="d-mono t-b">h3b</text><text x="679" y="237.5" text-anchor="middle" class="d-small">接收 F2</text><ellipse cx="220" cy="168" rx="27" ry="20" class="n-l3"/><text x="220" y="173" text-anchor="middle" class="d-mono t-b t-l3">r1</text><ellipse cx="540" cy="168" rx="27" ry="20" class="n-l3"/><text x="540" y="173" text-anchor="middle" class="d-mono t-b t-l3">r3</text><ellipse cx="380" cy="118" rx="27" ry="20" class="n-l3"/><text x="380" y="123" text-anchor="middle" class="d-mono t-b t-l3">r5</text><ellipse cx="380" cy="224" rx="27" ry="20" class="n-l3"/><text x="380" y="229" text-anchor="middle" class="d-mono t-b t-l3">r6</text><text x="380" y="81" text-anchor="middle" class="d-label t-l4">共享：F1 + F2 = 60 MB</text><text x="380" y="266" text-anchor="middle" class="d-small">r6 本轮无目标流</text><rect x="8" y="310" width="744" height="278" rx="8" class="d-panel"/><rect x="24" y="326" width="28" height="28" rx="5" class="n-l3"/><text x="38" y="345" text-anchor="middle" class="d-label t-l3">B</text><text x="65" y="346" text-anchor="start" class="d-title">分路示例</text><text x="728" y="345" text-anchor="end" class="d-small">固定：两条流各 30 MB；上联 50 Mbit/s</text><path d="M247,470 L353,420" class="d-candidate"/><path d="M407,420 L513,470" class="d-candidate"/><path d="M247,470 L353,526" class="d-candidate"/><path d="M407,526 L513,470" class="d-candidate"/><path d="M135,420 L193,464" class="d-flow" marker-end="url(#collision-l4)"/><path d="M247,464 L353,414" class="d-flow" marker-end="url(#collision-l4)"/><path d="M407,414 L513,464" class="d-flow" marker-end="url(#collision-l4)"/><path d="M567,464 L625,420" class="d-flow" marker-end="url(#collision-l4)"/><path d="M135,526 L193,476" class="d-flow d-dash" marker-end="url(#collision-l4)"/><path d="M247,476 L353,532" class="d-flow d-dash" marker-end="url(#collision-l4)"/><path d="M407,532 L513,476" class="d-flow d-dash" marker-end="url(#collision-l4)"/><path d="M567,476 L625,526" class="d-flow d-dash" marker-end="url(#collision-l4)"/><rect x="27.0" y="397.5" width="108" height="45" rx="6" class="n-host"/><text x="81" y="416.5" text-anchor="middle" class="d-mono t-b">h1a</text><text x="81" y="433.5" text-anchor="middle" class="d-small">F1 · 30 MB</text><rect x="625.0" y="397.5" width="108" height="45" rx="6" class="n-host"/><text x="679" y="416.5" text-anchor="middle" class="d-mono t-b">h3a</text><text x="679" y="433.5" text-anchor="middle" class="d-small">接收 F1</text><rect x="27.0" y="503.5" width="108" height="45" rx="6" class="n-host"/><text x="81" y="522.5" text-anchor="middle" class="d-mono t-b">h1b</text><text x="81" y="539.5" text-anchor="middle" class="d-small">F2 · 30 MB</text><rect x="625.0" y="503.5" width="108" height="45" rx="6" class="n-host"/><text x="679" y="522.5" text-anchor="middle" class="d-mono t-b">h3b</text><text x="679" y="539.5" text-anchor="middle" class="d-small">接收 F2</text><ellipse cx="220" cy="470" rx="27" ry="20" class="n-l3"/><text x="220" y="475" text-anchor="middle" class="d-mono t-b t-l3">r1</text><ellipse cx="540" cy="470" rx="27" ry="20" class="n-l3"/><text x="540" y="475" text-anchor="middle" class="d-mono t-b t-l3">r3</text><ellipse cx="380" cy="420" rx="27" ry="20" class="n-l3"/><text x="380" y="425" text-anchor="middle" class="d-mono t-b t-l3">r5</text><ellipse cx="380" cy="526" rx="27" ry="20" class="n-l3"/><text x="380" y="531" text-anchor="middle" class="d-mono t-b t-l3">r6</text><text x="380" y="383" text-anchor="middle" class="d-label t-l4">F1：30 MB</text><text x="380" y="568" text-anchor="middle" class="d-small">F2：30 MB</text><path d="M24,626 L64,626" class="d-flow"/><text x="75" y="630" text-anchor="start" class="d-small">F1 · TCP 流</text><path d="M230,626 L270,626" class="d-flow d-dash"/><text x="281" y="630" text-anchor="start" class="d-small">F2 · TCP 流</text><path d="M460,626 L500,626" class="d-candidate"/><text x="511" y="630" text-anchor="start" class="d-small">候选路径 · 每条 50 Mbit/s</text><text x="380" y="658" text-anchor="middle" class="d-small">两幅图是自然 ECMP 的分类示例；所有 host 接入保持 100 Mbit/s</text></svg></div><figcaption><b>图 3：</b><span>两场景保持相同节点位置；细蓝线表示候选路径，紫色实线 F1 与虚线 F2 分别跟踪两条 TCP 流。同路时，两条紫线共用一条上联的 50 Mbit/s，并非各有 50 Mbit/s。同路也可能经 r6，分路也可交换 r5/r6。省略网桥、ACK 回程及其他节点；每台 host 接入为 100 Mbit/s。图示是分类条件，不预先指定自然哈希结果。</span></figcaption></figure>
+<p>先预测：同路与分路下界分别是多少？然后固定做六轮，不以“必须出现某种分组”作为结束条件。</p>
+<div class="code cmd"><span class="code-tag">bash</span><pre><code># 16. 检查自然选路、设置 50 档，并完成六轮；每轮自动重启服务端、使用新源端口
+sudo ip -n r1 rule show
+sudo bash 2026/experiments/03/topo.sh rate 50
+for trial in $(seq 1 6); do
+  sudo &quot;$PY&quot; &quot;$MEASURE&quot; --output &quot;$RUN/t5-$trial&quot; \
+    --flow h1a:h3a:$((42000+trial)):5201 --flow h1b:h3b:$((43000+trial)):5203
+done
+sudo bash 2026/experiments/03/topo.sh rate 100
+</code></pre></div>
+<p>先读每轮 <code>summary.json</code> 中每流的 SYN 出口，再看 <code>capture.groups</code> 中<strong>有数据载荷</strong>的出口是否一致；路由变化、多出口或抓包丢失时标为“路径变化／证据不足”，不要硬分组。理论下界为同路 <strong>9.6 s</strong>、分路 <strong>4.8 s</strong>，实测不要求精确两倍。按分组报告样本数、各轮值和中位数；某组没有样本就写“本轮未观察到”，可以另加固定数量的补充轮次并全部保留。</p>
+<p>修订后实测六轮（2026-10-05）：分路四轮窗口为 5.039、5.044、5.038、5.044 s；同路两轮为 10.070、10.064 s。对应分路约 95.2、同路约 47.7 Mbit/s。这是本轮分布，不能据六次样本估计稳定的碰撞概率。</p>
+<h4 id="m5-s8">任务 6　双租户 VXLAN（选做）</h4>
+<p><strong>6.1 自建 overlay 并登记生命周期</strong></p>
+<p>保留自己的 underlay。以下给出关键搭建命令；运行前先画出 <code>t1a → br100 → vx100 → underlay → vx100 → br100 → t3a</code>，说明 VNI 100 与 200 的网桥为什么必须分开。租户 bridge 不配 IP，避免将重叠租户前缀通告进 underlay。</p>
+<p>下面是一个完整 Bash 块，使用 root 写清理清单；失败会调用清理工具。运行前检查所有同名资源，不会先删除其他实验。重复搭建前显式调用 <code>overlay_down.sh</code>。</p>
+<div class="code cmd"><span class="code-tag">bash</span><pre><code># 17. 创建租户 namespace、无 IP 的 bridge、静态 remote VTEP 和接入口
+sudo bash &lt;&lt;&#x27;BASH&#x27;
+set -Eeuo pipefail
+state=/run/lab03/overlay-resources
+[[ -f /run/lab03/namespaces ]] || { echo &#x27;先搭好自己的 topo.sh&#x27;; exit 1; }
+[[ ! -e &quot;$state&quot; ]] || { echo &#x27;先执行 overlay_down.sh&#x27;; exit 1; }
+for ns in t1a t3a t1b t3b; do
+  [[ ! -e /run/netns/$ns ]] || { echo &quot;$ns 已占用&quot;; exit 1; }
+done
+for rack in 1 3; do
+  for dev in br100 br200 vx100 vx200 r$rack-t${rack}a r$rack-t${rack}b; do
+    if ip -n r$rack link show &quot;$dev&quot; &gt;/dev/null 2&gt;&amp;1; then
+      echo &quot;r$rack/$dev 已占用&quot;; exit 1
+    fi
+  done
+done
+: &gt;&quot;$state&quot;
+trap &#x27;status=$?; if [[ $status -ne 0 ]]; then bash 2026/experiments/03/overlay_down.sh; fi&#x27; EXIT
+trap &#x27;exit 130&#x27; INT
+trap &#x27;exit 143&#x27; TERM
+for ns in t1a t3a t1b t3b; do
+  ip netns add &quot;$ns&quot;
+  echo &quot;ns $ns -&quot; &gt;&gt;&quot;$state&quot;
+  ip -n &quot;$ns&quot; link set lo up
+done
+for rack in 1 3; do
+  peer=3; [[ &quot;$rack&quot; == 3 ]] &amp;&amp; peer=1
+  for tenant in a b; do
+    vni=100; [[ &quot;$tenant&quot; == b ]] &amp;&amp; vni=200
+    ns=t$rack$tenant
+    for dev in br$vni vx$vni; do
+      if [[ &quot;$dev&quot; == br* ]]; then
+        ip -n r$rack link add &quot;$dev&quot; type bridge
+      else
+        ip -n r$rack link add &quot;$dev&quot; type vxlan id &quot;$vni&quot; \
+          local 10.0.$rack.1 remote 10.0.$peer.1 dstport 4789
+      fi
+      echo &quot;link r$rack $dev&quot; &gt;&gt;&quot;$state&quot;
+    done
+    ip -n r$rack link add r$rack-$ns type veth peer name eth0 netns &quot;$ns&quot;
+    echo &quot;link r$rack r$rack-$ns&quot; &gt;&gt;&quot;$state&quot;
+    for dev in r$rack-$ns vx$vni; do
+      ip -n r$rack link set &quot;$dev&quot; mtu 1450 master br$vni up
+      ip netns exec r$rack ethtool -K &quot;$dev&quot; gro off gso off tso off
+    done
+    ip -n r$rack link set br$vni mtu 1450 up
+    ip -n &quot;$ns&quot; link set eth0 mtu 1450 up
+    ip netns exec &quot;$ns&quot; ethtool -K eth0 gro off gso off tso off
+    octet=11; [[ &quot;$rack&quot; == 3 ]] &amp;&amp; octet=12
+    ip -n &quot;$ns&quot; addr add 192.168.10.$octet/24 dev eth0
+  done
+done
+trap - EXIT INT TERM
+BASH
+</code></pre></div>
+<div class="code cmd"><span class="code-tag">bash</span><pre><code># 18. 核对 offload 的实际状态，保留输出；不能用“忽略报错”代替验证
+sudo ip netns exec t1a ethtool -k eth0
+sudo ip netns exec r1 ethtool -k vx100
+sudo ip -n r1 -d link show vx100
+
+# 19. 同 VNI 的两个方向都要验证；两个租户使用相同的 IP
+for tenant in a b; do
+  sudo ip netns exec t1$tenant ping -c 1 -W 2 192.168.10.12
+  sudo ip netns exec t3$tenant ping -c 1 -W 2 192.168.10.11
+done
+</code></pre></div>
+<p>应看到租户侧 <code>generic-receive-offload</code>、<code>generic-segmentation-offload</code>、<code>tcp-segmentation-offload</code> 为 off；设备固定不支持的特性以实际 <code>[fixed]</code> 状态记录。本任务关闭这三个分段／聚合特性，不声称关闭所有 checksum offload。</p>
+<p><strong>6.2 同一包的内外层证据与隔离反例</strong></p>
+<p>分别在两个终端启动以下抓包，再在第三个终端运行一次 <code>ping -s 32</code>。这次比较的是<strong>同一次请求</strong>：核对 ICMP <code>id/seq</code>，不能拿不同时间的两个 ping 当同包。</p>
+<div class="code cmd"><span class="code-tag">bash</span><pre><code># 20. 终端 1：租户侧；终端 2 单独执行下一条 underlay 抓包
+sudo ip netns exec t1a timeout 10 tcpdump -n -vv -i eth0 -c 1 &#x27;icmp[0] = 8&#x27;
+</code></pre></div>
+<div class="code cmd"><span class="code-tag">bash</span><pre><code># 21. 终端 2：VNI 100 内的 IPv4 ICMP 请求（无 VLAN，内层 IPv4 无选项）
+sudo ip netns exec r1 timeout 10 tcpdump -n -vv -i any -Q out -c 1 \
+  &#x27;udp dst port 4789 and udp[12:4] = 0x00006400 and udp[28:2] = 0x0800 and udp[39] = 1 and udp[50] = 8&#x27;
+</code></pre></div>
+<div class="code cmd"><span class="code-tag">bash</span><pre><code># 22. 终端 3：只发一次请求
+sudo ip netns exec t1a ping -c 1 -W 2 -s 32 192.168.10.12
+</code></pre></div>
+<p>读偏移：UDP 起点后 12–14 是 VNI，15 是 <strong>VXLAN 保留字节</strong>，所以 <code>udp[12:4]</code> 包含三字节 VNI 和一字节保留值；28–29 是内层 EtherType；39 是内层 IP 协议；50 是无选项 IPv4 后的 ICMP 类型。这些固定偏移只适用于上述封装条件。</p>
+<p>请求内层 IP 总长应为 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mn>20</mn><mo>&#x0002B;</mo><mn>8</mn><mo>&#x0002B;</mo><mn>32</mn><mo>&#x0003D;</mo><mn>60</mn></mrow></math></span> B，外层 IP 总长应为 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mn>20</mn><mo>&#x0002B;</mo><mn>8</mn><mo>&#x0002B;</mo><mn>8</mn><mo>&#x0002B;</mo><mn>14</mn><mo>&#x0002B;</mo><mn>60</mn><mo>&#x0003D;</mo><mn>110</mn></mrow></math></span> B。记录外层地址、源端口、4789 与 VNI，并用同一 ICMP 标识关联两处观察。</p>
+<div class="code cmd"><span class="code-tag">bash</span><pre><code># 23. A 目的口关闭后应失败；B 仍可达；退出时总是恢复 A
+(
+  trap &#x27;sudo ip -n t3a link set eth0 up&#x27; EXIT
+  trap &#x27;exit 130&#x27; INT
+  trap &#x27;exit 143&#x27; TERM
+  sudo ip -n t3a link set eth0 down
+  if sudo ip netns exec t1a ping -c 1 -W 1 192.168.10.12; then
+    echo &#x27;隔离反例不成立，先排查桥接关系&#x27;; exit 1
+  fi
+  sudo ip netns exec t1b ping -c 1 -W 2 192.168.10.12
+)
+</code></pre></div>
+<p>这验证给定配置中的同 VNI 可达与 A/B 分离，不代表 VNI 提供加密或覆盖所有安全威胁。</p>
+<p><strong>6.3 隔离不等于带宽保证</strong></p>
+<p>先预测 A 单独运行与 A+B 同时运行的差别。为消除自然 ECMP 的变化，两种条件都把<strong>外层目的地址</strong>固定经 r5；固定源 leaf 上联 50 Mbit/s，A 始终两条 30 MB。改变的只是 B 是否同时发送两条 30 MB。</p>
+<figure class="fig" id="fig-tenants"><p class="fig-scroll-hint">左右滑动查看全图；键盘可聚焦图框后横向滚动。</p><div class="fig-body" tabindex="0" role="region" aria-label="图 4，可横向滚动"><svg class="lab-diagram" viewBox="0 0 760 736" role="img" aria-labelledby="tenants-title tenants-desc" xmlns="http://www.w3.org/2000/svg"><title id="tenants-title">租户隔离与共享带宽：B 加入后什么发生变化</title><desc id="tenants-desc">上下两种条件均将外层路径固定为 r1-r5-r3，出口为 50 Mbit/s。基线只有 A 的两条 30 MB 流，B 节点保留但空闲；并发条件下 B 也发送两条 30 MB 流。A 使用 VNI 100，B 使用 VNI 200。青绿实线与虚线标记租户逻辑流量，并行轨迹不代表独立物理容量。</desc><defs><marker id="tenants-l2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" class="mk-l2"/></marker><marker id="tenants-l3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" class="mk-l3"/></marker><marker id="tenants-l4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" class="mk-l4"/></marker></defs><rect x="8" y="8" width="744" height="306" rx="8" class="d-panel"/><rect x="24" y="24" width="28" height="28" rx="5" class="n-l3"/><text x="38" y="43" text-anchor="middle" class="d-label t-l3">A</text><text x="65" y="44" text-anchor="start" class="d-title">基线：仅租户 A</text><text x="728" y="43" text-anchor="end" class="d-small">固定：外层 /32 经 r5</text><rect x="187" y="67" width="386" height="213" rx="6" class="d-band"/><text x="380" y="90" text-anchor="middle" class="d-label t-l3">共享 UNDERLAY · 总量 60 MB</text><path d="M265,173 L353,173" class="d-candidate"/><path d="M407,173 L495,173" class="d-candidate"/><rect x="22.0" y="85.0" width="128" height="62" rx="6" class="n-host"/><text x="86" y="104.0" text-anchor="middle" class="d-mono t-b">A · t1a</text><text x="86" y="121.0" text-anchor="middle" class="d-small">VNI 100</text><text x="86" y="138.0" text-anchor="middle" class="d-small">2 × 30 MB</text><rect x="610.0" y="85.0" width="128" height="62" rx="6" class="n-host"/><text x="674" y="104.0" text-anchor="middle" class="d-mono t-b">A · t3a</text><text x="674" y="121.0" text-anchor="middle" class="d-small">VNI 100</text><text x="674" y="138.0" text-anchor="middle" class="d-small">接收 60 MB</text><path d="M150,116 L211,167" class="d-tenant" marker-end="url(#tenants-l2)"/><path d="M265,167 L353,167" class="d-tenant" marker-end="url(#tenants-l2)"/><path d="M407,167 L495,167" class="d-tenant" marker-end="url(#tenants-l2)"/><path d="M549,167 L610,116" class="d-tenant" marker-end="url(#tenants-l2)"/><rect x="22.0" y="209.0" width="128" height="62" rx="6" class="d-idle"/><text x="86" y="228.0" text-anchor="middle" class="d-mono t-b">B · t1b</text><text x="86" y="245.0" text-anchor="middle" class="d-small">VNI 200</text><text x="86" y="262.0" text-anchor="middle" class="d-small">空闲</text><rect x="610.0" y="209.0" width="128" height="62" rx="6" class="d-idle"/><text x="674" y="228.0" text-anchor="middle" class="d-mono t-b">B · t3b</text><text x="674" y="245.0" text-anchor="middle" class="d-small">VNI 200</text><text x="674" y="262.0" text-anchor="middle" class="d-small">空闲</text><ellipse cx="238" cy="173" rx="27" ry="20" class="n-l3"/><text x="238" y="178" text-anchor="middle" class="d-mono t-b t-l3">r1</text><ellipse cx="380" cy="173" rx="27" ry="20" class="n-l3"/><text x="380" y="178" text-anchor="middle" class="d-mono t-b t-l3">r5</text><ellipse cx="522" cy="173" rx="27" ry="20" class="n-l3"/><text x="522" y="178" text-anchor="middle" class="d-mono t-b t-l3">r3</text><text x="309" y="144" text-anchor="middle" class="d-small">50 Mbit/s</text><text x="451" y="144" text-anchor="middle" class="d-small">50 Mbit/s</text><text x="380" y="246" text-anchor="middle" class="d-label">A：60 MB  +  B：0 MB</text><text x="380" y="304" text-anchor="middle" class="d-small">A 的数据量与路径不变；只改变 B 是否同时发送</text><rect x="8" y="338" width="744" height="306" rx="8" class="d-panel"/><rect x="24" y="354" width="28" height="28" rx="5" class="n-l3"/><text x="38" y="373" text-anchor="middle" class="d-label t-l3">B</text><text x="65" y="374" text-anchor="start" class="d-title">并发：租户 A + B</text><text x="728" y="373" text-anchor="end" class="d-small">固定：外层 /32 经 r5</text><rect x="187" y="397" width="386" height="213" rx="6" class="d-band"/><text x="380" y="420" text-anchor="middle" class="d-label t-l3">共享 UNDERLAY · 总量 120 MB</text><path d="M265,503 L353,503" class="d-candidate"/><path d="M407,503 L495,503" class="d-candidate"/><rect x="22.0" y="415.0" width="128" height="62" rx="6" class="n-host"/><text x="86" y="434.0" text-anchor="middle" class="d-mono t-b">A · t1a</text><text x="86" y="451.0" text-anchor="middle" class="d-small">VNI 100</text><text x="86" y="468.0" text-anchor="middle" class="d-small">2 × 30 MB</text><rect x="610.0" y="415.0" width="128" height="62" rx="6" class="n-host"/><text x="674" y="434.0" text-anchor="middle" class="d-mono t-b">A · t3a</text><text x="674" y="451.0" text-anchor="middle" class="d-small">VNI 100</text><text x="674" y="468.0" text-anchor="middle" class="d-small">接收 60 MB</text><path d="M150,446 L211,497" class="d-tenant" marker-end="url(#tenants-l2)"/><path d="M265,497 L353,497" class="d-tenant" marker-end="url(#tenants-l2)"/><path d="M407,497 L495,497" class="d-tenant" marker-end="url(#tenants-l2)"/><path d="M549,497 L610,446" class="d-tenant" marker-end="url(#tenants-l2)"/><rect x="22.0" y="539.0" width="128" height="62" rx="6" class="n-host"/><text x="86" y="558.0" text-anchor="middle" class="d-mono t-b">B · t1b</text><text x="86" y="575.0" text-anchor="middle" class="d-small">VNI 200</text><text x="86" y="592.0" text-anchor="middle" class="d-small">2 × 30 MB</text><rect x="610.0" y="539.0" width="128" height="62" rx="6" class="n-host"/><text x="674" y="558.0" text-anchor="middle" class="d-mono t-b">B · t3b</text><text x="674" y="575.0" text-anchor="middle" class="d-small">VNI 200</text><text x="674" y="592.0" text-anchor="middle" class="d-small">接收 60 MB</text><path d="M150,570 L211,509" class="d-tenant d-dash" marker-end="url(#tenants-l2)"/><path d="M265,509 L353,509" class="d-tenant d-dash" marker-end="url(#tenants-l2)"/><path d="M407,509 L495,509" class="d-tenant d-dash" marker-end="url(#tenants-l2)"/><path d="M549,509 L610,570" class="d-tenant d-dash" marker-end="url(#tenants-l2)"/><ellipse cx="238" cy="503" rx="27" ry="20" class="n-l3"/><text x="238" y="508" text-anchor="middle" class="d-mono t-b t-l3">r1</text><ellipse cx="380" cy="503" rx="27" ry="20" class="n-l3"/><text x="380" y="508" text-anchor="middle" class="d-mono t-b t-l3">r5</text><ellipse cx="522" cy="503" rx="27" ry="20" class="n-l3"/><text x="522" y="508" text-anchor="middle" class="d-mono t-b t-l3">r3</text><text x="309" y="474" text-anchor="middle" class="d-small">50 Mbit/s</text><text x="451" y="474" text-anchor="middle" class="d-small">50 Mbit/s</text><text x="380" y="576" text-anchor="middle" class="d-label">A：60 MB  +  B：60 MB</text><text x="380" y="634" text-anchor="middle" class="d-small">A 的数据量与路径不变；只改变 B 是否同时发送</text><path d="M26,682 L61,682" class="d-tenant"/><text x="73" y="686" text-anchor="start" class="d-small">租户 A 的两条流</text><path d="M270,682 L305,682" class="d-tenant d-dash"/><text x="317" y="686" text-anchor="start" class="d-small">租户 B 的两条流</text><text x="380" y="715" text-anchor="middle" class="d-label t-l3">VNI 分离逻辑网络；两组流仍使用同一份上联容量</text></svg></div><figcaption><b>图 4：</b><span>两场景保留相同节点位置；青绿实线代表租户 A 的两条 TCP 流，虚线代表租户 B 的两条流，均为逻辑流量标记。蓝色路径是共同的 underlay；并行画出的租户流量不代表独立的上联容量。只画正向实际路径，省略独立租户 bridge/VTEP、ACK 回程与 r6 候选分支。租户接入口未单独限速，underlay 两端的 50 Mbit/s 出口共享。A、B 虚拟地址重叠，但 VNI 与网桥分开。</span></figcaption></figure>
+<div class="code cmd"><span class="code-tag">bash</span><pre><code># 24. 三次交替测基线与并发；每轮源端口换新，结束恢复路由和 100 档
+(
+  set -Eeuo pipefail
+  restore_t6() {
+    sudo ip -n r1 route del 10.0.3.1/32 via 10.1.0.2 dev r1-r5 2&gt;/dev/null || true
+    sudo bash 2026/experiments/03/topo.sh rate 100
+  }
+  trap restore_t6 EXIT
+  trap &#x27;exit 130&#x27; INT
+  trap &#x27;exit 143&#x27; TERM
+  sudo ip -n r1 route add 10.0.3.1/32 via 10.1.0.2 dev r1-r5
+  sudo bash 2026/experiments/03/topo.sh rate 50
+  for trial in 1 2 3; do
+    base=$((44000 + trial * 10))
+    sudo &quot;$PY&quot; &quot;$MEASURE&quot; --capture vxlan --output &quot;$RUN/t6-base-$trial&quot; \
+      --flow t1a:t3a:$((base+1)):5201 --flow t1a:t3a:$((base+2)):5202
+    sudo &quot;$PY&quot; &quot;$MEASURE&quot; --capture vxlan --output &quot;$RUN/t6-both-$trial&quot; \
+      --flow t1a:t3a:$((base+3)):5201 --flow t1a:t3a:$((base+4)):5202 \
+      --flow t1b:t3b:$((base+5)):5203 --flow t1b:t3b:$((base+6)):5204
+  done
+)
+</code></pre></div>
+<p>每组列出 A 的每流速率、A 从本轮共同起点到两个 A 客户端都完成的时间、全体共同窗口、A+B 聚合速率和实际出口。助手为每流记录相对本轮起点的 <code>launch_offset_seconds</code> 与 <code>finish_offset_seconds</code>；取两个 A 的完成偏移最大值就是 A 的子组共同窗口，按 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mn>8</mn><mo>&#x000D7;</mo><mn>60</mn><mo>&#x000D7;</mo><msup><mn>10</mn><mn>6</mn></msup><mo>&#x0002F;</mo><msub><mi>T</mi><mi>A</mi></msub></mrow></math></span> 算 A 的同窗口速率。进程完成由 5 ms 轮询观察，计时包含启动和收尾，不是线速时间戳；不能把两条各自速率直接相加。固定路径的忽略开销下界为基线 9.6 s、并发 19.2 s；TCP 不保证各流均分，也不要求 A 恰好减半。</p>
+<p>修订后实测样例（2026-10-05，三轮中位数）：仅 A 时，共同窗口 10.431 s、A 同窗口速率 46.02 Mbit/s；A+B 时，全体窗口 20.835 s、总速率 46.08 Mbit/s，A 子组窗口 20.799 s、A 同窗口速率 23.08 Mbit/s。两种条件的目标数据都经过 r1-r5，A/B 均有完整字节回执。这里支持的是共享容量导致相互影响，不是 TCP 保证公平分配。</p>
+<p>如果 A 没明显变慢，检查 B 是否真的收到 60 MB、两租户是否确实共享 r1-r5、背景负载和抓包丢失。结论应来自 VNI、字节回执、出口与时间的关联，不能只看一张吞吐表。</p>
+<p><strong>此时保留 overlay 继续任务 7、8。</strong> 若跳过后续，执行任务 8 末尾的统一清理。需要重建 overlay 时先执行 <code>sudo bash 2026/experiments/03/overlay_down.sh</code>；它同时回收 bridge/VTEP 和租户进程，重复执行不报错。</p>
+<h3 id="m5-s9">挑战任务</h3>
+<h4 id="m5-s10">任务 7　按目标连接核对 VXLAN 外层源端口</h4>
+<p><a href="https://www.rfc-editor.org/rfc/rfc7348#section-5">RFC 7348 第 5 节</a>建议由内层报文字段生成外层源端口，为 ECMP 提供区分信息；它没有要求每个包选择不同路径。Linux 6.8 的 <a href="https://github.com/torvalds/linux/blob/v6.8/include/net/udp.h"><code>udp_flow_src_port</code></a> 调用 <a href="https://github.com/torvalds/linux/blob/v6.8/include/linux/skbuff.h"><code>skb_get_hash</code></a>，可能复用已有哈希。<strong>每包调用哈希函数不等于每包哈希值不同。</strong> 在单机 veth 上看到连接重建或重传后的变化，也不能直接概括所有 Linux、物理 NIC 与交换机。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th style="text-align:left">组</th>
+<th style="text-align:left">条件</th>
+<th style="text-align:left">要回答的问题</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">默认</td>
+<td style="text-align:left">自然 ECMP，默认源端口范围</td>
+<td style="text-align:left">同一 VNI、同一内层连接的数据用了几个源端口和出口？</td>
+</tr>
+<tr>
+<td style="text-align:left">窄范围</td>
+<td style="text-align:left">两端 <code>srcport 40000 40100</code>，自然 ECMP</td>
+<td style="text-align:left">取值范围缩小后，实际路径是否改变？范围内仍有多个可能值。</td>
+</tr>
+<tr>
+<td style="text-align:left">钉路</td>
+<td style="text-align:left">窄范围保持不变，外层 <code>/32</code> 固定经 r5</td>
+<td style="text-align:left">无论源端口如何变化，目标数据是否均经过 r1-r5？</td>
+</tr>
+</tbody>
+</table></div>
+<p>每组各做两次，源端口不同。先记录预测，不预设一定分路或一定单路。</p>
+<div class="code cmd"><span class="code-tag">bash</span><pre><code># 25. 默认组：两次独立 30 MB 连接，捕获完整外层包
+sudo bash 2026/experiments/03/topo.sh rate 100
+for trial in 1 2; do
+  sudo &quot;$PY&quot; &quot;$MEASURE&quot; --capture vxlan --output &quot;$RUN/t7-default-$trial&quot; \
+    --flow t1a:t3a:$((47000+trial)):5201
+done
+</code></pre></div>
+<div class="code cmd"><span class="code-tag">bash</span><pre><code># 26. 窄范围组：重建两端 VTEP；清理清单中的同名设备记录仍有效
+for rack in 1 3; do
+  peer=3; [ &quot;$rack&quot; = 3 ] &amp;&amp; peer=1
+  sudo ip -n r$rack link del vx100
+  sudo ip -n r$rack link add vx100 type vxlan id 100 \
+    local 10.0.$rack.1 remote 10.0.$peer.1 dstport 4789 srcport 40000 40100
+  sudo ip -n r$rack link set vx100 mtu 1450 master br100 up
+  sudo ip netns exec r$rack ethtool -K vx100 gro off gso off tso off
+done
+for trial in 1 2; do
+  sudo &quot;$PY&quot; &quot;$MEASURE&quot; --capture vxlan --output &quot;$RUN/t7-narrow-$trial&quot; \
+    --flow t1a:t3a:$((47100+trial)):5201
+done
+</code></pre></div>
+<div class="code cmd"><span class="code-tag">bash</span><pre><code># 27. 钉路组：结束后自动移除 /32；不改内层连接数据量
+(
+  set -Eeuo pipefail
+  trap &#x27;sudo ip -n r1 route del 10.0.3.1/32 via 10.1.0.2 dev r1-r5 2&gt;/dev/null || true&#x27; EXIT
+  trap &#x27;exit 130&#x27; INT
+  trap &#x27;exit 143&#x27; TERM
+  sudo ip -n r1 route add 10.0.3.1/32 via 10.1.0.2 dev r1-r5
+  for trial in 1 2; do
+    sudo &quot;$PY&quot; &quot;$MEASURE&quot; --capture vxlan --output &quot;$RUN/t7-pinned-$trial&quot; \
+      --flow t1a:t3a:$((47200+trial)):5201
+  done
+)
+</code></pre></div>
+<div class="code cmd"><span class="code-tag">bash</span><pre><code># 28. 将汇总对回原始报文；按两条上联分别检查
+cat &quot;$RUN/t7-default-1/summary.json&quot;
+sudo tcpdump -n -vv -r &quot;$RUN/t7-default-1/r1-r5.pcap&quot; &#x27;udp dst port 4789&#x27;
+sudo tcpdump -n -vv -r &quot;$RUN/t7-default-1/r1-r6.pcap&quot; &#x27;udp dst port 4789&#x27;
+</code></pre></div>
+<p><code>capture.groups</code> 按 <strong>VNI + 内层源/目的 IP、TCP 端口</strong>筛选本轮发送连接，再按出口和外层源端口计数。<code>data_packets</code> 才是携带目标 TCP 数据的包；<code>tcp_payload_bytes_with_retransmissions</code> 包括重传，不能冒充应用有效字节。未匹配的 ARP、IPv6、其他租户与反向业务记在 <code>unmatched_packets</code>；同一 VXLAN 包会被 tcpdump 输出为多行，<strong>禁止用 <code>wc -l</code> 当包数</strong>。</p>
+<p>提交 <code>组别 / 内层连接 / 外层源端口集合 / 各出口数据包数 / 应用速率 / 抓包丢失情况</code>。若同一连接有多个外层端口，进一步按时间、TCP 序号、重传与路由日志定位；这是待解释的观测，不能直接写成“默认逐包负载均衡”。窄范围也不保证单路；该结论只有第三组的路由控制提供确定性条件。</p>
+<p>修订后实测节选（2026-10-05，每组第 1 轮）：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th style="text-align:left">组别</th>
+<th style="text-align:left">目标流外层源端口</th>
+<th style="text-align:left">r1-r5 / r1-r6 的目标数据包数</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">默认</td>
+<td style="text-align:left">36376</td>
+<td style="text-align:left">21467 / 0</td>
+</tr>
+<tr>
+<td style="text-align:left">窄范围</td>
+<td style="text-align:left">40088</td>
+<td style="text-align:left">0 / 21460</td>
+</tr>
+<tr>
+<td style="text-align:left">窄范围 + 钉路</td>
+<td style="text-align:left">40098</td>
+<td style="text-align:left">21460 / 0</td>
+</tr>
+</tbody>
+</table></div>
+<p>每一轮内层源端口不同；表中每条目标连接的数据只出现一个外层源端口，捕获丢失计数为 0。包数含重传，不能据 21467 比 21460 多就说应用多发送了数据。本轮没有观察到同一目标流多外层端口；允许其他运行出现不同结果，按上面的排查方法解释。</p>
+<h4 id="m5-s11">任务 8　封装开销：近似模型与实测边界</h4>
+<p><strong>先算 MTU</strong>：外层 IPv4 无选项、内层 Ethernet 无 VLAN 时，1450 B 内层 IP + 14 B 内层 Ethernet + 8 B VXLAN + 8 B UDP + 20 B 外层 IPv4 = 1500 B 外层 IP。下面验证源租户接口边界；第二条命令预期失败，失败位置是本地，不是远端丢包。</p>
+<div class="code cmd"><span class="code-tag">bash</span><pre><code># 29. IP 头 20 + ICMP 头 8 + 数据 1422 = 1450；再多一个字节应被本地拒绝
+sudo ip netns exec t1a ping -M do -c 1 -W 2 -s 1422 192.168.10.12
+sudo ip netns exec t1a ping -M do -c 1 -W 2 -s 1423 192.168.10.12
+</code></pre></div>
+<p>忽略 TCP 选项时，MSS 预算为 overlay 1410、underlay 1460 B，应用效率比近似 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mn>1410</mn><mo>&#x0002F;</mo><mn>1460</mn><mo>&#x02248;</mo><mn>0.966</mn></mrow></math></span>。若连接使用 12 B TCP 时间戳等选项，满长数据段载荷可能是 1398 与 1448 B，应再核对 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mn>1398</mn><mo>&#x0002F;</mo><mn>1448</mn><mo>&#x02248;</mo><mn>0.9655</mn></mrow></math></span>。SYN 的 MSS 声明与数据包实际载荷不是同一个量；用 <code>tcpdump -vv</code> 的 options 和数据 <code>length</code> 读实际情况，不预先假定没有选项。</p>
+<p><strong>公平对照</strong>：上联 100 档；两种传输各 30 MB，均显式钉到 r5；overlay 为 <code>t1a→t3a</code>，underlay 为 <code>h1a→h3a</code>。租户接入未限速，underlay host 接入口为 100 Mbit/s，这是仍存在的结构差异，报告要说明；网络整体空闲时二者目标瓶颈都是同一条 100 Mbit/s 上联。交替做五次，报告所有值与中位数。</p>
+<div class="code cmd"><span class="code-tag">bash</span><pre><code># 30. 分别固定 VTEP 与 underlay host 的 /32 路径；退出时移除两条临时路由
+(
+  set -Eeuo pipefail
+  restore_t8() {
+    for addr in 10.0.3.1 10.0.3.11; do
+      sudo ip -n r1 route del &quot;$addr/32&quot; via 10.1.0.2 dev r1-r5 2&gt;/dev/null || true
+    done
+  }
+  trap restore_t8 EXIT
+  trap &#x27;exit 130&#x27; INT
+  trap &#x27;exit 143&#x27; TERM
+  sudo bash 2026/experiments/03/topo.sh rate 100
+  for addr in 10.0.3.1 10.0.3.11; do
+    sudo ip -n r1 route add &quot;$addr/32&quot; via 10.1.0.2 dev r1-r5
+  done
+  for trial in 1 2 3 4 5; do
+    sudo &quot;$PY&quot; &quot;$MEASURE&quot; --output &quot;$RUN/t8-underlay-$trial&quot; \
+      --flow h1a:h3a:$((48000+trial)):5201
+    sudo &quot;$PY&quot; &quot;$MEASURE&quot; --capture vxlan --output &quot;$RUN/t8-overlay-$trial&quot; \
+      --flow t1a:t3a:$((48100+trial)):5201
+  done
+)
+</code></pre></div>
+<div class="code cmd"><span class="code-tag">bash</span><pre><code># 31. 汇总每流应用速率，打印全部值与中位数；比值不是因果分解
+python3 - &quot;$RUN&quot; &lt;&lt;&#x27;PY&#x27;
+import json, pathlib, statistics, sys
+root = pathlib.Path(sys.argv[1])
+medians = {}
+for kind in (&quot;underlay&quot;, &quot;overlay&quot;):
+    values = [json.loads((root / f&quot;t8-{kind}-{n}/summary.json&quot;).read_text())[&quot;flows&quot;][0][&quot;application_mbps&quot;] for n in range(1, 6)]
+    medians[kind] = statistics.median(values)
+    print(kind, [round(v, 2) for v in values], &quot;中位数&quot;, round(medians[kind], 2))
+print(&quot;overlay/underlay&quot;, medians[&quot;overlay&quot;] / medians[&quot;underlay&quot;])
+PY
+</code></pre></div>
+<p>修订后实测样例（2026-10-05，五轮客户端应用速率）：underlay 为 95.60、95.63、95.63、95.59、95.63 Mbit/s，overlay 为 92.28、92.33、92.33、92.33、92.33 Mbit/s；中位数比值用原始精度计算为 0.9655。抓包可见 TCP 时间戳选项，与实际段长预算一致。这是每流客户端计时口径，不要与含进程启动的 <code>shared_window_mbps</code> 混用。</p>
+<p>测得比值接近模型只说明<strong>与封装效率预期相符</strong>，不能证明全部差额由 MSS 损耗解释；还应检查实际段长、重传、限速统计、CPU 与计时开销。不要求精确等于 0.966，也不能由五次稳定值断言 CPU 一定不是瓶颈。</p>
+<p><strong>offload 拓展（不计基础验收）</strong>：先保存 <code>ethtool -k</code> 输出，再只改租户接入口与 VTEP 的 GRO/GSO/TSO 状态，重复同一套固定路径对照。记录哪些特性真正变了、捕获长度如何变化；结束恢复原状态。不要同时改变速率、路径或流数，也不要把未出现巨型报文当成 offload 一定未生效。</p>
+<div class="code cmd"><span class="code-tag">bash</span><pre><code># 32. 完成或异常中断后的统一清理；结果目录保留，可先复制到长期保存位置
+sudo bash 2026/experiments/03/overlay_down.sh
+sudo bash 2026/experiments/03/overlay_down.sh
+sudo bash 2026/experiments/03/topo.sh down
+sudo bash 2026/experiments/03/topo.sh down
+ip netns list
+</code></pre></div>
+</section><section class="module" id="m6"><header class="module-head"><div class="module-eyebrow"><span class="module-no">06</span><span class="tag">LAB 3</span></div><h2>故障排查</h2></header><div class="table-wrap"><table>
+<thead>
+<tr>
+<th style="text-align:left">现象</th>
+<th style="text-align:left">先查什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><code>topo.sh</code> 报 TODO 未完成</td>
+<td style="text-align:left">按注释完成学生代码；语法检查通过不等于拓扑正确</td>
+</tr>
+<tr>
+<td style="text-align:left">路由未就绪或单下一跳</td>
+<td style="text-align:left">路由日志、Lab 2 ECMP 与实际 FIB；可用 <code>up --reference</code> 分离问题</td>
+</tr>
+<tr>
+<td style="text-align:left">结果目录已存在</td>
+<td style="text-align:left">保存旧轮次，换 <code>RUN</code> 或轮次名；不覆盖失败记录</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>Address already in use</code></td>
+<td style="text-align:left">源端口是否仍在 TIME_WAIT；换新端口；服务端端口是否被其他进程占用</td>
+</tr>
+<tr>
+<td style="text-align:left">客户端 <code>Connection refused</code></td>
+<td style="text-align:left">服务端是否在正确的接收 namespace；核对 <code>ss -ltn</code> 和本轮 stderr</td>
+</tr>
+<tr>
+<td style="text-align:left">没有 <code>summary.json</code></td>
+<td style="text-align:left">本轮失败或中断；不能将残留客户端 JSON 当作完整对照</td>
+</tr>
+<tr>
+<td style="text-align:left">没有路径证据或存在多个出口</td>
+<td style="text-align:left"><code>--leaf</code>、五元组、VNI、路由变化和 <code>capture_stats</code> 丢失计数；不强行分类</td>
+</tr>
+<tr>
+<td style="text-align:left">overlay 重建 <code>File exists</code></td>
+<td style="text-align:left">先用 <code>overlay_down.sh</code> 清理本次登记的租户与 router 侧资源</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>ethtool</code> 失败</td>
+<td style="text-align:left">应为 <code>ip netns exec ... ethtool</code>；保留报错，查实际 <code>-k</code> 状态</td>
+</tr>
+<tr>
+<td style="text-align:left">正常传输已结束，手工 <code>wait</code> 不返回</td>
+<td style="text-align:left">不带 PID 的 <code>wait</code> 可能在等待抓包；只等待自己的客户端 PID</td>
+</tr>
+<tr>
+<td style="text-align:left">中断后路径或容量异常</td>
+<td style="text-align:left">重新 <code>topo.sh down</code>、<code>up</code>、<code>check</code>；overlay 重新搭建，结果保留</td>
+</tr>
+</tbody>
+</table></div>
+<p>辅助工具只结束自己创建的子进程；不要使用全局 <code>pkill -f tcpdump</code>。若要从某个中间任务继续，先确认上一任务的策略路由、<code>/32</code>、限速档位和 overlay 状态，不能只检查 ping 通不通。</p>
+</section><section class="module" id="m7"><header class="module-head"><div class="module-eyebrow"><span class="module-no">07</span><span class="tag">LAB 3</span></div><h2>思考题</h2></header><ol>
+<li><strong>1:1 为什么仍可能慢？</strong> 任务 3 的附加映射没有改变容量比，却让流共享接收侧出口。用链路负载下界解释，不把无量纲比值本身叫作吞吐上界。
+<em>思考提示：逐链路求数据量，再找最大的 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mn>8</mn><msub><mi>D</mi><mi>e</mi></msub><mo>&#x0002F;</mo><msub><mi>C</mi><mi>e</mi></msub></mrow></math></span>。</em></li>
+<li><strong>换端口为什么不保证换路？</strong> 比较哈希输入、有限数量的下一跳、内核已有流哈希与五元组。
+<em>思考提示：不同输入可以碰撞；新建连接与迁移已有连接不是同一件事。</em></li>
+<li><strong>多外层端口足以证明逐包分流吗？</strong> 列出需要排除的其他协议、其他连接、重传和路径变化。
+<em>思考提示：先定义目标流，再关联 VNI、内层五元组、时间和序号。</em></li>
+<li><strong>隔离与保证有什么不同？</strong> 给 A 保证带宽时，在哪里分类、预留或调度？只有限制 A 的最大发送速率，能否保证它的最小速率？
+<em>思考提示：限速、共享链路容量与最低保障不是同一概念。</em></li>
+<li><strong>哪些约定供 Lab 4–9 复用？</strong> 列出节点、接口、地址、限速档位与测量指标；为什么通信完成时间还不是完整 JCT？</li>
+<li><strong>为什么继续使用 lsrd？</strong> 区分教学复用与生产网络协议选择；不同控制协议能否安装相同的内核 multipath FIB？</li>
+</ol>
+</section><section class="module" id="m8"><header class="module-head"><div class="module-eyebrow"><span class="module-no">08</span><span class="tag">LAB 3</span></div><h2>提交要求</h2></header><div class="table-wrap"><table>
+<thead>
+<tr>
+<th style="text-align:left">层次</th>
+<th style="text-align:left">提交内容</th>
+<th style="text-align:left">分值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">基础任务 1–4，人人完成</td>
+<td style="text-align:left">完整 <code>topo.sh</code>；任务 1 检查点；自检与路由；任务 3 预测、两档结果、路径证据；任务 4 出口与跳数解释</td>
+<td style="text-align:left">60</td>
+</tr>
+<tr>
+<td style="text-align:left">进阶任务 5</td>
+<td style="text-align:left">探针记录、固定轮数的全部结果、同路／分路分类及证据边界；没有某类样本也可据实分析</td>
+<td style="text-align:left">15</td>
+</tr>
+<tr>
+<td style="text-align:left">进阶任务 6，选做</td>
+<td style="text-align:left">双向连通、同包内外层对照、隔离反例、三轮租户共享对照</td>
+<td style="text-align:left">10</td>
+</tr>
+<tr>
+<td style="text-align:left">挑战任务 7，选做</td>
+<td style="text-align:left">默认／窄范围／钉路的目标流分类表、实现边界</td>
+<td style="text-align:left">8</td>
+</tr>
+<tr>
+<td style="text-align:left">挑战任务 8，选做</td>
+<td style="text-align:left">MTU 账目、实际 TCP 选项与段长、五轮数据及近似模型分析</td>
+<td style="text-align:left">7</td>
+</tr>
+</tbody>
+</table></div>
+<p>基础报告建议 3–5 页，完成选做可增至 4–8 页；不要求为了页数重复截图。每项有预测、证据、解释：预测被支持或被推翻都正常，评分看证据是否充分。任务 6–8 是一条选做链，跳过不扣基础与任务 5 的得分，也不获得该链的 25 分。</p>
+<p>拓扑验收：<code>up</code> 成功返回后 <code>check</code> 全部通过；不超过约 30 秒应就绪，否则查日志；重复 <code>up/down</code> 不遗留资源，<code>rate</code> 两档确实可切换。默认启动入口等同 <code>up</code>。学生 <code>lsrd</code> 与拓扑 TODO 的正确性仍需自己完成并验证，不用参考实现代替提交。</p>
+<p>提交脚本与报告即可，报告附精简汇总表与关键输出；原始 pcap、JSON、stderr 在本机留存备查，不提交 <code>.venv/</code>、<code>__pycache__/</code>、完整抓包和日志。</p>
+<h3 id="m8-s1">维护与验证</h3>
+<p>本次修订日期：2026-10-05。教师验证使用 Ubuntu 24.04 / Linux <code>6.8.0-142-generic</code> ARM64、4 核 4 GB、Lab 2 独立参考路由实现。验证副本临时接入课堂脚本的拓扑实现，逐段运行本文命令；仓库中的学生拓扑 TODO 和 Lab 2 TODO 保持未完成状态。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th style="text-align:left">验证层次</th>
+<th style="text-align:left">本次结果与范围</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">离线检查</td>
+<td style="text-align:left">Bash 语法与 ShellCheck 通过；分类器 3 项测试通过，覆盖 VNI 区分、无关流排除、重传、截断文件与 IP 分片。</td>
+</tr>
+<tr>
+<td style="text-align:left">Linux 定量对照</td>
+<td style="text-align:left">任务 3 两档、任务 5 六轮、任务 6 三组交替对照、任务 7 三种配置各两轮、任务 8 五组交替对照，共 30 次测量完成且字节回执一致；抓包日志均为 0 丢弃。样例分别写在对应任务中。</td>
+</tr>
+<tr>
+<td style="text-align:left">Linux 观察与收尾</td>
+<td style="text-align:left">同／跨机架出口、TCP 与 UDP 探针、双租户往返连通、同包内外层对照、租户隔离、MTU 成败边界通过；超时和终止时只清理本轮进程；重复清理、重建与默认入口通过，最终无实验 namespace 遗留。原始学生骨架默认入口会如预期停在 TODO 提示并清理。</td>
+</tr>
+<tr>
+<td style="text-align:left">阅读版内容</td>
+<td style="text-align:left">Markdown 摘要、代码与输出逐字一致、图号、公式、唯一标识及本地链接通过静态核验；桌面、手机、深色与打印的实际显示尚待复核，本次浏览器访问受安全策略限制。</td>
+</tr>
+</tbody>
+</table></div>
+<p>这些结果只覆盖上述环境与参考拓扑，不代表所有学生 Linux 环境或学生实现均已验证。任务 3 的附加诊断映射、任务 8 的 offload 选读变体未纳入本轮复测。原始结果按 <code>measure.py</code> 的输出结构留存；学生应保存自己的数据，不以样例端口、路径比例或用时作为验收标准。</p>
+<p>测量分类器的离线检查入口：</p>
+<div class="code cmd"><span class="code-tag">bash</span><pre><code># 33. 维护者离线检查；不会创建网络资源，也不会要求学生补全这些测试
+uv run --project 2026/experiments/03 --frozen python -m unittest discover -s 2026/experiments/03/tests -v
+</code></pre></div>
+<p>HTML 阅读版的可复用生成入口与依赖见 <a href="../../tools/README.md">阅读版工具说明</a>。修改本文后应重建阅读版，不能只更新摘要值。</p>
 </section>
-<section class="module" id="m7"><header class="module-head"><div class="module-eyebrow"><span class="module-no">07</span><span class="tag">课堂实验</span></div><h2>提交要求与后续衔接</h2></header>
-<p>课堂提交一张“预测、证据、解释”记录表，至少包含一个反直觉现象。完整 Lab 3 的作业要求仍以<a class="xref" href="../README.md#lab-3%E6%90%AD%E4%B8%80%E4%B8%AA%E8%BF%B7%E4%BD%A0%E6%95%B0%E6%8D%AE%E4%B8%AD%E5%BF%83">实验设计总览</a>后续交付为准；本脚本的存在不代表 Lab 3 已完成。后续拓扑接口固化时继续复用 Lab 2 的路由守护进程。</p>
-</section>
-<footer class="colophon"><span>上海交通大学 ·《云网融合创新实践》Lab 3 课堂观察</span><span>由 <a href="README.md">2026/experiments/03/README.md</a> 生成 · sha256 e996399552 · 2026-10-04</span></footer></main></div><script>
+<footer class="colophon"><span>上海交通大学 · 云网融合创新实践 · Lab 3</span><span>由 <a href="README.md">README.md</a> 生成 · sha256 ab3627b30831 · 2026-10-06</span></footer></main></div><script>
 (function () {
   // 打印按钮
   document.querySelectorAll(".js-print").forEach(function (b) {

@@ -26,7 +26,7 @@
 | 03 | 动态路由协议：距离向量、链路状态、路径向量（RIP / OSPF / BGP） | [`docs/routing_protocol.md`](docs/routing_protocol.md) | [Lab 2](experiments/02/README.md) | 📝 |
 | 04 | 动手实现一个链路状态路由器：邻居发现、LSA 泛洪、SPF | [`docs/link_state_router.md`](docs/link_state_router.md) | [Lab 2](experiments/02/README.md) | 📝 |
 | **二、云数据中心网络** | | | | |
-| 05 | 数据中心网络：Clos / leaf-spine、ECMP、收敛比；overlay 与 VXLAN 多租户，容器网络与 SDN 一瞥 | [`docs/datacenter_network.md`](docs/datacenter_network.md) | [Lab 3 课堂观察](experiments/03/README.md) | 📝 |
+| 05 | 数据中心网络：Clos / leaf-spine、ECMP、收敛比；overlay 与 VXLAN 多租户，容器网络与 SDN 一瞥 | [`docs/datacenter_network.md`](docs/datacenter_network.md) | [Lab 3](experiments/03/README.md) | 📝 |
 | 06 | 网络性能测量与流量控制：带宽 / 延迟 / 抖动 / 丢包，`iperf3`、`tc` | — | Lab 4 | ⏳ |
 | **三、传输、时间与延迟** | | | | |
 | 07 | 传输层与拥塞控制：CUBIC / BBR / DCTCP，incast 问题 | — | Lab 5 | ⏳ |
@@ -50,7 +50,7 @@
 | 01 | [第一讲回顾](docs/network_review.md) | 围绕实验输出复习，供学生自查与课堂讨论 |
 | 01 | [回顾参考答案](docs/network_review_answers.md) | 配合回顾讲义讲评 |
 
-前五讲、上述补充资料与 Lab 1、Lab 2、Lab 3 课堂观察指导书均有同目录、同名的 `.html` 阅读版。编写时以 `.md` 为源文件，修改后应同步检查对应阅读版。第 05 讲仍为讲义草稿；Lab 3 课堂观察与拓扑原型已在备课沙箱中使用参考路由实现验证，完整分层作业、验收与下游接口仍待完善。
+前五讲、上述补充资料与 Lab 1、Lab 2、Lab 3 指导书均有同目录、同名的 `.html` 阅读版。编写时以 `.md` 为源文件，修改后应同步检查对应阅读版。第 05 讲仍为讲义草稿；Lab 3 已交付修订指导书、学生拓扑骨架、测量助手与清理工具；2026-10-05 已按修订命令在备课沙箱中验证主要对照，具体范围见 [Lab 3 维护与验证](experiments/03/README.md#维护与验证)。学生 TODO 保持留白，学生实现仍须独立验收。
 
 ### 可参考的 2025 材料
 
@@ -76,7 +76,7 @@
 4. **核验并更新索引**：检查本地链接、脚本语法、阅读版和对应实验；同步更新本页与实验总览的状态。文件存在不等于实验已经验证通过。
 5. **在沙箱中实机验证**：教师与 AI 助手使用 [`environment/`](environment/README.md) 中的 Linux 沙箱运行拓扑和真实流量，记录实际环境与验证范围。学生自行准备 Ubuntu，讲义和实验指导书以学生的独立 Ubuntu 环境为基准。
 
-Python 环境按实验分别管理。目前 Lab 2 与 Lab 3 课堂观察使用 Python 3.12、只依赖标准库，可以在 macOS 上做离线准备；拓扑、真实流量和路由安装必须在 Linux 上验证。以下命令均从仓库根目录执行：
+Python 环境按实验分别管理。目前 Lab 2 与 Lab 3 使用 Python 3.12、只依赖标准库，可以在 macOS 上做离线准备；拓扑、真实流量和路由安装必须在 Linux 上验证。以下命令均从仓库根目录执行：
 
 ```bash
 # 1. 按各自锁文件初始化 Lab 2 与 Lab 3 的独立 Python 环境

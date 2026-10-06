@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="generator" content="由 2026/docs/datacenter_network.md 生成（sha256 265009350ed39fd0c85aa1a9b4174778c1bc2f9a4be6e68814434d8394abffaf）；版式参考 2026/docs/link_state_router.html；请改 Markdown 源文件后重新生成">
+<meta name="generator" content="由 2026/docs/datacenter_network.md 生成（sha256 ba94e5ee17ee3c17390b64703f8175fdad90c1577c23836d40e7adb664e7102e）；版式参考 2026/docs/link_state_router.html；请改 Markdown 源文件后重新生成">
 <title>第05讲 数据中心网络：拓扑、多路径与虚拟网络</title>
 <style>
 /* ==========================================================================
@@ -471,7 +471,7 @@ svg .t-warn { fill: var(--warn); }
 <main class="doc" id="top">
 <header class="masthead"><div class="mast-eyebrow"><span>上海交通大学 · 云网融合创新实践</span><span class="lec">2026 · LECTURE 05 · 讲义</span></div><h1>数据中心网络：<br>拓扑、多路径与虚拟网络</h1><p class="mast-sub">Data Center Networks: Clos, ECMP &amp; VXLAN</p><div class="pathstrip"><svg viewBox="0 0 300 40" role="img" aria-label="两个 leaf 通过两个 spine 互联，机架内有二层 bridge"><line x1="80" y1="28" x2="140" y2="10" class="wire"/><line x1="80" y1="28" x2="205" y2="10" class="wire"/><line x1="260" y1="28" x2="140" y2="10" class="wire"/><line x1="260" y1="28" x2="205" y2="10" class="wire"/><line x1="9" y1="28" x2="80" y2="28" class="wire"/><line x1="260" y1="28" x2="291" y2="28" class="wire"/><rect x="2" y="21" width="14" height="14" rx="2" class="n-host"/><rect x="37" y="20" width="26" height="16" rx="3" class="n-l2"/><circle cx="80" cy="28" r="10" class="n-l3"/><circle cx="140" cy="10" r="9" class="n-l3"/><circle cx="205" cy="10" r="9" class="n-l3"/><circle cx="260" cy="28" r="10" class="n-l3"/><rect x="284" y="21" width="14" height="14" rx="2" class="n-host"/></svg><div class="legend"><span><i class="k-l2"></i>二层 · 交换与虚拟网络</span><span><i class="k-l3"></i>三层 · 路由与多路径</span><span><i class="k-l4"></i>四层 · 端口与封装</span></div></div><div class="lead"><span class="lead-label">课程导读</span><p>上一讲，我们让路由器把地图变成下一跳。本讲把三台路由器扩展成一座迷你数据中心：用 leaf-spine 拓扑提供多条路径，用 ECMP 分担流量，再用 overlay 为租户呈现各自的虚拟网络。贯穿全讲的问题是：<strong>两台主机能互通之后，网络还能为计算提供多少能力？</strong> 学完后，你应能从拓扑、路由表和抓包结果解释“路很多，作业却仍然很慢”的原因。</p></div></header>
 <aside class="callout note long"><div class="callout-label">NOTE<span>课堂安排与准备</span></div><p>本讲对应 <a class="xref" href="../README.md">课程大纲</a>第 05 讲和 <a class="xref" href="../experiments/README.md#lab-3%E6%90%AD%E4%B8%80%E4%B8%AA%E8%BF%B7%E4%BD%A0%E6%95%B0%E6%8D%AE%E4%B8%AD%E5%BF%83">Lab 3 设计</a>。第 05 讲由原来的两讲合并而来，按 <strong>90 分钟有效授课时间</strong>设计；两节 50 分钟的课可把其余时间用于休息和讨论。Clos、ECMP、收敛比为基础要求；VXLAN 的封装原理要求看懂，多租户搭建为进阶任务；容器网络与 SDN 只建立概念联系。</p>
-<p><strong>材料状态</strong>：讲义草稿，已配套<a class="xref" href="../experiments/03/README.html">课堂观察脚本</a>，共用一张真实 leaf-spine 实验床。本文的命令与六组脚本观察已在 Ubuntu 24.04、Linux <code>6.8.0-142-generic</code> ARM64、4 核／4 GB 的备课沙箱中使用 Lab 2 参考实现复核（2026-10-04）。标为“实测样例”的输出来自该环境；为便于阅读可省略无关字段，端口、路径分布和用时以自己的测量为准。算例另标为教学设定或理论下界。完整 Lab 3 的分层作业、验收与后续接口仍待完善。</p>
+<p><strong>材料状态</strong>：讲义草稿，已配套<a class="xref" href="../experiments/03/README.html">课堂观察脚本</a>，共用一张真实 leaf-spine 实验床。本文的命令与六组脚本观察已在 Ubuntu 24.04、Linux <code>6.8.0-142-generic</code> ARM64、4 核／4 GB 的备课沙箱中使用 Lab 2 参考实现复核（2026-10-04）。标为“实测样例”的输出来自该环境；为便于阅读可省略无关字段，端口、路径分布和用时以自己的测量为准。算例另标为教学设定或理论下界。Lab 3 的分层作业、测量助手与验收现已补齐；修订后命令的验证范围见配套指导书“维护与验证”。</p>
 <p><strong>课堂组织</strong>：前五个模块讲原理，每次短观察只解决一个问题：用什么工具、看哪些字段、这些数据支持什么判断。模块六再做一次完整的“预测、测量、解释”：在同一实验床上，让学生诊断两种“传得慢”的原因。课前搭建一次，课堂连续使用，模块六结束后统一清理。基础跟做不要求当场重写拓扑、路由器或 VXLAN 配置；这些工作留到 Lab 3 分层完成。</p></aside>
 <section class="plain-sec goals" id="objectives"><h2>学习目标</h2><ol>
 <li>画出 2 spine × 4 leaf × 8 host 的拓扑，追踪同机架与跨机架报文，说明二层网桥和三层路由各自的范围。</li>
@@ -790,6 +790,7 @@ svg .t-warn { fill: var(--warn); }
 </tr>
 </tbody></table></div>
 <p>字段与默认值参见 <a class="ext" href="https://docs.kernel.org/networking/ip-sysctl.html">Linux IP sysctl 文档</a>。表中的默认值是文档值，实际系统可能已被配置工具改过。</p>
+<p><strong>实验边界</strong>：本课的 Linux namespace 通过 veth 直连，报文可能携带内核已有的流哈希；相同五元组的新 TCP 连接可能选到不同上联。不要把这个单机现象直接推广到物理交换机，也不要把“改变端口有机会换路”写成“必定换路”。Lab 3 以当轮连接的抓包分类，并用数据出口检查 SYN 是否代表整段传输；具体内核实现作为选读。</p>
 <h3 id="s3-3"><span class="sec-no">3.3</span>一条 TCP 连接能否同时吃满两条路</h3>
 <p>在本讲采用的常规按流 ECMP 中，一条 TCP 连接只选一个下一跳。如果路径各有 100 Mbit/s，一条连接不能仅凭“两条路存在”就获得 200 Mbit/s。多条连接可能分到不同路上，但也可能发生碰撞。</p>
 <p>按包轮流分配是另一类方案，需要处理乱序等代价。本讲不展开 flowlet、自适应负载均衡或多路径传输协议；不能据此把所有多路径机制都归为按流 ECMP。</p>
@@ -1198,7 +1199,7 @@ svg .t-warn { fill: var(--warn); }
 <tr>
 <td>进阶</td>
 <td>能区分自然 ECMP 与实验中的固定分路</td>
-<td>在自然 ECMP 下改变端口，找到同路与分路组合，比较相同数据量的完成时间；有余力再搭双租户 VXLAN</td>
+<td>自然 ECMP 下固定轮数采样，按实际路径分类并比较相同数据量的完成时间，某类未出现时据实说明；有余力再搭双租户 VXLAN</td>
 </tr>
 <tr>
 <td>挑战</td>
@@ -1206,7 +1207,7 @@ svg .t-warn { fill: var(--warn); }
 <td>研究封装后的实际分流与 MTU／吞吐开销，说明 offload 和 CPU 的影响</td>
 </tr>
 </tbody></table></div>
-<p>开始 Lab 3 时，先复现一次基础对照，确认拓扑、路由、测量都能对上；再一次只改一个因素。最终稳定节点名、接口名和地址约定，才能让 Lab 4 生成网络画像、Lab 7–9 在同一 host namespace 中运行计算作业。完整分层作业、验收与下游接口仍待完善，不把课堂观察通过当作全部 Lab 3 已完成。</p>
+<p>开始 Lab 3 时，先复现一次基础对照，确认拓扑、路由、测量都能对上；再一次只改一个因素。最终稳定节点名、接口名和地址约定，才能让 Lab 4 生成网络画像、Lab 7–9 在同一 host namespace 中运行计算作业。Lab 3 已提供学生拓扑骨架、定量测量与清理工具；接口与验收见指导书。课堂观察通过不替代学生拓扑、路由实现与选做任务的独立验证。</p>
 <h3 id="s6-7"><span class="sec-no">6.7</span>恢复与清理（3 分钟）</h3>
 <p><code>matrix</code>、<code>capacity</code> 正常结束会删除临时分路策略；<code>capacity</code> 结束时上联仍为 50 Mbit/s。先确认回到自然选路、恢复课堂基线，再清理资源：</p>
 <div class="code cmd"><span class="code-tag">bash</span><pre><code><span class="ln"><span class="c step"><span class="step-n"># 1.</span> 确认没有 priority 105 / 106 的临时策略</span></span><span class="ln"><span class="su">sudo</span> ip -n <span class="ns">r1</span> rule show</span><span class="ln"></span><span class="ln"><span class="c step"><span class="step-n"># 2.</span> 恢复容量基线，便于理解配置的生命周期</span></span><span class="ln"><span class="su">sudo</span> bash 2026/experiments/03/classroom.sh rate 100</span><span class="ln"></span><span class="ln"><span class="c step"><span class="step-n"># 3.</span> 结束路由器、业务与抓包进程，并删除脚本登记的拓扑和 overlay</span></span><span class="ln"><span class="su">sudo</span> bash 2026/experiments/03/classroom.sh down</span><span class="ln"></span><span class="ln"><span class="c step"><span class="step-n"># 4.</span> 重复清理应成功；确认课堂 namespace 没有残留</span></span><span class="ln"><span class="su">sudo</span> bash 2026/experiments/03/classroom.sh down</span><span class="ln">ip netns list</span></code></pre></div>
@@ -1293,13 +1294,13 @@ svg .t-warn { fill: var(--warn); }
 <h3 id="s7-4"><span class="sec-no">7.4</span>后续衔接实验</h3>
 <ul>
 <li>上游：<a class="xref" href="../experiments/02/README.html">Lab 2 指导书</a>的 R7、R8 与 ECMP 进阶任务；<a class="xref" href="link_state_router.html">第 04 讲</a>的首跳集合与路由安装。</li>
-<li>本讲：<a class="xref" href="../experiments/03/README.html">Lab 3 课堂观察</a>，从三角形长成 leaf-spine；完整分层作业与下游接口仍按 <a class="xref" href="../experiments/README.md#lab-3%E6%90%AD%E4%B8%80%E4%B8%AA%E8%BF%B7%E4%BD%A0%E6%95%B0%E6%8D%AE%E4%B8%AD%E5%BF%83">Lab 3 设计</a>完善。</li>
+<li>本讲：<a class="xref" href="../experiments/03/README.html">Lab 3 课堂观察</a>，从三角形长成 leaf-spine；分层作业、测量口径与下游接口见 <a class="xref" href="../experiments/README.md#lab-3%E6%90%AD%E4%B8%80%E4%B8%AA%E8%BF%B7%E4%BD%A0%E6%95%B0%E6%8D%AE%E4%B8%AD%E5%BF%83">Lab 3 设计</a>。</li>
 <li>下一讲：<a class="xref" href="../experiments/README.md#lab-4%E7%BB%99%E7%BD%91%E7%BB%9C%E5%81%9A%E4%BD%93%E6%A3%80">Lab 4 设计</a>，把连通性、吞吐和延迟变成可比较的网络画像。</li>
 <li>后半程：<a class="xref" href="../experiments/README.md">Lab 7–9 与综合项目</a>，用同一实验床解释通信代价，并把拓扑、路径和共享容量纳入计算决策。</li>
 </ul>
 <p>去年 <a class="xref" href="../../2025/docs/network_impact_distributed_frameworks.md#4-%E7%BD%91%E7%BB%9C%E6%8B%93%E6%89%91%E5%AF%B9%E5%88%86%E5%B8%83%E5%BC%8F%E6%A1%86%E6%9E%B6%E7%9A%84%E5%BD%B1%E5%93%8D">分布式框架讲义</a>中讨论了拓扑与通信代价，可作为后续学习参考；本讲的 2×4×8 拓扑、容量算例和任务分层按 2026 课程规划设计。</p>
 </section>
-<footer class="colophon"><span>上海交通大学 ·《云网融合创新实践》第 05 讲</span><span>由 <a href="datacenter_network.md">2026/docs/datacenter_network.md</a> 生成 · sha256 265009350e · 2026-10-04</span></footer>
+<footer class="colophon"><span>上海交通大学 ·《云网融合创新实践》第 05 讲</span><span>由 <a href="datacenter_network.md">2026/docs/datacenter_network.md</a> 生成 · sha256 ba94e5ee17 · 2026-10-05</span></footer>
 </main></div><script>
 (function () {
   // 打印按钮
