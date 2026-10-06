@@ -88,7 +88,7 @@
 
 ### 3.5 HTML 阅读版的制作方法
 
-详细版式与检查规范见 [`agend.md`](agend.md)。每次制作遵循以下顺序：
+详细版式与检查规范见 [`html_guidelines.md`](html_guidelines.md)。每次制作遵循以下顺序：
 
 1. **先定源文，再生成阅读版**：以同名 Markdown 为唯一内容源；正文、输出、公式、表格和图注先改 Markdown，HTML 不另增一套教学事实。
 2. **复用现有模板**：以 `link_state_router.html` 的公共 CSS、字体、目录行为、代码块和打印样式为基准；从本讲标题与小节生成目录，更新讲次、路线、页眉页脚。不要套用一套无关的通用网页风格。
@@ -154,12 +154,12 @@ AI 助手若无法在 Linux 上实际运行脚本，应至少完成 `bash -n` / 
 | 动态路由与路由器实现 | `2026/docs/routing_protocol.md`、`link_state_router.md`；配套 `2026/experiments/02/README.md` 的 LSR-lite v1 规则 R1–R9 |
 | 复习与讲评 | `2026/docs/network_review.md`、`network_review_answers.md` |
 | 讲义组织、实验数据带读与场景对照 | 本文件第 3 节；`2026/docs/datacenter_network.md` 的短观察和模块六 |
-| HTML 阅读版制作与验收 | `agend.md`；公共样式参考 `2026/docs/link_state_router.html`，配图参考 `datacenter_network.html` |
+| HTML 阅读版制作与验收 | `html_guidelines.md`；公共样式参考 `2026/docs/link_state_router.html`，配图参考 `datacenter_network.html` |
 | 拓扑扩展与后续实验 | `2026/experiments/01/ns_topo.sh` → `02/topo.sh` → 实验总览中的 Lab 3–9 依赖关系 |
 
 - **先检查工作区**：开始任务时查看 `git status`，保留已有未提交修改与未跟踪资料，仅改动当前任务所需内容。
 - **备课与验证沙箱**：`2026/environment/` 中的 Lima / Docker 环境仅供教师与 AI 助手设计讲义、开发实验及进行 Linux 实机验证。Linux 实机验证优先复用当前 Lima 实例 `innovation-ii`，VM 内工作副本为 `/workspace`，使用方式见 [`environment/lima.md`](2026/environment/lima.md)。学生自行准备 Ubuntu 环境；学生讲义与实验指导书使用标准 Ubuntu 工具和命令，不把本机 Lima / Docker 沙箱入口作为前置要求。验证时记录实际内核、资源与验证范围，不将沙箱中的通过结果视为所有学生环境均已验证。
 - **保留教学留白**：Lab 2 的 `neighbor.py`、`lsdb.py`、`spf.py`、`sysnet.py` 中有学生 TODO；初始离线测试为 5 项通过、9 项失败、3 项错误。维护或初始化不能把这些失败当成普通缺陷自动补全；只有明确要求实现或制作参考答案时才处理。
 - **保持阅读版一致**：现有讲义与实验指导书有同名 `.html` 阅读版。修改时以 `.md` 为源文件，同时检查阅读版；仓库目前未提供统一生成脚本，不要假定一个不存在的转换命令。
-- **HTML 生成规范**：新增或修改 HTML 阅读版前，阅读 [`agend.md`](agend.md)，按其中的模板复用、SVG 配图、离线阅读、响应式与打印要求制作，并完成交付检查。
+- **HTML 生成规范**：新增或修改 HTML 阅读版前，阅读 [`html_guidelines.md`](html_guidelines.md)，按其中的模板复用、SVG 配图、离线阅读、响应式与打印要求制作，并完成交付检查。
 - **区分验证层次**：macOS 可编辑资料、做语法检查和 Lab 2 离线测试；namespace、`tc` 与路由安装须在 Linux 上验证。报告应分别说明文件准备、离线检查和实机验证结果。
