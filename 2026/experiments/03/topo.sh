@@ -186,7 +186,7 @@ up() {
   down
   for ns in "${L3_ROUTERS[@]}" "${L3_HOSTS[@]}"; do
     if [[ -e "/run/netns/$ns" ]]; then
-      echo "$ns 已被其他实验使用。请先完成并清理 Lab 1/2。" >&2; exit 1
+      echo "$ns 已存在：先执行 classroom.sh down 清理课堂拓扑，或按 Lab 1/2 指导书清理。" >&2; exit 1
     fi
   done
   mkdir -p "$L3_STATE" "$L3_RESULTS"
@@ -216,12 +216,14 @@ up() {
 check() {
   # TODO 3　连通性自检。ready 只断言了控制平面，这里验证数据平面。
   #
-  # 至少覆盖三组检查；任何一处不通就以非零退出（脚本头部的 set -e 会帮你）：
+  # 至少覆盖四组检查；任何一处不通就以非零退出（脚本头部的 set -e 会帮你）：
   #   1) 8 条上联：每条链路两端互 ping 对方直连地址（r1 ping 10.1.0.2、r5 ping 10.1.0.1，…）
   #   2) 8 台 host：各自 ping 自己的网关 10.0.{rack}.1
   #   3) 跨机架往返：h1a → 10.0.3.11、h3a → 10.0.1.11、h4b → 10.0.2.12
-  # 全部通过后打印（保持这行文字，便于对照验收）：
+  #   4) 每个 leaf 去往其他 3 个机架前缀的路由都有两个下一跳（共 12 条；ready 只查了 r1 → 10.0.3.0/24）
+  # 全部通过后打印（保持这两行文字，便于对照验收）：
   #   [OK] 8 条上联往返、8 台 host 网关可达、跨机架往返。
+  #   [OK] 4 个 leaf 去往其他 3 个机架的 12 条路由均有两个下一跳。
   # 再打印 r1 去往 10.0.3.0/24 的路由——应有 proto 200 的两个下一跳。
   ready || { echo 'ready 断言未通过：先看 /tmp/lab03-results/r*.log 与 topo.sh show。' >&2; return 1; }
   todo_missing 'TODO 3（check：连通性自检）'
