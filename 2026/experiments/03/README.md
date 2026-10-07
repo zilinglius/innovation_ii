@@ -109,12 +109,12 @@ uv sync --project 2026/experiments/03 --frozen
 
 | 观察 | 命令（课堂脚本） | 现象一句话 | 讲义 |
 | :--- | :--- | :--- | :--- |
-| locality | `classroom.sh locality` | 同机架帧从网桥端口出，跨机架帧走上联；traceroute 4 跳 | 2.5 节 |
-| ecmp | `classroom.sh ecmp` | 单流被钉在一条 50 Mbit 上联，8 流聚合翻倍，但不保证 4:4 | 模块三 |
-| matrix | `classroom.sh matrix` | 总量相同，接收端集中后受 100 Mbit 接入口限制 | 模块四 |
-| capacity | `classroom.sh capacity` | 上联 200→100 Mbit/s，完成时间约增至两倍 | 模块四 |
-| vxlan | `classroom.sh vxlan` | 同 VNI 往返、异 VNI 隔离（相同 IP 互不干扰） | 模块五 |
-| mtu | `classroom.sh mtu` | 内层 1422 B 可发，1423 B 被源租户接口拒绝 | 模块五 |
+| locality | `classroom.sh locality` | 同机架帧从网桥端口出，跨机架帧走上联；traceroute 通常四行，含目的 host | 2.5 节 |
+| ecmp | `classroom.sh ecmp` | 自然 ECMP 下单流受一条 50 Mbit/s 上联限制；样例八流接收吞吐接近翻倍，不保证流数或吞吐均分 | 3.5 节 |
+| matrix | `classroom.sh matrix` | 两流共 60 MB、固定分路；集中接收时共享 100 Mbit/s 接入口，比较共同窗口 | 6.3 节 |
+| capacity | `classroom.sh capacity` | 两流共 60 MB、固定分路；全部 fabric 链路双向从 100 降至 50 Mbit/s，样例共同窗口约翻倍 | 6.4 节 |
+| vxlan | `classroom.sh vxlan` | 同 VNI 往返、关闭 A 接收端后 B 不替 A 响应；同包内外层关联支持封装解释 | 5.7 节 |
+| mtu | `classroom.sh mtu` | ICMP 数据 1422 B 对应内层 IPv4 包 1450 B；数据增至 1423 B 时被源接口拒绝 | 5.8 节 |
 
 > [!NOTE]
 > `classroom.sh down` 只清理课堂脚本自己登记的资源。课堂的参考数据同样来自备课沙箱（见讲义"材料状态"），你在自己的实验床上测到的分布可能与它不同——先解释，再决定是否重跑。
@@ -358,7 +358,7 @@ sudo ip netns exec r1 timeout 20 tcpdump -n -l -S -i any -Q out \
 ```
 
 ```bash
-# 14. 终端 2：新五元组的十次建连尝试；不设服务端，预期 Connection refused
+# 14. 终端 2：同一五元组的十次新建连尝试；不设服务端，预期 Connection refused
 for i in $(seq 1 10); do
   sudo ip netns exec h1a python3 - <<'PY'
 import socket
@@ -802,7 +802,7 @@ ip netns list
 
 ### 维护与验证
 
-本次修订日期：2026-10-05。教师验证使用 Ubuntu 24.04 / Linux `6.8.0-142-generic` ARM64、4 核 4 GB、Lab 2 独立参考路由实现。验证副本临时接入课堂脚本的拓扑实现，逐段运行本文命令；仓库中的学生拓扑 TODO 和 Lab 2 TODO 保持未完成状态。
+以下为 2026-10-05 的实验修订与验证记录。教师验证使用 Ubuntu 24.04 / Linux `6.8.0-142-generic` ARM64、4 核 4 GB、Lab 2 独立参考路由实现。验证副本临时接入课堂脚本的拓扑实现，逐段运行本文命令；仓库中的学生拓扑 TODO 和 Lab 2 TODO 保持未完成状态。
 
 | 验证层次 | 本次结果与范围 |
 | :--- | :--- |
@@ -812,6 +812,8 @@ ip netns list
 | 阅读版内容 | Markdown 摘要、代码与输出逐字一致、图号、公式、唯一标识及本地链接通过静态核验；桌面、手机、深色与打印的实际显示尚待复核，本次浏览器访问受安全策略限制。 |
 
 这些结果只覆盖上述环境与参考拓扑，不代表所有学生 Linux 环境或学生实现均已验证。任务 3 的附加诊断映射、任务 8 的 offload 选读变体未纳入本轮复测。原始结果按 `measure.py` 的输出结构留存；学生应保存自己的数据，不以样例端口、路径比例或用时作为验收标准。
+
+2026-10-07 随第 05 讲定稿修正六组课堂观察速查表与 TCP 探针注释，未改实验命令或条件。阅读版已重建，静态核验与分类器 3 项测试通过；本次修改区域的桌面、390 px 手机、浅色／深色及打印样式已查看，未重做全篇显示验收或 PDF 分页检查，未重跑 Linux 实验。
 
 测量分类器的离线检查入口：
 

@@ -1,5 +1,5 @@
 <!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="generator" content="2026/tools/build_lab3_html.py；源文 sha256 ab3627b30831c1a5bc881fc0256077c6986872384b7851e1bbd06ff6c568e857；更新 2026-10-06">
+<meta name="generator" content="2026/tools/build_lab3_html.py；源文 sha256 54c9f7526247ea99ed3aa583456632ef61226cb1ed64f897b34b53d69aba7bdc；更新 2026-10-07">
 <title>Lab 3 · 搭一个迷你数据中心</title><style>
 /* ==========================================================================
    云网融合创新实践 · 讲义样式
@@ -655,38 +655,38 @@ uv sync --project 2026/experiments/03 --frozen
 <tr>
 <td style="text-align:left">locality</td>
 <td style="text-align:left"><code>classroom.sh locality</code></td>
-<td style="text-align:left">同机架帧从网桥端口出，跨机架帧走上联；traceroute 4 跳</td>
+<td style="text-align:left">同机架帧从网桥端口出，跨机架帧走上联；traceroute 通常四行，含目的 host</td>
 <td style="text-align:left">2.5 节</td>
 </tr>
 <tr>
 <td style="text-align:left">ecmp</td>
 <td style="text-align:left"><code>classroom.sh ecmp</code></td>
-<td style="text-align:left">单流被钉在一条 50 Mbit 上联，8 流聚合翻倍，但不保证 4:4</td>
-<td style="text-align:left">模块三</td>
+<td style="text-align:left">自然 ECMP 下单流受一条 50 Mbit/s 上联限制；样例八流接收吞吐接近翻倍，不保证流数或吞吐均分</td>
+<td style="text-align:left">3.5 节</td>
 </tr>
 <tr>
 <td style="text-align:left">matrix</td>
 <td style="text-align:left"><code>classroom.sh matrix</code></td>
-<td style="text-align:left">总量相同，接收端集中后受 100 Mbit 接入口限制</td>
-<td style="text-align:left">模块四</td>
+<td style="text-align:left">两流共 60 MB、固定分路；集中接收时共享 100 Mbit/s 接入口，比较共同窗口</td>
+<td style="text-align:left">6.3 节</td>
 </tr>
 <tr>
 <td style="text-align:left">capacity</td>
 <td style="text-align:left"><code>classroom.sh capacity</code></td>
-<td style="text-align:left">上联 200→100 Mbit/s，完成时间约增至两倍</td>
-<td style="text-align:left">模块四</td>
+<td style="text-align:left">两流共 60 MB、固定分路；全部 fabric 链路双向从 100 降至 50 Mbit/s，样例共同窗口约翻倍</td>
+<td style="text-align:left">6.4 节</td>
 </tr>
 <tr>
 <td style="text-align:left">vxlan</td>
 <td style="text-align:left"><code>classroom.sh vxlan</code></td>
-<td style="text-align:left">同 VNI 往返、异 VNI 隔离（相同 IP 互不干扰）</td>
-<td style="text-align:left">模块五</td>
+<td style="text-align:left">同 VNI 往返、关闭 A 接收端后 B 不替 A 响应；同包内外层关联支持封装解释</td>
+<td style="text-align:left">5.7 节</td>
 </tr>
 <tr>
 <td style="text-align:left">mtu</td>
 <td style="text-align:left"><code>classroom.sh mtu</code></td>
-<td style="text-align:left">内层 1422 B 可发，1423 B 被源租户接口拒绝</td>
-<td style="text-align:left">模块五</td>
+<td style="text-align:left">ICMP 数据 1422 B 对应内层 IPv4 包 1450 B；数据增至 1423 B 时被源接口拒绝</td>
+<td style="text-align:left">5.8 节</td>
 </tr>
 </tbody>
 </table></div>
@@ -887,7 +887,7 @@ sudo ip netns exec h1a traceroute -n -I -q 1 -w 1 10.0.3.11
 sudo ip netns exec r1 timeout 20 tcpdump -n -l -S -i any -Q out \
   &#x27;tcp dst port 5299 and tcp[13] &amp; 0x12 = 0x02&#x27;
 </code></pre></div>
-<div class="code cmd"><span class="code-tag">bash</span><pre><code># 14. 终端 2：新五元组的十次建连尝试；不设服务端，预期 Connection refused
+<div class="code cmd"><span class="code-tag">bash</span><pre><code># 14. 终端 2：同一五元组的十次新建连尝试；不设服务端，预期 Connection refused
 for i in $(seq 1 10); do
   sudo ip netns exec h1a python3 - &lt;&lt;&#x27;PY&#x27;
 import socket
@@ -1332,7 +1332,7 @@ ip netns list
 <p>拓扑验收：<code>up</code> 成功返回后 <code>check</code> 全部通过；不超过约 30 秒应就绪，否则查日志；重复 <code>up/down</code> 不遗留资源，<code>rate</code> 两档确实可切换。默认启动入口等同 <code>up</code>。学生 <code>lsrd</code> 与拓扑 TODO 的正确性仍需自己完成并验证，不用参考实现代替提交。</p>
 <p>提交脚本与报告即可，报告附精简汇总表与关键输出；原始 pcap、JSON、stderr 在本机留存备查，不提交 <code>.venv/</code>、<code>__pycache__/</code>、完整抓包和日志。</p>
 <h3 id="m8-s1">维护与验证</h3>
-<p>本次修订日期：2026-10-05。教师验证使用 Ubuntu 24.04 / Linux <code>6.8.0-142-generic</code> ARM64、4 核 4 GB、Lab 2 独立参考路由实现。验证副本临时接入课堂脚本的拓扑实现，逐段运行本文命令；仓库中的学生拓扑 TODO 和 Lab 2 TODO 保持未完成状态。</p>
+<p>以下为 2026-10-05 的实验修订与验证记录。教师验证使用 Ubuntu 24.04 / Linux <code>6.8.0-142-generic</code> ARM64、4 核 4 GB、Lab 2 独立参考路由实现。验证副本临时接入课堂脚本的拓扑实现，逐段运行本文命令；仓库中的学生拓扑 TODO 和 Lab 2 TODO 保持未完成状态。</p>
 <div class="table-wrap"><table>
 <thead>
 <tr>
@@ -1360,13 +1360,14 @@ ip netns list
 </tbody>
 </table></div>
 <p>这些结果只覆盖上述环境与参考拓扑，不代表所有学生 Linux 环境或学生实现均已验证。任务 3 的附加诊断映射、任务 8 的 offload 选读变体未纳入本轮复测。原始结果按 <code>measure.py</code> 的输出结构留存；学生应保存自己的数据，不以样例端口、路径比例或用时作为验收标准。</p>
+<p>2026-10-07 随第 05 讲定稿修正六组课堂观察速查表与 TCP 探针注释，未改实验命令或条件。阅读版已重建，静态核验与分类器 3 项测试通过；本次修改区域的桌面、390 px 手机、浅色／深色及打印样式已查看，未重做全篇显示验收或 PDF 分页检查，未重跑 Linux 实验。</p>
 <p>测量分类器的离线检查入口：</p>
 <div class="code cmd"><span class="code-tag">bash</span><pre><code># 33. 维护者离线检查；不会创建网络资源，也不会要求学生补全这些测试
 uv run --project 2026/experiments/03 --frozen python -m unittest discover -s 2026/experiments/03/tests -v
 </code></pre></div>
 <p>HTML 阅读版的可复用生成入口与依赖见 <a href="../../tools/README.md">阅读版工具说明</a>。修改本文后应重建阅读版，不能只更新摘要值。</p>
 </section>
-<footer class="colophon"><span>上海交通大学 · 云网融合创新实践 · Lab 3</span><span>由 <a href="README.md">README.md</a> 生成 · sha256 ab3627b30831 · 2026-10-06</span></footer></main></div><script>
+<footer class="colophon"><span>上海交通大学 · 云网融合创新实践 · Lab 3</span><span>由 <a href="README.md">README.md</a> 生成 · sha256 54c9f7526247 · 2026-10-07</span></footer></main></div><script>
 (function () {
   // 打印按钮
   document.querySelectorAll(".js-print").forEach(function (b) {
