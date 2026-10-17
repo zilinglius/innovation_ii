@@ -27,7 +27,7 @@
 | 04 | 动手实现一个链路状态路由器：邻居发现、LSA 泛洪、SPF | [`docs/link_state_router.md`](docs/link_state_router.md) | [Lab 2](experiments/02/README.md) | 📝 |
 | **二、云数据中心网络** | | | | |
 | 05 | 数据中心网络：Clos / leaf-spine、ECMP、收敛比；overlay 与 VXLAN 多租户，容器网络与 SDN 一瞥 | [`docs/datacenter_network.md`](docs/datacenter_network.md) | [Lab 3](experiments/03/README.md) | ✅ |
-| 06 | 网络性能测量与流量控制：带宽 / 延迟 / 抖动 / 丢包，`iperf3`、`tc` | — | Lab 4 | ⏳ |
+| 06 | 网络性能测量与流量控制：带宽 / 延迟 / 抖动 / 丢包，`iperf3`、`tc` | [`docs/network_measurement.md`](docs/network_measurement.md) | [Lab 4](experiments/04/README.md) | ✅ |
 | **三、传输、时间与延迟** | | | | |
 | 07 | 传输层与拥塞控制：CUBIC / BBR / DCTCP，incast 问题 | — | Lab 5 | ⏳ |
 | 08 | 发送节奏与报文时间戳：pacing、`SO_TXTIME`、ETF qdisc | — | Lab 5 | ⏳ |
@@ -54,7 +54,7 @@
 | 03 | [第三讲回顾](docs/routing_protocol_review.md)（[HTML 阅读版](docs/routing_protocol_review.html)） | 36 道分层题、约 40 分钟课堂路线，9 幅图串起距离向量、OSPF、BGP 与故障诊断 |
 | 03 | [第三讲回顾参考答案](docs/routing_protocol_review_answers.md)（[HTML 阅读版](docs/routing_protocol_review_answers.html)） | 36 题逐题讲评、11 幅推演图、判断改错与六个程序员视角讨论 |
 
-前五讲、上述补充资料与 Lab 1、Lab 2、Lab 3 指导书均有同目录、同名的 `.html` 阅读版。编写时以 `.md` 为源文件，修改后应同步检查对应阅读版。第 05 讲于 2026-10-07 完成定稿审查：已同步完整 Lab 3 的入口、分层任务与测量口径，并核对阅读版内容、本地链接及桌面、手机、深色与打印样式显示；本轮未重跑 Linux 实验。Lab 3 已交付修订指导书、学生拓扑骨架、测量助手与清理工具；2026-10-05 已按修订命令在备课沙箱中验证主要对照，具体范围见 [Lab 3 维护与验证](experiments/03/README.md#维护与验证)。学生 TODO 保持留白，学生实现仍须独立验收。
+前六讲、上述补充资料与 Lab 1–Lab 4 指导书均有同目录、同名的 `.html` 阅读版。编写时以 `.md` 为源文件，修改后应同步检查对应阅读版。第 05 讲于 2026-10-07 完成定稿审查：已同步完整 Lab 3 的入口、分层任务与测量口径，并核对阅读版内容、本地链接及桌面、手机、深色与打印样式显示；本轮未重跑 Linux 实验。Lab 3 已交付修订指导书、学生拓扑骨架、测量助手与清理工具；2026-10-05 已按修订命令在备课沙箱中验证主要对照，具体范围见 [Lab 3 维护与验证](experiments/03/README.md#维护与验证)。学生 TODO 保持留白，学生实现仍须独立验收。第 06 讲于 2026-10-17 定稿：讲义全部命令块按原文在完整实验床（`experiments/04/topo.sh`）上逐块重跑通过，实测环境为 Ubuntu 26.04 / Linux 7.0 备课虚拟机；阅读版由 `tools/build_network_measurement_html.py` 生成，已核对内容、链接，以及桌面、手机、深色与导出 PDF 的显示。尚未在 Ubuntu 22.04／24.04 上复核。
 
 ### 可参考的 2025 材料
 

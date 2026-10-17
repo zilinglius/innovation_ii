@@ -1,0 +1,12 @@
+[project]
+name = "lab04-checkup"
+version = "1.0.0"
+description = "Lab 4：给网络做体检——网络画像工具 checkup.py（画像格式 lab04.netprofile/v1）"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+# 只用标准库：subprocess、json、statistics、math。
+# 环境准备（仓库根目录）：uv sync --project 2026/experiments/04 --frozen
+# 离线测试：cd 2026/experiments/04 && uv run --frozen python -m unittest -v
+# 测量需要 root 与实验床：sudo 2026/experiments/04/.venv/bin/python 2026/experiments/04/checkup.py

@@ -1,6 +1,6 @@
 # 2026 阅读版维护工具
 
-目前提供 **Lab 3 阅读版**和**第二、三讲回顾阅读版**的生成入口，不是全仓库通用转换器。教师使用，不属于学生实验依赖；学生 Lab 3 仍只用 Python 标准库。
+目前提供 **Lab 3、Lab 4 阅读版**、**第二、三讲回顾阅读版**和**第 06 讲讲义阅读版**的生成入口，不是全仓库通用转换器。第 06 讲与 Lab 4 的生成器共用 `reading_common.py`（命令行内高亮、生成页结构检查、链接与锚点核对、残留标记检查）。教师使用，不属于学生实验依赖；学生 Lab 3 仍只用 Python 标准库。
 
 ## Lab 3 阅读版
 
@@ -68,3 +68,39 @@ uv run --project 2026/tools --frozen python 2026/tools/build_routing_protocol_re
 - 生成器核对两份材料 36 个题号、连续图号、命令／输出文本、唯一标识、本地链接、源文摘要与外部资源依赖；它是第三讲专用入口，不重建原讲义或其他讲次。
 - 图示以约 760 单位宽度绘制，手机局部滚动，打印按可用宽度缩放。生成后仍需实际查看桌面、390 px 手机、浅色／深色与打印显示，自动检查不能替代显示验收。
 - 本次材料引用第三讲已有 FRR 8.4.4 输出并增加纸面推演，没有新增 Linux 实测；协议状态、RIB/FIB 与业务证据分别解释，不能把排版检查视为实验验证。
+
+## 第 06 讲讲义阅读版
+
+先修改 `2026/docs/network_measurement.md`，再从仓库根目录执行：
+
+```bash
+# 1. 按本目录锁文件准备依赖（与其他生成器共用）
+uv sync --project 2026/tools --frozen
+
+# 2. 生成第 06 讲阅读版，日期填写本次内容更新日期
+uv run --project 2026/tools --frozen python 2026/tools/build_network_measurement_html.py --date 2026-10-17
+```
+
+- 输出 `2026/docs/network_measurement.html`。CSS、字体、目录行为与打印样式取自 `link_state_router.html`；页面结构对照 `datacenter_network.html`：导读、“课堂安排与准备”提示框、学习目标、本讲路线、课堂时间安排、各模块。
+- 命令块只加行内高亮（步骤注释、`sudo`、namespace 名），不加逐行的块级容器，保证复制出的文本与源文逐字一致。输出块统一标为“实测样例”；出现其他代码类型时生成器会报错，需先补渲染规则。
+- 链到仓库内 Markdown 时，若同目录有同名阅读版，改链到 `.html`；否则保留 `.md` 链接。
+- 两幅图由 `network_measurement_figures.py` 绘制为内嵌 SVG，与 Markdown 中带 `%% lecture06:<key>` 的 Mermaid 源图一一对应，源图摘要保存在 `network_measurement_figure_sources.json`。图注取自源图下方的 `*图示说明：…*`。修改源图后先核对 SVG 的节点、方向、标签与简化条件，再更新摘要。
+- 生成器自动核对：命令／输出文本逐字一致、图数与图号、唯一 ID、页内与跨页锚点、本地链接、源文摘要、外部资源依赖、未解析的 Markdown 标记，以及第 04 讲模板残留。显示检查仍须在真实浏览器中完成：桌面、约 390 px 手机、浅色／深色、打印与导出 PDF 的分页。
+
+## Lab 4 阅读版
+
+先修改 `2026/experiments/04/README.md`，再从仓库根目录执行：
+
+```bash
+# 1. 按本目录锁文件准备依赖（与其他生成器共用）
+uv sync --project 2026/tools --frozen
+
+# 2. 生成 Lab 4 阅读版，日期填写本次内容更新日期
+uv run --project 2026/tools --frozen python 2026/tools/build_lab4_html.py --date 2026-10-17
+```
+
+- 输出 `2026/experiments/04/README.html`。CSS、字体、目录与打印样式取自 `link_state_router.html`；页面结构与 Lab 3 阅读版一致：实验导读、按“一、二、……”分节、目录列出各级小节，任务（h4）在目录中缩进。
+- `bash` 块只加行内高亮；`output` 块标为“实测样例”，无语言标记的字符块（如 3.3 节的目录树）标为“示意”。出现其他代码类型时生成器会报错。
+- 3.3 节的字符数据流图由 `lab4_figures.py` 绘制为内嵌 SVG，图注取自其下方的 `*图 1：…*`；源图摘要保存在 `lab4_figure_sources.json`。修改字符图后先核对 SVG 的框、箭头、TODO 标签与说明，再更新摘要。
+- 链到仓库内 Markdown 时，若同目录有同名阅读版则改链到 `.html`。生成器自动核对命令／输出文本逐字一致、图号、唯一 ID、链接与锚点、源文摘要、外部资源依赖与残留标记；浏览器显示（桌面、约 390 px 手机、浅色／深色、打印与导出 PDF）须另行检查。
+
