@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="generator" content="由 2026/docs/link_state_router.md 生成（sha1 141ee8e576）；请改 Markdown 源文件后重新生成，不要手改本文件">
+<meta name="generator" content="由 2026/docs/link_state_router.md 生成（sha1 2d31ae96f2）；请改 Markdown 源文件后重新生成，不要手改本文件">
 <title>第04讲 动手实现一个链路状态路由器</title>
 <style>
 /* ==========================================================================
@@ -737,11 +737,11 @@ h3 .h3-tag {
 <p><code>loop.py</code> 的核心是这几行：</p>
 <div class="code py short"><span class="code-tag">Python</span><pre><code><span class="ln">  <span class="kw">def</span> run(self) -&gt; <span class="kw">None</span>:</span><span class="ln">    self._running = <span class="kw">True</span></span><span class="ln">    <span class="kw">while</span> self._running:</span><span class="ln">      timeout = self._next_timeout()</span><span class="ln">      readable, _, _ = select.select(list(self._readers), [], [], timeout)</span><span class="ln">      <span class="kw">for</span> fd <span class="kw">in</span> readable:</span><span class="ln">        callback = self._readers.get(fd)</span><span class="ln">        <span class="kw">if</span> callback <span class="kw">is</span> <span class="kw">not</span> <span class="kw">None</span>:</span><span class="ln">          callback(fd)</span><span class="ln">      self._fire_due_timers()</span></code></pre></div>
 <p><code>select()</code> 做的事是：给它一组文件描述符和一个超时，它睁眼等着，<strong>任何一个描述符可读</strong>或者<strong>超时到了</strong>就返回。两类事件的合流点就在 <code>timeout</code> 这个参数上——它等于<strong>最近一个定时器还有多久到期</strong>。于是每一轮循环：</p>
-<figure class="fig" id="fig3"><div class="fig-body"><svg viewBox="0 0 760 330" role="img" aria-label="流程图：每一轮先算 timeout（最近的定时器还有多久到期），然后 select() 同时等待套接字可读与超时；套接字可读就调它的回调读空报文并逐条交给 router.on_message，之后（或超时后）执行所有已到期的定时器；周期定时器按 now + interval 重新入堆，一次性的丢弃；回到循环顶部" xmlns="http://www.w3.org/2000/svg"><defs><marker id="f-loop-ah-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0.5,1 L9.5,5 L0.5,9 z" class="mk-ink"/></marker><marker id="f-loop-ah-l2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0.5,1 L9.5,5 L0.5,9 z" class="mk-l2"/></marker><marker id="f-loop-ah-l3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0.5,1 L9.5,5 L0.5,9 z" class="mk-l3"/></marker><marker id="f-loop-ah-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0.5,1 L9.5,5 L0.5,9 z" class="mk-warn"/></marker><marker id="f-loop-ah-drop" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0.5,1 L9.5,5 L0.5,9 z" class="mk-drop"/></marker></defs><rect x="20" y="20" width="220" height="56" rx="6" class="n-plain"/><text x="130.0" y="44.0" text-anchor="middle" class="t-b">算 timeout</text><text x="130.0" y="61.0" text-anchor="middle" class="t-xs t-2">= 最近的定时器到期时刻 − 现在</text><polyline points="240,48 279,48" class="ar ar-ink" marker-end="url(#f-loop-ah-ink)"/><rect x="280" y="20" width="180" height="56" rx="6" class="n-l3 strong"/><text x="370.0" y="44.0" text-anchor="middle" class="t-mono t-b">select(可读集合, timeout)</text><text x="370.0" y="61.0" text-anchor="middle" class="t-xs t-2">睁眼等着</text><polyline points="460,48 499,48" class="ar ar-ink" marker-end="url(#f-loop-ah-ink)"/><text x="480" y="13" text-anchor="middle" class="t-xs t-b t-2">某个套接字可读</text><rect x="500" y="20" width="240" height="56" rx="6" class="n-host"/><text x="620.0" y="44.0" text-anchor="middle" class="t-b">调它的回调</text><text x="620.0" y="61.0" text-anchor="middle" class="t-xs t-2">读空报文，逐条交给 router.on_message</text><polyline points="620,76 620,148 461,148" class="ar ar-ink" marker-end="url(#f-loop-ah-ink)"/><polyline points="370,76 370,119" class="ar ar-ink" marker-end="url(#f-loop-ah-ink)"/><text x="380" y="102" text-anchor="start" class="t-xs t-b t-2">超时</text><rect x="280" y="120" width="180" height="56" rx="6" class="n-host"/><text x="370.0" y="144.0" text-anchor="middle" class="t-b">执行所有已到期的定时器</text><text x="370.0" y="161.0" text-anchor="middle" class="t-xs t-2">小顶堆：堆顶最早到期</text><polyline points="370,176 370,205" class="ar ar-ink" marker-end="url(#f-loop-ah-ink)"/><polygon points="274,240 370,206 466,240 370,274" class="n-l3"/><text x="370" y="244.5" text-anchor="middle" class="t-b">是周期定时器？</text><polyline points="466,240 559,240" class="ar ar-ink" marker-end="url(#f-loop-ah-ink)"/><text x="512" y="232" text-anchor="middle" class="t-xs t-b t-2">是</text><rect x="560" y="214" width="180" height="52" rx="6" class="n-l3"/><text x="650.0" y="236.0" text-anchor="middle" class="t-sm t-b">按 now + interval 重新入堆</text><text x="650.0" y="253.0" text-anchor="middle" class="t-xs t-2">now = 回调执行完的时刻</text><polyline points="274,240 201,240" class="ar ar-ink" marker-end="url(#f-loop-ah-ink)"/><text x="238" y="232" text-anchor="middle" class="t-xs t-b t-2">否</text><rect x="20" y="214" width="180" height="52" rx="6" class="n-plain"/><text x="110.0" y="244.5" text-anchor="middle" class="t-sm t-b">一次性定时器：丢弃</text><polyline points="650,266 650,300 110,300 110,266" class="ar ar-ink"/><polyline points="110,300 10,300 10,48 19,48" class="ar ar-ink" marker-end="url(#f-loop-ah-ink)"/><text x="380" y="316" text-anchor="middle" class="t-xs t-muted">回到循环顶部：整个守护进程就是这一个循环</text></svg></div><figcaption><b>图 3</b><span>事件循环的一轮：两类事件在 select() 的 timeout 参数上合流——它等于最近一个定时器还有多久到期。周期定时器按 now + interval 重排，回调跑慢了只会漂移，不会积压。</span></figcaption></figure>
+<figure class="fig" id="fig3"><div class="fig-body"><svg viewBox="0 0 760 330" role="img" aria-label="流程图：每一轮先算 timeout（最近的定时器还有多久到期），然后 select() 同时等待套接字可读与超时；套接字可读就调它的回调读空报文并逐条交给 router.on_message，之后（或超时后）执行所有已到期的定时器；周期定时器按 now + interval 重新入堆，一次性的丢弃；回到循环顶部" xmlns="http://www.w3.org/2000/svg"><defs><marker id="f-loop-ah-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0.5,1 L9.5,5 L0.5,9 z" class="mk-ink"/></marker><marker id="f-loop-ah-l2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0.5,1 L9.5,5 L0.5,9 z" class="mk-l2"/></marker><marker id="f-loop-ah-l3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0.5,1 L9.5,5 L0.5,9 z" class="mk-l3"/></marker><marker id="f-loop-ah-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0.5,1 L9.5,5 L0.5,9 z" class="mk-warn"/></marker><marker id="f-loop-ah-drop" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0.5,1 L9.5,5 L0.5,9 z" class="mk-drop"/></marker></defs><rect x="20" y="20" width="220" height="56" rx="6" class="n-plain"/><text x="130.0" y="44.0" text-anchor="middle" class="t-b">算 timeout</text><text x="130.0" y="61.0" text-anchor="middle" class="t-xs t-2">= 最近的定时器到期时刻 − 现在</text><polyline points="240,48 279,48" class="ar ar-ink" marker-end="url(#f-loop-ah-ink)"/><rect x="280" y="20" width="180" height="56" rx="6" class="n-l3 strong"/><text x="370.0" y="44.0" text-anchor="middle" class="t-mono t-b">select(可读集合, timeout)</text><text x="370.0" y="61.0" text-anchor="middle" class="t-xs t-2">睁眼等着</text><polyline points="460,48 499,48" class="ar ar-ink" marker-end="url(#f-loop-ah-ink)"/><text x="480" y="13" text-anchor="middle" class="t-xs t-b t-2">某个套接字可读</text><rect x="500" y="20" width="240" height="56" rx="6" class="n-host"/><text x="620.0" y="44.0" text-anchor="middle" class="t-b">调它的回调</text><text x="620.0" y="61.0" text-anchor="middle" class="t-xs t-2">读空报文，逐条交给 router.on_message</text><polyline points="620,76 620,148 461,148" class="ar ar-ink" marker-end="url(#f-loop-ah-ink)"/><polyline points="370,76 370,119" class="ar ar-ink" marker-end="url(#f-loop-ah-ink)"/><text x="380" y="102" text-anchor="start" class="t-xs t-b t-2">超时</text><rect x="280" y="120" width="180" height="56" rx="6" class="n-host"/><text x="370.0" y="144.0" text-anchor="middle" class="t-b">执行所有已到期的定时器</text><text x="370.0" y="161.0" text-anchor="middle" class="t-xs t-2">小顶堆：堆顶最早到期</text><polyline points="370,176 370,205" class="ar ar-ink" marker-end="url(#f-loop-ah-ink)"/><polygon points="274,240 370,206 466,240 370,274" class="n-l3"/><text x="370" y="244.5" text-anchor="middle" class="t-b">是周期定时器？</text><polyline points="466,240 559,240" class="ar ar-ink" marker-end="url(#f-loop-ah-ink)"/><text x="512" y="232" text-anchor="middle" class="t-xs t-b t-2">是</text><rect x="560" y="214" width="180" height="52" rx="6" class="n-l3"/><text x="650.0" y="236.0" text-anchor="middle" class="t-sm t-b">按 now + interval 重新入堆</text><text x="650.0" y="253.0" text-anchor="middle" class="t-xs t-2">now = 回调执行完的时刻</text><polyline points="274,240 201,240" class="ar ar-ink" marker-end="url(#f-loop-ah-ink)"/><text x="238" y="232" text-anchor="middle" class="t-xs t-b t-2">否</text><rect x="20" y="214" width="180" height="52" rx="6" class="n-plain"/><text x="110.0" y="244.5" text-anchor="middle" class="t-sm t-b">一次性定时器：丢弃</text><polyline points="650,266 650,300 110,300 110,266" class="ar ar-ink"/><polyline points="110,300 10,300 10,48 19,48" class="ar ar-ink" marker-end="url(#f-loop-ah-ink)"/><text x="380" y="316" text-anchor="middle" class="t-xs t-muted">回到循环顶部：整个守护进程就是这一个循环</text></svg></div><figcaption><b>图 3</b><span>事件循环的一轮：两类事件在 select() 的 timeout 参数上合流——它等于最近一个定时器还有多久到期。周期定时器按 now + interval 重排，事件循环被拖慢时只会漂移，不会连续补跑。</span></figcaption></figure>
 <p>定时器放在一个<strong>小顶堆</strong>里，堆顶永远是最早到期的那个，所以“最近的定时器还有多久”是 <math class="math"><mi>O</mi><mo stretchy="false">(</mo><mn>1</mn><mo stretchy="false">)</mo></math> 的。<code>call_later(delay, fn)</code> 与 <code>call_every(interval, fn)</code> 都只是往堆里放一个 <code>Timer</code>；<code>cancel()</code> 只做一个标记，被标记的定时器出堆时直接跳过。</p>
 <p>第二个问题的答案在 <code>_fire_due_timers()</code> 的最后两行：</p>
 <div class="code py short"><span class="code-tag">Python</span><pre><code><span class="ln">      <span class="kw">if</span> timer.interval <span class="kw">is</span> <span class="kw">not</span> <span class="kw">None</span> <span class="kw">and</span> <span class="kw">not</span> timer.cancelled:</span><span class="ln">        timer.when = now + timer.interval</span><span class="ln">        heapq.heappush(self._timers, (timer.when, next(self._seq), timer))</span></code></pre></div>
-<p>周期定时器下一次的到期时刻是 <strong><code>now + interval</code></strong>，<code>now</code> 是<strong>执行完回调之后</strong>的时刻——而不是 <code>when + interval</code>（上一次“本该”到期的时刻加周期）。如果回调跑慢了 3 秒，前一种写法只是把下一次也顺延 3 秒，节拍漂移但每次只跑一次；后一种写法会发现“已经欠了一次”，立刻补跑，欠得多就连续补跑好几次——这就是“积压”。对 Hello 来说，漂移是可以接受的，连续补发好几条 Hello 则毫无意义。代价是长期看节拍会慢慢变慢——思考题 1 请你算这笔账。</p>
+<p>周期定时器下一次的到期时刻是 <strong><code>now + interval</code></strong>，<code>now</code> 是<strong>这一批定时器开始执行之前</strong>取的时刻（<code>select()</code> 返回、读完套接字之后）——而不是 <code>when + interval</code>（上一次“本该”到期的时刻加周期）。如果事件循环被前面的回调拖住了 3 秒，前一种写法只是把下一次也顺延 3 秒，节拍漂移但每次只跑一次；后一种写法算出的下一次到期时刻已经过去，同一批里立刻补跑，欠得多就连续补跑好几次——这就是“积压”。对 Hello 来说，漂移是可以接受的，连续补发好几条 Hello 则毫无意义。还有一个细节：<code>now</code> 取在回调之前，若慢的恰好是这个回调自己，算出的下一次到期时刻也可能已经过去，下一轮会立刻再跑一次——只补这一次，不会连续补。代价是长期看节拍会慢慢变慢——思考题 1 请你算这笔账。</p>
 <h3 id="s2-3"><span class="sec-no">2.3</span>时间：单调时钟与 0.5 秒的分辨率</h3>
 <p><code>loop.now()</code> 返回的是 <code>time.monotonic()</code>，不是 <code>time.time()</code>。前者是<strong>单调时钟</strong>：只往前走，不受管理员改系统时间、NTP 校时的影响。协议里所有“多久没收到”——Dead 定时器、R9 的重传间隔——都用它。<code>time.time()</code> 只在日志与 CLI 的 <code>uptime</code> 里出现，那是给人看的。</p>
 <p>Dead 定时器不是每个邻居一个，而是 <code>router.py</code> 每 0.5 秒调一次 <code>neighbors.expire(now)</code>，扫一遍邻居表，把 <code>now - last_seen &gt; dead</code> 的删掉：</p>
@@ -969,7 +969,7 @@ h3 .h3-tag {
 </tr>
 </tbody>
 </table></div>
-<p>R5 是这一组的核心。“除来源外”是空间上的止损——不把刚收到的东西原路送回；“更新才转发”是时间上的止损——同一条 LSA 每台路由器只转发一次。两个条件缺一不可，<a class="xref" href="#s4-3">4.3 节</a>会拿掉第二个看看。</p>
+<p>R5 是这一组的核心。“除来源外”是空间上的止损——不把刚收到的东西原路送回；“更新才转发”是时间上的止损——同一条 LSA 每台路由器只转发一次。两者分工不同：让洪水停下来的是后者，<a class="xref" href="#s4-3">4.3 节</a>会拿掉它看看；只拿掉前者，泛洪照样会停——原路送回的那一份到了来源处会被判为不更新而丢弃，只是线上多出几份冗余。</p>
 <p>R6 看起来是个边角料，其实每次调试都会用到：改完代码 <code>run.sh restart r1</code>，r1 从 <code>seq = 1</code> 重新开始，可 r2、r3 手里还有它上一版 <code>seq = 5</code> 的 LSA——按 R5，r1 的新 LSA 比旧的“旧”，会被所有人丢掉，r1 永远回不到地图上。有了 R6，r1 在全量同步（R3）里收到自己的旧版本，<code>seq</code> 跳到 6，重发，地图修好。6.12 节会在日志里看到这一跳。</p>
 <h3 id="s4-2"><span class="sec-no">4.2</span>一条 LSA 在三角形上走几步</h3>
 <p class="predict"><strong>预测一下再往下看</strong>：r1 重新生成一条 LSA（内容不变，<code>seq + 1</code>）。三角形的三条链路上，这条 LSA 一共会出现几份？其中几份被“存入”、几份被“丢弃”？</p>
@@ -1350,7 +1350,7 @@ h3 .h3-tag {
 <td style="text-align:left">断在谁身上</td>
 <td style="text-align:left">r1</td>
 <td style="text-align:left">r1：<code>Deleted 10.0.2.0/24</code> → 2 秒后装回</td>
-<td style="text-align:left">探针包到 r1 时没有路由，被丢弃。<strong>r2 的内核全程都能转发</strong>——机架 2 是它的直连网段，<code>proto kernel</code> 的路由从未消失</td>
+<td style="text-align:left">探针包到 r1 时没有路由，被丢弃；这次记录里去程只断在 r1。r2 到机架 2 的直连路由（<code>proto kernel</code>）从未消失，但它自己写的 <code>proto 200</code> 路由在旧进程退出时已被清空——后果见下文“回程与反向路径过滤”</td>
 </tr>
 <tr>
 <td style="text-align:left">r2 的 seq</td>
@@ -1366,9 +1366,49 @@ h3 .h3-tag {
 </tr>
 </tbody>
 </table></div>
-<p>这个 2 秒值得多想一步：<strong>数据平面根本没坏</strong>。r2 的内核一直能把包转到机架 2，链路一根没断，是 r1 因为“邻居重启了”主动撤掉了路由。控制平面的一次抖动，造成了数据平面 2 秒的中断。真实网络里路由器软件升级、进程崩溃重启是常事，于是 OSPF 有了 <strong>graceful restart</strong>（RFC 3623）：重启的路由器先告诉邻居“我要重启了，请在 grace 期内继续用旧路由转发、别把我从地图上抹掉”，重启完成后再悄悄接上。它的代价是什么、grace 期内拓扑真的变了怎么办，是思考题 4。</p>
+<p>这个 2 秒值得多想一步：<strong>链路一根没断，内核也没坏</strong>，是 r1 因为“邻居重启了”主动撤掉了路由——控制平面的一次抖动，造成了数据平面 2 秒的中断。而这还只是去程的账。</p>
+<p><strong>回程与反向路径过滤：r2 自己也断了。</strong> 上面的探针只量了 h1a → h2a。r2 的旧进程退出时按 R8 清空了自己写的 <code>proto 200</code> 路由（<code>run.sh stop</code> 也会兜底清理），在新进程重新同步、算路之前，r2 的内核里<strong>没有去机架 1 的路由</strong>，回程的包到了 r2 就被丢弃。默认设置下去程也会受牵连：Ubuntu 的发行版默认把 <code>rp_filter</code>（第 02 讲 4.5 节）设为 2，即宽松模式——收到一个包时，若它的源地址经任何接口都不可达就丢弃；新建的 namespace 会继承这个值。于是在 r1 撤路由之前，去程包虽然到了 r2，也会因为源地址 10.0.1.11 查不到路由而被丢弃。</p>
+<p>2026-10-18 在备课虚拟机（Ubuntu 26.04.1、Linux <code>7.0.0-38-generic</code>）上用同一份参考实现补测了本节：两个方向各跑一条 100 pps 的探针，重启前后各读一次两台路由器的内核丢弃计数——<code>IpExtInNoRoutes</code> 记“转发时查不到路由”，<code>TcpExtIPReversePathFilter</code> 记反向路径过滤。</p>
+<div class="table-wrap"><table class="short">
+<thead>
+<tr>
+<th style="text-align:left">r2 的 <code>rp_filter</code></th>
+<th style="text-align:left">去程 h1a → h2a</th>
+<th style="text-align:left">回程 h2a → h1a</th>
+<th style="text-align:left">r1 无路由</th>
+<th style="text-align:left">r2 反向路径过滤</th>
+<th style="text-align:left">r2 无路由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">2（默认）</td>
+<td style="text-align:left">245 个，2460 ms</td>
+<td style="text-align:left">244 个，2450 ms</td>
+<td style="text-align:left">199</td>
+<td style="text-align:left">45</td>
+<td style="text-align:left">244</td>
+</tr>
+<tr>
+<td style="text-align:left">0（只改 r2）</td>
+<td style="text-align:left">199 个，2000 ms</td>
+<td style="text-align:left">240 个，2410 ms</td>
+<td style="text-align:left">199</td>
+<td style="text-align:left">0</td>
+<td style="text-align:left">239</td>
+</tr>
+</tbody>
+</table></div>
+<p>默认设置下，去程的 245 个约等于 45 + 199：从 r2 的旧进程退出、清空路由，到 r1 撤掉路由，中间约 0.45 秒，这段时间的包丢在 r2 的反向路径过滤上；此后约 2.0 秒丢在 r1。回程的 244 个全部丢在 r2，一直持续到新 r2 收到邻居的全量同步、算完路，约 2.4 秒，其中主要是在等一个 Hello 周期。把 r2 的 <code>rp_filter</code> 改为 0 后，去程只剩 r1 那一段，回到约 2 秒；回程不受影响。上面 2010 ms 那次记录没有读取 <code>rp_filter</code>，结果与改为 0 的补测一致。两次补测中，计数与探针统计逐方向最多相差 1 个包，没有逐包定位。</p>
+<p>所以你在默认的 Ubuntu 上复现第 35 步，去程空洞多半比 2 秒长。对需要双向往返的 TCP 连接，无论 <code>rp_filter</code> 取何值，回程都会断：从 r2 的旧进程退出算起，到新进程装回路由为止（本次约 2.4 秒，重启越慢越长）。复现时加下面两步，就能把丢包拆到具体的路由器上：</p>
+<div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="ln"><span class="c step"><span class="step-n"># 38.</span> 读 r2 的反向路径过滤设置：内核取 all 与接口值中较大的一个</span></span><span class="ln"><span class="su">sudo</span> ip netns exec <span class="ns">r2</span> sysctl net.ipv4.conf.all.rp_filter net.ipv4.conf.r2-r1.rp_filter</span><span class="ln"></span><span class="ln"><span class="c step"><span class="step-n"># 39.</span> 第 35 步之前、探针结束之后各读一次两台路由器的丢弃计数，相减就是这次重启丢在哪里</span></span><span class="ln"><span class="su">sudo</span> ip netns exec <span class="ns">r1</span> nstat -asz IpExtInNoRoutes TcpExtIPReversePathFilter</span><span class="ln"><span class="su">sudo</span> ip netns exec <span class="ns">r2</span> nstat -asz IpExtInNoRoutes TcpExtIPReversePathFilter</span></code></pre></div>
+<p><code>rp_filter</code> 为 2 的那次补测中，第 38 步与探针结束后第 39 步的输出（重启前四个计数都是 0）：</p>
+<div class="code out short"><span class="code-tag">输出</span><pre><code><span class="ln">net.ipv4.conf.all.rp_filter = 2</span><span class="ln">net.ipv4.conf.r2-r1.rp_filter = 2</span></code></pre></div>
+<div class="code out short"><span class="code-tag">输出</span><pre><code><span class="ln">#kernel</span><span class="ln">TcpExtIPReversePathFilter       1                  0.0</span><span class="ln">IpExtInNoRoutes                 199                0.0</span><span class="ln">#kernel</span><span class="ln">TcpExtIPReversePathFilter       45                 0.0</span><span class="ln">IpExtInNoRoutes                 244                0.0</span></code></pre></div>
+<p>前两行计数是 r1 的，后两行是 r2 的。r1 那 1 次反向路径过滤发生在恢复的瞬间：r2 比 r1 早约 3 ms 装回路由，其间到达 r1 的一个回程包，源地址 10.0.2.11 暂时不可达。</p>
+<p>控制平面的一次抖动，造成了数据平面两个方向、两台路由器上的中断。真实网络里路由器软件升级、进程崩溃重启是常事，于是 OSPF 有了 <strong>graceful restart</strong>（RFC 3623）：重启的路由器先告诉邻居“我要重启了，请在 grace 期内继续用旧路由转发、别把我从地图上抹掉”，自己也保留转发表继续转发，重启完成后再悄悄接上。它的代价是什么、grace 期内拓扑真的变了怎么办，是思考题 4。</p>
 <h3 id="s6-13"><span class="sec-no">6.13</span>环境清理（Teardown）<span class="h3-tag">跟做</span></h3>
-<div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="ln"><span class="c step"><span class="step-n"># 38.</span> 停掉守护进程——每台退出时 flush 掉自己写的路由；确认内核里已经没有 proto 200 的路由</span></span><span class="ln"><span class="su">sudo</span> bash 2026/experiments/02/run.sh stop</span><span class="ln"><span class="su">sudo</span> ip -n <span class="ns">r1</span> route show proto 200</span><span class="ln"></span><span class="ln"><span class="c step"><span class="step-n"># 39.</span> 拆实验床，确认没有残留的 namespace</span></span><span class="ln"><span class="su">sudo</span> bash 2026/experiments/02/topo.sh down</span><span class="ln"><span class="su">sudo</span> ip netns list</span></code></pre></div>
+<div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="ln"><span class="c step"><span class="step-n"># 40.</span> 停掉守护进程——每台退出时 flush 掉自己写的路由；确认内核里已经没有 proto 200 的路由</span></span><span class="ln"><span class="su">sudo</span> bash 2026/experiments/02/run.sh stop</span><span class="ln"><span class="su">sudo</span> ip -n <span class="ns">r1</span> route show proto 200</span><span class="ln"></span><span class="ln"><span class="c step"><span class="step-n"># 41.</span> 拆实验床，确认没有残留的 namespace</span></span><span class="ln"><span class="su">sudo</span> bash 2026/experiments/02/topo.sh down</span><span class="ln"><span class="su">sudo</span> ip netns list</span></code></pre></div>
 <div class="code out short"><span class="code-tag">输出</span><pre><code><span class="ln">[*] 停止守护进程：</span><span class="ln">  [OK]   r1 已停止</span><span class="ln">  [OK]   r2 已停止</span><span class="ln">  [OK]   r3 已停止</span></code></pre></div>
 <div class="code out short"><span class="code-tag">输出</span><pre><code><span class="ln">[*] 拆除 Lab 2 实验床：先停 lsrd，删掉 r3 与机架 3，再拆 Lab 1 的部分...</span><span class="ln">[*] 拆除实验床...</span><span class="ln">[*] 完成。</span></code></pre></div>
 <p>后两条命令都不该有输出。如果 <code>ip route show proto 200</code> 还有东西——守护进程被 <code>kill -9</code> 了、或者你的 <code>shutdown</code> 没走到 <code>route_flush()</code>——手工 <code>sudo ip -n rN route flush proto 200</code>；这也是 Lab 2 排错表的第一条。今天改过的 <code>neighbor.py</code> 留着，它就是任务 2 的起点。</p>
@@ -1380,7 +1420,7 @@ h3 .h3-tag {
 <li>
 <p><strong>定时器的两种重排</strong></p>
 <ul>
-<li><code>loop.py</code> 的周期定时器用 <code>now + interval</code> 重排下一次到期时刻（<a class="xref" href="#s2-2">2.2 节</a>）。如果改成 <code>when + interval</code>（上一次“本该”到期的时刻加周期）会怎样？在单机虚拟机上，某次回调被 CPU 争用拖慢了 3 秒，两种做法各对 Hello 的发送与 Dead 的判定造成什么影响？哪一种更可能把活着的邻居误判为 Dead？</li>
+<li><code>loop.py</code> 的周期定时器用 <code>now + interval</code> 重排下一次到期时刻（<a class="xref" href="#s2-2">2.2 节</a>）。如果改成 <code>when + interval</code>（上一次“本该”到期的时刻加周期）会怎样？在单机虚拟机上，某次事件循环被 CPU 争用拖慢了 3 秒，两种做法各对 Hello 的发送与 Dead 的判定造成什么影响？哪一种更可能把活着的邻居误判为 Dead？</li>
 <li class="hint"><em>思考提示：一个漂移、一个积压。画一条时间轴，标出原定的 Hello 时刻与实际的时刻。再想想 Dead = 4 × Hello 这个比例给谁留了余量——发送方还是接收方。</em></li>
 </ul>
 </li>
@@ -1401,7 +1441,7 @@ h3 .h3-tag {
 <li>
 <p><strong>给 LSR-lite 加 graceful restart</strong></p>
 <ul>
-<li>6.12 节里数据平面没坏、业务却断了 2 秒。要让邻居在我重启期间继续用旧路由转发，规范要改哪几条？Hello 里要加什么字段、R2 的哪一步要改、R4 什么时候不该触发、什么情况下邻居必须放弃 grace 期立刻改路？RFC 3623 的 grace-LSA 是怎么做的？</li>
+<li>6.12 节里链路没断、内核也没坏，业务却在两个方向上断了 2 秒以上。要让邻居在我重启期间继续用旧路由转发，规范要改哪几条？我自己退出时还该不该按 R8 清空路由？Hello 里要加什么字段、R2 的哪一步要改、R4 什么时候不该触发、什么情况下邻居必须放弃 grace 期立刻改路？RFC 3623 的 grace-LSA 是怎么做的？</li>
 <li class="hint"><em>思考提示：先想清楚“重启期间拓扑真的变了”怎么办——grace 期内邻居继续用旧地图，旧地图里有一条已经断掉的链路，流量会怎样。再想想重启的路由器怎么知道自己“已经追上了”。</em></li>
 </ul>
 </li>
@@ -1441,7 +1481,7 @@ h3 .h3-tag {
 <li>RFC 1122：<em>Requirements for Internet Hosts — Communication Layers</em>（1.<a class="xref" href="#s2-2">2.2 节</a>“Robustness Principle”，与 <a class="xref" href="#s2-4">2.4 节</a>“先校验再处理”对照）</li>
 </ul>
 </section>
-<footer class="colophon"><span>上海交通大学 ·《云网融合创新实践》第 04 讲</span><span>由 2026/docs/link_state_router.md 生成 · sha1 141ee8e576 · 2026-09-27</span></footer>
+<footer class="colophon"><span>上海交通大学 ·《云网融合创新实践》第 04 讲</span><span>由 2026/docs/link_state_router.md 生成 · sha1 2d31ae96f2 · 2026-10-18</span></footer>
 </main>
 </div>
 <script>
