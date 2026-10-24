@@ -187,21 +187,32 @@ up() {
   return 1
 }
 
+reach() {
+  # 不通时说出是哪一对，再继续检查其余各对。
+  ip netns exec "$1" ping -c 1 -W 2 "$2" >/dev/null && return 0
+  echo "[失败] $1 → $2 无回应" >&2
+  return 1
+}
+
 check() {
-  local rack spine k host
-  ready
+  local rack spine k host failed=0
+  ready || { echo "[失败] 邻接、LSDB 或 r1 的两个下一跳未就绪，查看 $C5_RESULTS/r*.log。" >&2; return 1; }
   for rack in 1 2 3 4; do
     for spine in 5 6; do
       k=$((2 * (rack - 1) + spine - 5))
-      ip netns exec "r$rack" ping -c 1 -W 2 "10.1.$k.2" >/dev/null
-      ip netns exec "r$spine" ping -c 1 -W 2 "10.1.$k.1" >/dev/null
+      reach "r$rack" "10.1.$k.2" || failed=1
+      reach "r$spine" "10.1.$k.1" || failed=1
     done
     for host in a b; do
-      ip netns exec "h$rack$host" ping -c 1 -W 2 "10.0.$rack.1" >/dev/null
-      ip netns exec "h$rack$host" ping -c 1 -W 2 10.0.3.11 >/dev/null
-      ip netns exec h3a ping -c 1 -W 2 "10.0.$rack.$([[ "$host" == a ]] && echo 11 || echo 12)" >/dev/null
+      reach "h$rack$host" "10.0.$rack.1" || failed=1
+      reach "h$rack$host" 10.0.3.11 || failed=1
+      reach h3a "10.0.$rack.$([[ "$host" == a ]] && echo 11 || echo 12)" || failed=1
     done
   done
+  if [[ "$failed" -ne 0 ]]; then
+    echo "[失败] 以上往返不通：对照路径上各路由器的 ip route show proto 200 与 $C5_RESULTS/r*.log。" >&2
+    return 1
+  fi
   echo '[OK] 每条上联往返、8 台 host 的网桥接入与跨机架往返。'
   ip -n r1 route show 10.0.3.0/24
 }

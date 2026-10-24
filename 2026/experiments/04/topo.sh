@@ -302,22 +302,30 @@ up() {
   return 1
 }
 
+reach() {
+  # 不通时说出是哪一对，再继续检查其余各对。
+  ip netns exec "$1" ping -c 1 -W 2 "$2" >/dev/null && return 0
+  echo "[失败] $1 → $2 无回应" >&2
+  return 1
+}
+
 check() {
-  local rack spine k host other prefix count
+  local rack spine k host other prefix count failed=0
   ready || die "ready 断言未通过：先看 $L4_RESULTS/r*.log 与 topo.sh show。"
   for rack in 1 2 3 4; do
     for spine in 5 6; do
       k=$((2 * (rack - 1) + spine - 5))
-      ip netns exec "r$rack" ping -c 1 -W 2 "10.1.$k.2" >/dev/null
-      ip netns exec "r$spine" ping -c 1 -W 2 "10.1.$k.1" >/dev/null
+      reach "r$rack" "10.1.$k.2" || failed=1
+      reach "r$spine" "10.1.$k.1" || failed=1
     done
     for host in a b; do
-      ip netns exec "h$rack$host" ping -c 1 -W 2 "10.0.$rack.1" >/dev/null
+      reach "h$rack$host" "10.0.$rack.1" || failed=1
     done
   done
-  ip netns exec h1a ping -c 1 -W 2 10.0.3.11 >/dev/null
-  ip netns exec h3a ping -c 1 -W 2 10.0.1.11 >/dev/null
-  ip netns exec h4b ping -c 1 -W 2 10.0.2.12 >/dev/null
+  reach h1a 10.0.3.11 || failed=1
+  reach h3a 10.0.1.11 || failed=1
+  reach h4b 10.0.2.12 || failed=1
+  [[ "$failed" -eq 0 ]] || die "以上往返不通：对照路径上各路由器的 ip route show proto 200 与 $L4_RESULTS/r*.log。"
   echo '[OK] 8 条上联往返、8 台 host 网关可达、跨机架往返。'
   for rack in 1 2 3 4; do
     for other in 1 2 3 4; do

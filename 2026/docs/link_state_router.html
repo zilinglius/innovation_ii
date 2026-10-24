@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="generator" content="由 2026/docs/link_state_router.md 生成（sha1 2d31ae96f2）；请改 Markdown 源文件后重新生成，不要手改本文件">
+<meta name="generator" content="由 2026/docs/link_state_router.md 生成（sha1 810d95fb91）；请改 Markdown 源文件后重新生成，不要手改本文件">
 <title>第04讲 动手实现一个链路状态路由器</title>
 <style>
 /* ==========================================================================
@@ -777,6 +777,11 @@ h3 .h3-tag {
 <td style="text-align:left">重传</td>
 </tr>
 <tr>
+<td style="text-align:left">定时器，每 2 秒（写内核时）</td>
+<td style="text-align:left"><code>_resync()</code></td>
+<td style="text-align:left">读回内核的 <code>proto 200</code> 路由，与 <code>installed</code> 对账，补装被内核删掉的（<a class="xref" href="#s5-4">5.4 节</a>）</td>
+</tr>
+<tr>
 <td style="text-align:left">套接字，收到 <code>hello</code></td>
 <td style="text-align:left"><code>on_message()</code></td>
 <td style="text-align:left"><code>neighbors.process_hello(...)</code> → 事件 → <code>_handle_events()</code></td>
@@ -1139,6 +1144,7 @@ h3 .h3-tag {
 </tbody>
 </table></div>
 <p><code>run.sh show r1 routes</code> 打出来的是 RIB（进程的账），最右一列 KERNEL 标着它是否已在内核里；<code>ip -n r1 route show proto 200</code> 打出来的是 FIB（内核的账）。两本账正常时应当一致；Lab 2 任务 10 的六种故障里，有一种只有把两本账放在一起才看得出来。</p>
+<p><strong>对账</strong>。diff 只拿 RIB 与 <code>installed</code> 比，而 <code>installed</code> 记的是“我以为写进去了什么”。内核也会自己删路由：接口被关掉时，经它的路由随即消失，而且不逐条通知。接口若在 Dead 之内恢复，邻居没有掉线，RIB 不变，diff 为空，这些路由就再也装不回来——第五讲回顾题 31 的补测里，spine 的一个接口抖动 0.5 秒，就有一半跨机架主机对一直不通。所以给定的 <code>router.py</code> 另有一个每 2 秒的定时器 <code>_resync()</code>：把 <code>ip -j route show proto 200</code> 读回来与 <code>installed</code> 比对，缺了或被改了、且出接口都已恢复的，重装一次。它只补自己装过的路由，不删别人的；<code>--no-install</code> 时不启用，所以 Lab 2 任务 10 的“只算不写内核”照样只能靠两本账对照看出来。</p>
 <h3 id="s5-5"><span class="sec-no">5.5</span>两只耳朵：Hello 与 netlink</h3>
 <p>第 03 讲 3.7 节把收敛时间拆成检测、传播、计算、安装四段，并说“检测几乎总是大头，而且差着三个数量级”：拔线是“响的故障”，内核立刻知道；对端死机是“静默的故障”，只有 Dead 定时器能发现。</p>
 <p>从实现者的角度重看这句话：内核“立刻知道”没有用，除非<strong>守护进程在听</strong>。zebra 通过 netlink 订阅了内核的接口事件，接口一 down 它就收到通知，几毫秒内把邻居置 Down、重算、改路由——这是 FRR 拔线 0 丢包的全部秘密。基础版的 <code>lsrd</code> 只有一只耳朵：听网络里的 Hello。内核喊了，它听不见，只能等 8 秒 Dead——<strong>一个响的故障，被它当成了静默故障</strong>。</p>
@@ -1481,7 +1487,7 @@ h3 .h3-tag {
 <li>RFC 1122：<em>Requirements for Internet Hosts — Communication Layers</em>（1.<a class="xref" href="#s2-2">2.2 节</a>“Robustness Principle”，与 <a class="xref" href="#s2-4">2.4 节</a>“先校验再处理”对照）</li>
 </ul>
 </section>
-<footer class="colophon"><span>上海交通大学 ·《云网融合创新实践》第 04 讲</span><span>由 2026/docs/link_state_router.md 生成 · sha1 2d31ae96f2 · 2026-10-18</span></footer>
+<footer class="colophon"><span>上海交通大学 ·《云网融合创新实践》第 04 讲</span><span>由 2026/docs/link_state_router.md 生成 · sha1 810d95fb91 · 2026-10-24</span></footer>
 </main>
 </div>
 <script>

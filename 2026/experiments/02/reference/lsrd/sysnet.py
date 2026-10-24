@@ -5,6 +5,7 @@
   list_interfaces()          `ip -j addr show`      → 有 IPv4 地址的接口列表
   route_replace / route_del  `ip route replace/del` → 写内核 FIB（规范 R8）
   route_flush()              `ip route flush proto 200`
+  route_table()              `ip -j route show proto 200` → 内核实际装着的路由（对账用）
   watch_links()              `ip -o monitor link`   → 接口 up/down 事件（进阶任务 T6）
 
 路由都带 `proto 200 metric 20`：proto 200 是 iproute2 没有占用的协议号，
@@ -103,6 +104,18 @@ def route_list() -> List[Dict[str, Any]]:
   if result.returncode != 0:
     return []
   return json.loads(result.stdout or "[]")
+
+
+def route_table() -> Dict[str, List[Tuple[str, str]]]:
+  """
+  把 route_list() 整理成与 router.installed 相同的形状：prefix → 排好序的 [(下一跳地址, 出接口), ...]。
+  带 dead / linkdown 标记的下一跳照样算在内：接口恢复后，内核会自己把多下一跳路由里的它们救回来。
+  """
+  table: Dict[str, List[Tuple[str, str]]] = {}
+  for route in route_list():
+    hops = route.get("nexthops") or [route]
+    table[route["dst"]] = sorted((hop.get("gateway", ""), hop.get("dev", "")) for hop in hops)
+  return table
 
 
 # ---- 听链路事件（进阶任务 T6）-------------------------------------------------

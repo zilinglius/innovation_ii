@@ -5,6 +5,7 @@
   定时器  每 hello 秒        → 在每个活动接口广播 Hello（R1）
   定时器  每 0.5 秒          → 邻居表超时检查（R2 的 Dead 定时器）
   定时器  每 1 秒（开了 R9） → 重传未确认的 LSU
+  定时器  每 2 秒（写内核时） → 读回内核的 proto 200 路由，与 installed 对账（R8 的补充）
   套接字  收到 hello         → neighbors.process_hello → 事件 → 可能 R3 / R4
   套接字  收到 lsu           → flooder.on_lsu → LSDB 变了 → 安排一次 SPF
   套接字  收到 ack           → flooder.on_ack
@@ -12,6 +13,7 @@
 
 SPF 不是收到一条 LSA 就跑一次，而是延迟 spf_delay 秒合并这段时间内的所有变化再跑一次；
 跑完把前缀表翻译成 (下一跳地址, 出接口)，与上次安装的做 diff，只 replace / del 有变化的路由（R8）。
+内核也会自己删路由（接口被关掉时），所以另有一个定时器把内核的实际路由读回来对账，补装丢掉的。
 """
 
 from __future__ import annotations
@@ -90,6 +92,8 @@ class Router:
 
     self.loop.call_every(self.cfg.hello, self._send_hellos)
     self.loop.call_every(0.5, self._tick)
+    if self.cfg.install:
+      self.loop.call_every(2.0, self._resync)
     if self.cfg.ack:
       self.loop.call_every(1.0, lambda: self.flooder.retransmit(self.loop.now()))
     if self.cfg.watch_links:
@@ -236,6 +240,25 @@ class Router:
         LOG.info("route del %s", prefix)
       del self.installed[prefix]
     return replaced, deleted
+
+  def _resync(self) -> None:
+    """
+    两本账的对账。diff 只拿 RIB 与 installed 比，而 installed 记的是“我以为写进去了什么”。
+    接口被关掉时，内核会自己删掉经它的路由，且不发通知；接口若在 Dead 之内恢复，邻居没有掉线，
+    RIB 不变，diff 为空，这些路由就再也装不回来（第 05 讲回顾题 31）。所以定期把内核的实际路由
+    读回来：缺了或被改了、且出接口都已恢复的，重装一次。只补自己装过的，不删别人的。
+    """
+    actual = sysnet.route_table()
+    lost = [p for p, nhs in self.installed.items() if actual.get(p) != nhs]
+    if not lost:
+      return
+    up = {iface.name for iface in sysnet.list_interfaces() if iface.lower_up}
+    for prefix in lost:
+      nexthops = self.installed[prefix]
+      if all(dev in up for _, dev in nexthops) and sysnet.route_replace(prefix, nexthops):
+        self.stats["route_resynced"] += 1
+        LOG.warning("route %s missing or changed in the kernel, reinstalled via %s", prefix,
+                    " + ".join(f"{via} dev {dev}" for via, dev in nexthops))
 
   # ---- 给 CLI 的快照 --------------------------------------------------------------
 

@@ -1,6 +1,6 @@
 # 2026 阅读版维护工具
 
-目前提供 **Lab 3、Lab 4 阅读版**、**第二、三、四讲回顾阅读版**和**第 06 讲讲义阅读版**的生成入口，不是全仓库通用转换器。第 06 讲与 Lab 4 的生成器共用 `reading_common.py`（命令行内高亮、生成页结构检查、链接与锚点核对、残留标记检查）。教师使用，不属于学生实验依赖；学生 Lab 3 仍只用 Python 标准库。
+目前提供 **Lab 3、Lab 4 阅读版**、**第二、三、四、五讲回顾阅读版**和**第 06 讲讲义阅读版**的生成入口，不是全仓库通用转换器。第 06 讲与 Lab 4 的生成器共用 `reading_common.py`（命令行内高亮、生成页结构检查、链接与锚点核对、残留标记检查）。教师使用，不属于学生实验依赖；学生 Lab 3 仍只用 Python 标准库。
 
 ## Lab 3 阅读版
 
@@ -88,6 +88,26 @@ uv run --project 2026/tools --frozen python 2026/tools/build_link_state_router_r
 - 题单与答案各 6 幅图，由 `link_state_router_review_figures.py` 绘制为内嵌 SVG；Mermaid 源图以 `%% lsr-review:<key>` 标识，摘要保存在 `link_state_router_review_figure_sources.json`。图注取自源图下方的 `*图 N：…*`，阅读版中图号与说明分列。答案中的计时图（图 1、4、5）在阅读版里按时间比例绘制，图 4 的放大段在图内注明不按比例。修改 Mermaid 后先核对 SVG 的节点、方向、数值与简化条件，再更新摘要。
 - 生成器核对：32 个题号逐一对应、连续图号、代码／输出逐字一致、唯一 ID、本地链接与跨页锚点、源文摘要、外部资源依赖，以及其他讲次模板与未转换 Mermaid 的残留。显示仍须在浏览器中检查桌面、约 390 px 手机、浅色／深色与导出 PDF 的分页；打印时题单的“使用说明”与第一、二、三、五、十节，答案的第一、三、七、八、十一节与“讲评时的核对入口”允许接续上一页，其余模块另起一页。
 - 第八节题 29、30 引用 2026-10-18 在备课虚拟机上用 `02/reference/lsrd` 补测的重启场景，复现命令写在答案题 30；其余数字沿用第四讲模块六的原记录。排版检查不代表实验验证。
+
+## 第五讲回顾与参考答案阅读版
+
+先修改 `2026/docs/datacenter_network_review.md` 与 `datacenter_network_review_answers.md`，再从仓库根目录执行：
+
+```bash
+# 1. 按本目录锁文件准备依赖
+uv sync --project 2026/tools --frozen
+
+# 2. 生成第五讲回顾，日期填写本次内容更新日期
+uv run --project 2026/tools --frozen python 2026/tools/build_datacenter_network_review_html.py --date 2026-10-24
+
+# 3. 生成逐题参考答案
+uv run --project 2026/tools --frozen python 2026/tools/build_datacenter_network_review_html.py --answers --date 2026-10-24
+```
+
+- 结构与第四讲回顾生成器相同：输出同目录、同名 HTML，公共样式、字体、目录与打印行为取自 `link_state_router.html`，打印页眉改为“第 05 讲回顾”。代码块支持 `bash` 与 `text` 两类，只做转义、不加高亮，复制文本与源文一致。链到仓库内 Markdown 时，若同目录有同名阅读版则改链到 `.html`。
+- 题单 5 幅、答案 6 幅图，由 `datacenter_network_review_figures.py` 绘制为内嵌 SVG；Mermaid 源图以 `%% dc-review:<key>` 标识，摘要保存在 `datacenter_network_review_figure_sources.json`。图注取自源图下方的 `*图 N：…*`。答案中的柱状图（图 1、2、5）与时间线（图 4）按数值比例绘制，图 4 的放大段在图内注明比例。修改 Mermaid 后先核对 SVG 的节点、方向、数值与简化条件，再更新摘要。
+- 生成器核对：32 个题号逐一对应、连续图号、代码／输出逐字一致、唯一 ID、本地链接与跨页锚点、源文摘要、外部资源依赖、本机绝对路径，以及其他讲次模板与未转换 Mermaid 的残留。显示仍须在浏览器中检查桌面、约 390 px 手机、浅色／深色与导出 PDF 的分页；打印时题单的“使用说明”与第一、六、十节，答案除第三、七节外的各节允许接续上一页。
+- 题 10、24、27–31 引用 2026-10-24 在备课虚拟机上用课堂实验床与 `02/reference/lsrd` 补测的数据，复现命令写在答案题 30、31；其余数字沿用第五讲原记录。排版检查不代表实验验证。
 
 ## 第 06 讲讲义阅读版
 

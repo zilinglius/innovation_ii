@@ -239,6 +239,7 @@ Dead 定时器不是每个邻居一个，而是 `router.py` 每 0.5 秒调一次
 | 定时器，每 `hello` 秒 | `_send_hellos()` | 对每个活动接口 `transport.broadcast(link, neighbors.build_hello(link))`（R1） |
 | 定时器，每 0.5 秒 | `_tick()` | `neighbors.expire(now)` → 事件 → `_handle_events()`（R2 的 Dead） |
 | 定时器，每 1 秒（开了 R9） | `flooder.retransmit(now)` | 重传 |
+| 定时器，每 2 秒（写内核时） | `_resync()` | 读回内核的 `proto 200` 路由，与 `installed` 对账，补装被内核删掉的（5.4 节） |
 | 套接字，收到 `hello` | `on_message()` | `neighbors.process_hello(...)` → 事件 → `_handle_events()` |
 | 套接字，收到 `lsu` | `on_message()` | `flooder.on_lsu(...)` → 返回“LSDB 变了吗” → `schedule_spf()` |
 | 套接字，收到 `ack` | `on_message()` | `flooder.on_ack(...)` |
@@ -581,6 +582,8 @@ SPF 的产出是 `{前缀: (cost, [首跳 rid, ...])}`。要变成内核认识�
 | zebra 的做法 | — | 同样是 diff |
 
 `run.sh show r1 routes` 打出来的是 RIB（进程的账），最右一列 KERNEL 标着它是否已在内核里；`ip -n r1 route show proto 200` 打出来的是 FIB（内核的账）。两本账正常时应当一致；Lab 2 任务 10 的六种故障里，有一种只有把两本账放在一起才看得出来。
+
+**对账**。diff 只拿 RIB 与 `installed` 比，而 `installed` 记的是“我以为写进去了什么”。内核也会自己删路由：接口被关掉时，经它的路由随即消失，而且不逐条通知。接口若在 Dead 之内恢复，邻居没有掉线，RIB 不变，diff 为空，这些路由就再也装不回来——第五讲回顾题 31 的补测里，spine 的一个接口抖动 0.5 秒，就有一半跨机架主机对一直不通。所以给定的 `router.py` 另有一个每 2 秒的定时器 `_resync()`：把 `ip -j route show proto 200` 读回来与 `installed` 比对，缺了或被改了、且出接口都已恢复的，重装一次。它只补自己装过的路由，不删别人的；`--no-install` 时不启用，所以 Lab 2 任务 10 的“只算不写内核”照样只能靠两本账对照看出来。
 
 ### 5.5 两只耳朵：Hello 与 netlink
 

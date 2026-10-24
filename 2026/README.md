@@ -24,9 +24,9 @@
 | 01 | 计算机网络基础与 Linux 网络虚拟化 | [`docs/network.md`](docs/network.md) | [Lab 1](experiments/01/README.md) | 📝 |
 | 02 | 二层交换与静态路由：bridge、多跳拓扑、路由表与转发 | [`docs/switching_routing.md`](docs/switching_routing.md)；[课堂回顾](docs/switching_routing_review.md) | [Lab 1](experiments/01/README.md) | 📝 |
 | 03 | 动态路由协议：距离向量、链路状态、路径向量（RIP / OSPF / BGP） | [`docs/routing_protocol.md`](docs/routing_protocol.md)；[课堂回顾](docs/routing_protocol_review.md) | [Lab 2](experiments/02/README.md) | 📝 |
-| 04 | 动手实现一个链路状态路由器：邻居发现、LSA 泛洪、SPF | [`docs/link_state_router.md`](docs/link_state_router.md) | [Lab 2](experiments/02/README.md) | 📝 |
+| 04 | 动手实现一个链路状态路由器：邻居发现、LSA 泛洪、SPF | [`docs/link_state_router.md`](docs/link_state_router.md)；[课堂回顾](docs/link_state_router_review.md) | [Lab 2](experiments/02/README.md) | 📝 |
 | **二、云数据中心网络** | | | | |
-| 05 | 数据中心网络：Clos / leaf-spine、ECMP、收敛比；overlay 与 VXLAN 多租户，容器网络与 SDN 一瞥 | [`docs/datacenter_network.md`](docs/datacenter_network.md) | [Lab 3](experiments/03/README.md) | ✅ |
+| 05 | 数据中心网络：Clos / leaf-spine、ECMP、收敛比；overlay 与 VXLAN 多租户，容器网络与 SDN 一瞥 | [`docs/datacenter_network.md`](docs/datacenter_network.md)；[课堂回顾](docs/datacenter_network_review.md) | [Lab 3](experiments/03/README.md) | ✅ |
 | 06 | 网络性能测量与流量控制：带宽 / 延迟 / 抖动 / 丢包，`iperf3`、`tc` | [`docs/network_measurement.md`](docs/network_measurement.md) | [Lab 4](experiments/04/README.md) | ✅ |
 | **三、传输、时间与延迟** | | | | |
 | 07 | 传输层与拥塞控制：CUBIC / BBR / DCTCP，incast 问题 | — | Lab 5 | ⏳ |
@@ -55,8 +55,10 @@
 | 03 | [第三讲回顾参考答案](docs/routing_protocol_review_answers.md)（[HTML 阅读版](docs/routing_protocol_review_answers.html)） | 36 题逐题讲评、11 幅推演图、判断改错与六个程序员视角讨论 |
 | 04 | [第四讲回顾](docs/link_state_router_review.md)（[HTML 阅读版](docs/link_state_router_review.html)） | 32 道分层题、约 40 分钟课堂路线，6 幅图串起事件循环、Hello、泛洪、SPF 首跳、收敛计时与重启补测 |
 | 04 | [第四讲回顾参考答案](docs/link_state_router_review_answers.md)（[HTML 阅读版](docs/link_state_router_review_answers.html)） | 32 题逐题讲评、6 幅推演图、三个实现缺陷的诊断表；含 2026-10-18 重启场景补测（去程／回程与 `rp_filter` 对照） |
+| 05 | [第五讲回顾](docs/datacenter_network_review.md)（[HTML 阅读版](docs/datacenter_network_review.html)） | 32 道分层题、约 40 分钟课堂路线，5 幅图串起流量矩阵、leaf-spine 地址、多对一下界、VXLAN 封装与上联故障对照 |
+| 05 | [第五讲回顾参考答案](docs/datacenter_network_review_answers.md)（[HTML 阅读版](docs/datacenter_network_review_answers.html)） | 32 题逐题讲评、6 幅推演图、三个现场的诊断表；含 2026-10-24 补测（哈希策略 0／1 对照、上联故障前后的收敛与容量、短暂抖动后的 spine 路由缺失） |
 
-前六讲、上述补充资料与 Lab 1–Lab 4 指导书均有同目录、同名的 `.html` 阅读版。编写时以 `.md` 为源文件，修改后应同步检查对应阅读版。第 05 讲于 2026-10-07 完成定稿审查：已同步完整 Lab 3 的入口、分层任务与测量口径，并核对阅读版内容、本地链接及桌面、手机、深色与打印样式显示；本轮未重跑 Linux 实验。Lab 3 已交付修订指导书、学生拓扑骨架、测量助手与清理工具；2026-10-05 已按修订命令在备课沙箱中验证主要对照，具体范围见 [Lab 3 维护与验证](experiments/03/README.md#维护与验证)。学生 TODO 保持留白，学生实现仍须独立验收。第 06 讲于 2026-10-17 定稿：讲义全部命令块按原文在完整实验床（`experiments/04/topo.sh`）上逐块重跑通过，实测环境为 Ubuntu 26.04 / Linux 7.0 备课虚拟机；阅读版由 `tools/build_network_measurement_html.py` 生成，已核对内容、链接，以及桌面、手机、深色与导出 PDF 的显示。尚未在 Ubuntu 22.04／24.04 上复核。第四讲回顾与参考答案于 2026-10-18 完成，阅读版由 `tools/build_link_state_router_review_html.py` 生成，已核对桌面、手机、深色与导出 PDF 的显示；答案中的重启场景（题 30）在同一备课虚拟机上用 Lab 2 参考实现补测，其余数字引用第四讲原记录。同日据此修订第 04 讲：2.2 节说明定时器重排时 `now` 的取值时刻，4.1 节写清 R5 两个条件的分工，6.12 节补充回程与 `rp_filter` 的补测数据和两步复现命令（原 6.13 节步骤顺延为 40、41）。第 04 讲阅读版仓库内没有生成脚本，本次为手工同步，已逐块核对 80 个代码／输出块与源文一致。
+前六讲、上述补充资料与 Lab 1–Lab 4 指导书均有同目录、同名的 `.html` 阅读版。编写时以 `.md` 为源文件，修改后应同步检查对应阅读版。第 05 讲于 2026-10-07 完成定稿审查：已同步完整 Lab 3 的入口、分层任务与测量口径，并核对阅读版内容、本地链接及桌面、手机、深色与打印样式显示；本轮未重跑 Linux 实验。Lab 3 已交付修订指导书、学生拓扑骨架、测量助手与清理工具；2026-10-05 已按修订命令在备课沙箱中验证主要对照，具体范围见 [Lab 3 维护与验证](experiments/03/README.md#维护与验证)。学生 TODO 保持留白，学生实现仍须独立验收。第 06 讲于 2026-10-17 定稿：讲义全部命令块按原文在完整实验床（`experiments/04/topo.sh`）上逐块重跑通过，实测环境为 Ubuntu 26.04 / Linux 7.0 备课虚拟机；阅读版由 `tools/build_network_measurement_html.py` 生成，已核对内容、链接，以及桌面、手机、深色与导出 PDF 的显示。尚未在 Ubuntu 22.04／24.04 上复核。第四讲回顾与参考答案于 2026-10-18 完成，阅读版由 `tools/build_link_state_router_review_html.py` 生成，已核对桌面、手机、深色与导出 PDF 的显示；答案中的重启场景（题 30）在同一备课虚拟机上用 Lab 2 参考实现补测，其余数字引用第四讲原记录。同日据此修订第 04 讲：2.2 节说明定时器重排时 `now` 的取值时刻，4.1 节写清 R5 两个条件的分工，6.12 节补充回程与 `rp_filter` 的补测数据和两步复现命令（原 6.13 节步骤顺延为 40、41）。第 04 讲阅读版仓库内没有生成脚本，本次为手工同步，已逐块核对 80 个代码／输出块与源文一致。第五讲回顾与参考答案于 2026-10-24 完成，阅读版由 `tools/build_datacenter_network_review_html.py` 生成，已核对桌面、约 390 px 手机、深色与导出 PDF 的显示；题 10、24、27–31 的数据是同日在同一备课虚拟机上用课堂实验床（`classroom.sh up --reference`）补测的，其余数字引用第五讲原记录。同日据该回顾题 31 的补测修复 Lab 2 给定的 `router.py`（骨架与参考实现同一份）：新增每 2 秒一次的内核路由对账 `_resync()`，链路短暂关闭、邻居来不及 Down 时，也能补装被内核删掉的路由；`--no-install` 时不启用，学生 TODO 未改动。第 04 讲 2.5 节定时器表与 5.4 节随之补充，阅读版为手工同步。`classroom.sh check` 与 `experiments/04/topo.sh check` 改为逐条列出不通的往返。修复后的验证：Lab 2 离线测试中骨架仍为 5 项通过、9 项失败、3 项错误，参考实现 17 项全部通过；在同一备课虚拟机上复测了课堂实验床的抖动与上联故障、Lab 2 三角形实验床的拔线与抖动，以及 Lab 4 实验床的搭建、自检与清理。
 
 ### 可参考的 2025 材料
 
