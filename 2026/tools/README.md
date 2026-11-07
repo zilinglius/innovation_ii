@@ -1,6 +1,6 @@
 # 2026 阅读版维护工具
 
-目前提供 **Lab 3、Lab 4、Lab 5 阅读版**、**第二、三、四、五讲回顾阅读版**和**第 06、07 讲讲义阅读版**的生成入口，不是全仓库通用转换器。第 06、07 讲与 Lab 4、Lab 5 的生成器共用 `reading_common.py`（命令行内高亮、生成页结构检查、链接与锚点核对、残留标记检查）。教师使用，不属于学生实验依赖；学生 Lab 3 仍只用 Python 标准库。
+目前提供 **Lab 3、Lab 4、Lab 5 阅读版**、**第二、三、四、五、六讲回顾阅读版**和**第 06、07 讲讲义阅读版**的生成入口，不是全仓库通用转换器。第 06、07 讲与 Lab 4、Lab 5 的生成器共用 `reading_common.py`（命令行内高亮、生成页结构检查、链接与锚点核对、残留标记检查）。教师使用，不属于学生实验依赖；学生 Lab 3 仍只用 Python 标准库。
 
 ## Lab 3 阅读版
 
@@ -108,6 +108,25 @@ uv run --project 2026/tools --frozen python 2026/tools/build_datacenter_network_
 - 题单 5 幅、答案 6 幅图，由 `datacenter_network_review_figures.py` 绘制为内嵌 SVG；Mermaid 源图以 `%% dc-review:<key>` 标识，摘要保存在 `datacenter_network_review_figure_sources.json`。图注取自源图下方的 `*图 N：…*`。答案中的柱状图（图 1、2、5）与时间线（图 4）按数值比例绘制，图 4 的放大段在图内注明比例。修改 Mermaid 后先核对 SVG 的节点、方向、数值与简化条件，再更新摘要。
 - 生成器核对：32 个题号逐一对应、连续图号、代码／输出逐字一致、唯一 ID、本地链接与跨页锚点、源文摘要、外部资源依赖、本机绝对路径，以及其他讲次模板与未转换 Mermaid 的残留。显示仍须在浏览器中检查桌面、约 390 px 手机、浅色／深色与导出 PDF 的分页；打印时题单的“使用说明”与第一、六、十节，答案除第三、七节外的各节允许接续上一页。
 - 题 10、24、27–31 引用 2026-10-24 在备课虚拟机上用课堂实验床与 `02/reference/lsrd` 补测的数据，复现命令写在答案题 30、31；其余数字沿用第五讲原记录。排版检查不代表实验验证。
+
+## 第六讲回顾与参考答案阅读版
+
+先修改 `2026/docs/network_measurement_review.md` 与 `network_measurement_review_answers.md`，再从仓库根目录执行：
+
+```bash
+# 1. 按本目录锁文件准备依赖
+uv sync --project 2026/tools --frozen
+
+# 2. 生成第六讲回顾，日期填写本次内容更新日期
+uv run --project 2026/tools --frozen python 2026/tools/build_network_measurement_review_html.py --date 2026-11-07
+
+# 3. 生成逐题参考答案
+uv run --project 2026/tools --frozen python 2026/tools/build_network_measurement_review_html.py --answers --date 2026-11-07
+```
+
+- 由第五讲回顾生成器派生，结构相同；显示公式放进可横向滚动的容器。题单 4 幅、答案 5 幅图由 `network_measurement_review_figures.py` 绘制（图 1 复用第五讲回顾的拓扑），Mermaid 源图以 `%% nm-review:<key>` 标识，摘要保存在 `network_measurement_review_figure_sources.json`。题单图 3 与答案图 1、2、3、5 按数值比例绘制。修改 Mermaid 后先核对 SVG 的节点、方向、数值与简化条件，再更新摘要。
+- 生成器核对的项目与第五讲回顾相同；显示仍须在浏览器中检查桌面、约 390 px 手机、浅色／深色与导出 PDF 的分页。
+- 题 8、16、22、27–31 引用 2026-11-07 的补测，复现命令写在答案题 16、27–30。排版检查不代表实验验证。
 
 ## 第 06 讲讲义阅读版
 
