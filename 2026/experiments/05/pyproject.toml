@@ -1,0 +1,12 @@
+[project]
+name = "lab05-tail-latency"
+version = "1.0.0"
+description = "Lab 5：长尾延迟与对冲请求——扇出测量工具 tailbench.py"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+# 只用标准库：asyncio、socket、json、statistics。
+# 环境准备（仓库根目录）：uv sync --project 2026/experiments/05 --frozen
+# 离线测试：cd 2026/experiments/05 && uv run --frozen python -m unittest -v
+# 测量需要 root 与实验床，用系统 python3 即可：sudo ip netns exec h1a python3 2026/experiments/05/tailbench.py

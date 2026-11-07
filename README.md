@@ -2,7 +2,7 @@
 
 本科生课程 **《云网融合创新实践》** 的讲义与配套实验。课程从计算机网络基础出发，利用 Linux 内核的网络虚拟化能力（network namespace、veth、bridge、`tc netem`）在单机上搭建可复现的网络实验，逐步深入到路由协议、精确定时与延迟测量，以及网络对分布式计算框架的影响。
 
-2026 学期共 **15 讲、9 个实验和一个综合项目**。课程最终目标是让学生实践计算与网络的相互融合，以作业完成时间（Job Completion Time, JCT）衡量后半程的优化效果。
+2026 学期共 **12 讲、7 个实验（Lab 4 选做）和一个综合项目**。课程最终目标是让学生实践计算与网络的相互融合，以作业完成时间（Job Completion Time, JCT）衡量后半程的优化效果。
 
 ## 仓库结构
 
@@ -22,7 +22,7 @@
 
 ## 实验环境
 
-- 一台 Linux 主机或虚拟机，推荐 Ubuntu 22.04 及以上、至少 4 核 CPU 和 4 GB 内存，具备 `sudo` 权限；Lab 9 需要 cgroup v2
+- 一台 Linux 主机或虚拟机，推荐 Ubuntu 22.04 及以上、至少 4 核 CPU 和 4 GB 内存，具备 `sudo` 权限；Lab 7 需要 cgroup v2
 - 必需：`iproute2`、`iputils-ping`、`tcpdump`、`traceroute`、`iperf3`、`iptables`、Python 3.10 及以上与 [`uv`](https://docs.astral.sh/uv/)
 - 个别讲次另需 FRRouting 或特定内核模块，详见 [2026 环境说明](2026/README.md#实验环境) 与各实验指导书；`shellcheck` 用于脚本静态检查
 - macOS / Windows 用户请使用 Linux 虚拟机或云主机

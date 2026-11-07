@@ -4,7 +4,7 @@
 
 ## 1. 项目是什么
 
-这是上海交通大学本科生课程 **《云网融合创新实践》** 的讲义与配套实验（labs）仓库，授课教师 Rui Ren。课程主线是：从计算机网络基础出发，用 Linux 内核的网络虚拟化能力（network namespace、veth、bridge、`tc netem`）在单机上搭建可复现的网络实验，再逐步走向路由协议、精确定时与延迟测量，最后讨论网络对分布式计算框架的影响与拓扑感知调度。全课 15 讲，**最终目标是让学生实践计算与网络的相互融合，以实现更高效的计算**。
+这是上海交通大学本科生课程 **《云网融合创新实践》** 的讲义与配套实验（labs）仓库，授课教师 Rui Ren。课程主线是：从计算机网络基础出发，用 Linux 内核的网络虚拟化能力（network namespace、veth、bridge、`tc netem`）在单机上搭建可复现的网络实验，再逐步走向路由协议、精确定时与延迟测量，最后讨论网络对分布式计算框架的影响与拓扑感知调度。全课 12 讲，**最终目标是让学生实践计算与网络的相互融合，以实现更高效的计算**。
 
 读者是本科生：假定学过程序设计与基本的操作系统概念，但**不假定**系统学过计算机网络。
 
@@ -101,7 +101,7 @@
 
 ## 4. 实验（lab）规范
 
-2026 的实验是重新设计的，2025 的实验只作参考。总体设计（9 个实验加综合项目、相互依赖、已知风险）见 `2026/experiments/README.md`，编写任何实验前先读它。核心原则：
+2026 的实验是重新设计的，2025 的实验只作参考。总体设计（7 个实验加综合项目、相互依赖、已知风险）见 `2026/experiments/README.md`，编写任何实验前先读它。核心原则：
 
 - **跑真实流量，不用仿真器**：作业是跑在各 namespace 里的真实进程，网络条件用 `tc` 施加。
 - **一个实验床、一个指标贯穿始终**：实验床从两个 namespace 长成 leaf-spine 迷你数据中心；后半程统一用作业完成时间（JCT）衡量。前面实验的产出要能被后面的实验直接复用，接口改动须同步检查下游实验。
@@ -110,7 +110,7 @@
 
 通用规范：
 
-- 实验环境：一台 Linux 主机或虚拟机（推荐 Ubuntu 22.04 及以上，至少 4 核、4 GB；Lab 9 需要 cgroup v2），需要 `iproute2`、`iputils-ping`、`tcpdump`、`iperf3`、Python 3 与 `uv`。macOS 上无法直接运行 namespace 实验，需在 Linux 虚拟机或云主机中进行。
+- 实验环境：一台 Linux 主机或虚拟机（推荐 Ubuntu 22.04 及以上，至少 4 核、4 GB；Lab 7 需要 cgroup v2），需要 `iproute2`、`iputils-ping`、`tcpdump`、`iperf3`、Python 3 与 `uv`。macOS 上无法直接运行 namespace 实验，需在 Linux 虚拟机或云主机中进行。
 - 所有实验命令约定**从仓库根目录执行**，需要 root 的步骤显式写 `sudo`。
 - Bash 脚本：
   - 首行 `#!/usr/bin/env bash`，紧跟 `set -Eeuo pipefail`；
@@ -155,7 +155,7 @@ AI 助手若无法在 Linux 上实际运行脚本，应至少完成 `bash -n` / 
 | 复习与讲评 | `2026/docs/network_review.md`、`network_review_answers.md` |
 | 讲义组织、实验数据带读与场景对照 | 本文件第 3 节；`2026/docs/datacenter_network.md` 的短观察和模块六 |
 | HTML 阅读版制作与验收 | `html_guidelines.md`；公共样式参考 `2026/docs/link_state_router.html`，配图参考 `datacenter_network.html` |
-| 拓扑扩展与后续实验 | `2026/experiments/01/ns_topo.sh` → `02/topo.sh` → 实验总览中的 Lab 3–9 依赖关系 |
+| 拓扑扩展与后续实验 | `2026/experiments/01/ns_topo.sh` → `02/topo.sh` → 实验总览中的 Lab 3–7 依赖关系 |
 
 - **先检查工作区**：开始任务时查看 `git status`，保留已有未提交修改与未跟踪资料，仅改动当前任务所需内容。
 - **备课与验证沙箱**：`2026/environment/` 中的 Lima / Docker 环境仅供教师与 AI 助手设计讲义、开发实验及进行 Linux 实机验证。Linux 实机验证优先复用当前 Lima 实例 `innovation-ii`，VM 内工作副本为 `/workspace`，使用方式见 [`environment/lima.md`](2026/environment/lima.md)。学生自行准备 Ubuntu 环境；学生讲义与实验指导书使用标准 Ubuntu 工具和命令，不把本机 Lima / Docker 沙箱入口作为前置要求。验证时记录实际内核、资源与验证范围，不将沙箱中的通过结果视为所有学生环境均已验证。

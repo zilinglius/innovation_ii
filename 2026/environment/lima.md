@@ -80,7 +80,7 @@ bash 2026/environment/lima.sh down
 
 - `course-check` 验证 namespace、veth、bridge、双向 ping、转发、ECMP 路由安装、netem / HTB、抓包、真实 TCP 流量、iptables，并探测 VXLAN。
 - `course-kernel-check` 在临时 veth 上实际安装 `fq`、支持 ECN 的 RED 和软件 ETF；创建 TCP 套接字选择 CUBIC、BBR、DCTCP；通过临时 systemd 单元设置 `CPUQuota=50%`，运行忙循环并核对 `cpu.max` 与实际限流计数。
-- 内核能力通过不等于实验效果已验证。ECMP 分流比例、完整 VXLAN overlay、DCTCP 的 ECN 标记与吞吐、BBR 行为、发送时间精度、CPU 控制器委派仍按各实验另行验证。Lab 3–9 的状态以 [实验总览](../experiments/README.md)为准。
+- 内核能力通过不等于实验效果已验证。ECMP 分流比例、完整 VXLAN overlay、DCTCP 的 ECN 标记与吞吐、BBR 行为、发送时间精度、CPU 控制器委派仍按各实验另行验证。Lab 3–7 的状态以 [实验总览](../experiments/README.md)为准。
 
 ### 本机实测记录
 

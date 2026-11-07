@@ -1,4 +1,4 @@
-"""画像格式 v1：校验与读取。这是 Lab 4 与 Lab 9 之间的接口，Lab 9 的调度器直接 import 本模块。
+"""画像格式 v1：校验与读取。这是 Lab 4 与 Lab 7 之间的接口，Lab 7 的调度器直接 import 本模块。
 
 一份画像回答“在某个时刻、用某种方法、在某种条件下，每对主机之间的往返时间与吞吐是多少、有多准”：
 
@@ -123,7 +123,7 @@ def validate(profile):
 
 
 class Profile:
-    """读取后的画像。Lab 9 的调度器用 rtt() 与 throughput() 取数，取不到时返回 None。"""
+    """读取后的画像。Lab 7 的调度器用 rtt() 与 throughput() 取数，取不到时返回 None。"""
 
     def __init__(self, data):
         self.data = validate(data)

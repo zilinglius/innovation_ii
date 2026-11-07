@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="generator" content="2026/tools/build_network_measurement_html.py；源文 sha256 9c4f56c7d162abed7610138fec0380ca72bb887d74646241ab8d9efa5a16aa8b；更新 2026-10-17">
+<meta name="generator" content="2026/tools/build_network_measurement_html.py；源文 sha256 88dec775362c926641325ac4191943a5cbe7a56f8483785f67f898ff07384c3f；更新 2026-11-07">
 <title>第06讲 给网络做体检：性能测量与流量控制</title><style>
 /* ==========================================================================
    云网融合创新实践 · 讲义样式
@@ -492,7 +492,7 @@ svg.lec06 .frame { fill:none; stroke:var(--rule-2); stroke-width:1.2; stroke-das
 <main class="doc" id="top">
 <header class="masthead"><div class="mast-eyebrow"><span>上海交通大学 · 云网融合创新实践</span><span class="lec">2026 · LECTURE 06 · 讲义</span></div><h1>给网络做体检：<br>性能测量与流量控制</h1><p class="mast-sub">Network Check-up: Measurement &amp; Traffic Control</p><div class="pathstrip"><svg viewBox="0 0 300 40" role="img" aria-label="探测报文从主机出发，经过限速与排队的路由器到达另一台主机，往返计时"><line x1="16" y1="26" x2="284" y2="26" class="wire"/><rect x="2" y="19" width="14" height="14" rx="2" class="n-host"/><circle cx="96" cy="26" r="10" class="n-l3"/><rect x="134" y="18" width="34" height="16" rx="3" class="n-l4"/><circle cx="204" cy="26" r="10" class="n-l3"/><rect x="284" y="19" width="14" height="14" rx="2" class="n-host"/><path d="M 24 10 H 270" class="ar ar-l3 dash"/><path d="M 266 6 L 274 10 L 266 14" class="ar ar-l3"/></svg><div class="legend"><span><i class="k-l3"></i>三层 · 延迟、丢包与路径</span><span><i class="k-l4"></i>四层 · 连接与吞吐</span></div></div><div class="lead"><span class="lead-label">课程导读</span><p>上一讲我们用 <code>tc</code> 给链路限速，用 <code>iperf3</code> 和 <code>transfer.py</code> 量过吞吐，每次关心的都是一个结果。本讲从调度器的一个问题出发：“h1a 到 h3a 有多快？”同一对主机，可以量出 0.2 ms 或 121 ms 的往返时间，也可以量出 47 Mbit/s 或 91 Mbit/s 的速率（4.4、4.5 节）。这些数都是真的，差别在于<strong>测的是什么、怎么测、在什么条件下测、测得有多准</strong>。学完后，你应能为一对主机交出一张“体检单”：每个数字都写明指标、方法、条件和不确定度，并能用它为不同的作业选择放置。</p>
 </div></header>
-<aside class="callout note long"><div class="callout-label">NOTE<span>课堂安排与准备</span></div><p>本讲对应<a href="../README.md" class="xref">课程大纲</a>第 06 讲和 <a href="../experiments/README.md#lab-4%E7%BB%99%E7%BD%91%E7%BB%9C%E5%81%9A%E4%BD%93%E6%A3%80" class="xref">Lab 4 设计</a>，按 <strong>90 分钟有效授课时间</strong>设计。延迟、丢包、吞吐的定义与读数为基础要求；令牌桶与负载下延迟要求看懂现象并会计算；统计区间要求会算一次。TCP 为什么会把队列填满、长尾怎样放大、α-β 模型怎样定义，分别留给第 07、09、10 讲。</p>
+<aside class="callout note long"><div class="callout-label">NOTE<span>课堂安排与准备</span></div><p>本讲对应<a href="../README.md" class="xref">课程大纲</a>第 06 讲和 <a href="../experiments/README.md#lab-4%E7%BB%99%E7%BD%91%E7%BB%9C%E5%81%9A%E4%BD%93%E6%A3%80" class="xref">Lab 4 设计</a>，按 <strong>90 分钟有效授课时间</strong>设计。延迟、丢包、吞吐的定义与读数为基础要求；令牌桶与负载下延迟要求看懂现象并会计算；统计区间要求会算一次。TCP 为什么会把队列填满、长尾怎样放大留给第 07 讲，α-β 模型怎样定义留给第 08 讲。</p>
 <p><strong>材料状态</strong>：✅ 已定稿（2026-10-17）。标为“实测样例”的输出来自 2026-10-17 的备课虚拟机：Ubuntu 26.04.1、Linux <code>7.0.0-38-generic</code>、x86_64、2 核 2.8 GB，iproute2 6.19.0、iputils 20250605、iperf3 3.20；使用<a href="../experiments/04/topo.sh" class="xref">完整实验床</a>与 Lab 2 参考路由。为便于阅读省略了无关字段；端口、时间与单次读数以自己的测量为准，算例另标为教学设定或理论值。定稿时按原文逐块重跑了全部命令，并核对了阅读版的内容与显示。本文命令尚未在 Ubuntu 22.04／24.04 上复核，<code>tc</code> 的部分行为随内核版本变化（见 2.2 节）。</p>
 <p><strong>课堂组织</strong>：前五个模块各讲一类体检项目，每次短观察只回答一个问题：用什么工具、在哪个接口和方向观察、读哪些字段、这些数据支持什么判断。模块六给一张藏了条件的实验床完整做一次体检。课前搭建一次，全程沿用 <strong>100 Mbit/s 档位</strong>；每个短观察结束时恢复基线，用 <code>topo.sh status</code> 确认后再进入下一个。</p>
 </aside>
@@ -657,7 +657,7 @@ rtt min/avg/max/mdev = 0.087/0.157/0.226/0.029 ms
 <section class="module" id="m2" data-layer="l3"><header class="module-head"><div class="module-eyebrow"><span class="module-no">模块二</span><span class="tag l3">L3 · 延迟与丢包</span></div><h2>延迟、抖动与丢包</h2></header>
 <h3 id="s2-1"><span class="sec-no">2.1</span>往返时间与单向延迟</h3>
 <p><strong>往返时间</strong>（Round-Trip Time，RTT）是一个报文从源出发、对端回应、回应回到源的总时间，包含去程、对端处理与回程，定义见 <a href="https://www.rfc-editor.org/rfc/rfc2681" class="ext">RFC 2681</a>。<strong>单向延迟</strong>（One-Way Delay）只看一个方向，定义见 <a href="https://www.rfc-editor.org/rfc/rfc7679" class="ext">RFC 7679</a>。两个方向的条件可以不同：例如只在进入某台主机的方向排队。只看 RTT，无法知道延迟在哪个方向。</p>
-<p>测单向延迟需要两端的时钟一致。真实网络中两台主机的时钟各自走，必须先用 NTP 或 PTP 同步，同步误差直接进入结果（第 08 讲）。本实验床的所有 namespace 跑在同一台主机上，共用同一个内核时钟，所以可以直接相减。<a href="../experiments/04/owd.py" class="xref"><code>owd.py</code></a> 就利用这一点：发送端在 UDP 报文里写入发送时刻（<code>CLOCK_MONOTONIC</code>），接收端用同一时钟读出接收时刻，二者之差就是单向延迟。它在 Python 中打时间戳，自身会带来零点几毫秒的开销，2.3 节会读到这个噪声底。</p>
+<p>测单向延迟需要两端的时钟一致。真实网络中两台主机的时钟各自走，必须先用 NTP 或 PTP 同步，同步误差直接进入结果（第 07 讲）。本实验床的所有 namespace 跑在同一台主机上，共用同一个内核时钟，所以可以直接相减。<a href="../experiments/04/owd.py" class="xref"><code>owd.py</code></a> 就利用这一点：发送端在 UDP 报文里写入发送时刻（<code>CLOCK_MONOTONIC</code>），接收端用同一时钟读出接收时刻，二者之差就是单向延迟。它在 Python 中打时间戳，自身会带来零点几毫秒的开销，2.3 节会读到这个噪声底。</p>
 <h3 id="s2-2"><span class="sec-no">2.2</span>用 netem 制造“病因”</h3>
 <p>本实验床每个端口的发送方向都是同一个结构：</p>
 <figure class="fig" id="fig-qdisc"><p class="fig-scroll-hint">左右滑动查看全图；键盘可聚焦图框后横向滚动。</p><div class="fig-body" tabindex="0" role="region" aria-label="图 1，可横向滚动"><svg class="lec06" viewBox="0 0 760 300" role="img" aria-labelledby="qdisc-title qdisc-desc" xmlns="http://www.w3.org/2000/svg"><title id="qdisc-title">图 1</title><desc id="qdisc-desc">HTB 类决定这个端口每秒最多发多少（容量）；叶子 qdisc 决定排队的报文以什么顺序、在什么条件下离开。只替换叶子，限速保持不变。所有配置只作用于该接口的发送方向（egress）。</desc><defs><marker id="qdisc-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" class="mk-ink"/></marker><marker id="qdisc-l4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" class="mk-l4"/></marker></defs><rect x="8" y="34" width="744" height="252" rx="8" class="frame"/><text x="22" y="26" text-anchor="start" class="t-sm t-2">一个限速端口的发送方向（egress）</text><text x="330" y="62" text-anchor="middle" class="t-sm t-l3">HTB 根与类：决定容量（每秒最多发多少）</text><text x="555" y="62" text-anchor="middle" class="t-sm t-l4">叶子：决定排队方式</text><rect x="20" y="82" width="110" height="56" rx="5" class="n-host"/><text x="75.0" y="115.0" text-anchor="middle" class="">报文离开接口</text><path d="M 130 110 H 158" class="ar" marker-end="url(#qdisc-ink)"/><rect x="162" y="82" width="120" height="56" rx="5" class="n-l3"/><text x="222.0" y="106.0" text-anchor="middle" class="">根 qdisc</text><text x="222.0" y="124.0" text-anchor="middle" class="t-mono t-l3">htb 1:</text><path d="M 282 110 H 310" class="ar" marker-end="url(#qdisc-ink)"/><rect x="314" y="82" width="140" height="56" rx="5" class="n-l3"/><text x="384.0" y="106.0" text-anchor="middle" class="">类 1:10</text><text x="384.0" y="124.0" text-anchor="middle" class="t-mono t-l3">rate = ceil = 档位</text><path d="M 454 110 H 482" class="ar" marker-end="url(#qdisc-ink)"/><rect x="486" y="82" width="136" height="56" rx="5" class="n-l4"/><text x="554.0" y="106.0" text-anchor="middle" class="">叶子 qdisc 10:</text><text x="554.0" y="124.0" text-anchor="middle" class="t-mono t-l4">基线为 fq</text><path d="M 622 110 H 650" class="ar" marker-end="url(#qdisc-ink)"/><rect x="654" y="82" width="90" height="56" rx="5" class="n-host"/><text x="699.0" y="115.0" text-anchor="middle" class="">veth 对端</text><path d="M 554 138 V 206" class="ar ar-l4 dash" marker-end="url(#qdisc-l4)"/><text x="564" y="180" text-anchor="start" class="t-sm t-l4">本讲替换为</text><rect x="420" y="210" width="324" height="64" rx="5" class="alt"/><text x="582" y="236" text-anchor="middle" class="t-mono">netem：加延迟／抖动／丢包</text><text x="582" y="258" text-anchor="middle" class="t-mono">pfifo：单一先进先出队列</text><text x="20" y="220" text-anchor="start" class="t-sm t-2">只替换叶子，HTB 的限速保持不变</text><text x="20" y="244" text-anchor="start" class="t-sm t-2">所有配置只作用于该接口的发送方向</text></svg></div><figcaption><b>图 1</b><span>HTB 类决定这个端口每秒最多发多少（容量）；叶子 qdisc 决定排队的报文以什么顺序、在什么条件下离开。只替换叶子，限速保持不变。所有配置只作用于该接口的发送方向（egress）。</span></figcaption></figure>
@@ -1026,6 +1026,7 @@ burst 1000000b   2 MB：0.175 s，91.3 Mbit/s    20 MB：3.187 s，50.2 Mbit/s
 <h3 id="s4-5"><span class="sec-no">4.5</span>教师演示：吞吐相同，负载下延迟差几百倍</h3>
 <p><strong>问题与预测</strong>：h3a 接入口为 50 Mbit/s。h1b 向 h3a 发一条 40 MB 的大流，同时从 h1a <code>ping</code> h3a，RTT 是多少？把这个端口的叶子从 fq 换成单一先进先出队列 <code>pfifo</code>，大流的吞吐和 <code>ping</code> 的 RTT 各怎样变化？</p>
 <p><strong>观察点</strong>：大流由 h1b 发出、ping 由 h1a 发出，两者只在 r3→h3a 这一处共用队列；大流与 ping 若从同一台主机发出，结论会不同（见本节末的边界）。</p>
+<p><strong>算法</strong>：本节样例没有显式指定拥塞控制算法，从数据和 2026-11-07 的复现判断用的是 CUBIC。算法不同，结果差别很大：用同样的命令对照 pfifo，CUBIC 的 <code>ping</code> p50 为 121 ms，BBR 只有 3.61 ms，原因见<a href="tail_latency.html" class="xref">第 07 讲</a> 1.3 节。复跑前先用 <code>sysctl net.ipv4.tcp_congestion_control</code> 确认，不是 <code>cubic</code> 时执行 <code>sudo ip netns exec h1b sysctl -w net.ipv4.tcp_congestion_control=cubic</code>。</p>
 <p>公平队列 fq（Fair Queue）按流分别排队、轮流发送（<a href="https://man7.org/linux/man-pages/man8/tc-fq.8.html" class="ext"><code>tc-fq(8)</code></a>）；本机默认每条流最多排 <code>flow_limit 100</code> 个包。<code>pfifo limit 1000</code> 让所有报文排同一个队，最多 1000 个包。</p>
 <div class="code cmd"><span class="code-tag">bash</span><pre><code><span class="c step"><span class="step-n"># 1.</span> 瓶颈：r3-h3a 降到 50 Mbit/s（叶子仍为 fq）</span>
 <span class="su">sudo</span> ip netns exec <span class="ns">r3</span> tc class change dev r3-h3a parent 1: classid 1:10 htb rate 50mbit ceil 50mbit
@@ -1450,7 +1451,7 @@ done | python3 2026/experiments/04/stats.py --ci
 </tbody>
 </table></div>
 <p><em>表注：吞吐取 6.2 节筛查读数，RTT 取 p50；均为理论下界，未计建连、计算与其他开销。作业 A 若是从机架 4 向外发送，h4a→h1a 方向约 95.7 Mbit/s，不受这一条件影响：放置时还要看数据的方向。</em></p>
-<p><strong>结论：两类作业要避开的主机不同。</strong> 只看吞吐的调度器会把作业 B 放到 h2b 上；只看 RTT 的调度器会把作业 A 放进机架 4。网络画像必须同时有两个维度，并且写明测量条件——这就是 Lab 9 用它做调度决策的前提。</p>
+<p><strong>结论：两类作业要避开的主机不同。</strong> 只看吞吐的调度器会把作业 B 放到 h2b 上；只看 RTT 的调度器会把作业 A 放进机架 4。网络画像必须同时有两个维度，并且写明测量条件——这就是 Lab 7 用它做调度决策的前提。</p>
 <p>若自己的数值偏离样例，沿证据检查：</p>
 <div class="table-wrap" tabindex="0" role="region" aria-label="表格，可横向滚动"><table>
 <thead>
@@ -1484,7 +1485,7 @@ done | python3 2026/experiments/04/stats.py --ci
 </tbody>
 </table></div>
 <h3 id="s6-6"><span class="sec-no">6.6</span>从课堂实践走向 Lab 4</h3>
-<p>课上完成的是“一行、手工、单次”的体检：提出预测、筛查、对照定位、复测、交付。Lab 4 把它变成可复用的工具，任务与验收以 <a href="../experiments/README.md#lab-4%E7%BB%99%E7%BD%91%E7%BB%9C%E5%81%9A%E4%BD%93%E6%A3%80" class="xref">Lab 4 设计</a>为准。</p>
+<p>课上完成的是“一行、手工、单次”的体检：提出预测、筛查、对照定位、复测、交付。Lab 4 把它变成可复用的工具，任务与验收以 <a href="../experiments/README.md#lab-4%E7%BB%99%E7%BD%91%E7%BB%9C%E5%81%9A%E4%BD%93%E6%A3%80" class="xref">Lab 4 设计</a>为准。Lab 4 自 2026-11-07 起改为选做：Lab 7 开始前会发布完整工具，α-β 模型的数据由 Lab 6 自己测。</p>
 <div class="table-wrap" tabindex="0" role="region" aria-label="表格，可横向滚动"><table>
 <thead>
 <tr>
@@ -1497,12 +1498,12 @@ done | python3 2026/experiments/04/stats.py --ci
 <tr>
 <td>基础</td>
 <td>体检单五要素；<code>ping</code>、<code>iperf3</code>、<code>stats.py</code> 的读法；重复与区间</td>
-<td>写 <code>profile.py</code>：自动测全部 28 对 RTT 与 56 对有向吞吐，输出带样本量、区间与方法的 <code>profile.json</code>；用数据为 <code>-t</code>、<code>-O</code>、<span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>n</mi></mrow></math></span> 的取法辩护，并识别 CPU 争用</td>
+<td>补全 <code>netprof</code>，让 <code>checkup.py</code> 自动测全部 28 对 RTT 与 56 对有向吞吐，输出带样本量、区间与方法的 <code>profile.json</code>；用数据为 <code>-t</code>、<code>-O</code>、<span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>n</mi></mrow></math></span> 的取法辩护，并识别 CPU 争用</td>
 </tr>
 <tr>
 <td>进阶</td>
 <td>单向延迟；ECMP 下“一对主机走两条路”</td>
-<td>场景 <code>uplink-r1r5</code> 只降一条上联，处理同一主机对的双峰样本；测不同数据量下的传输时间，为第 10 讲的 α-β 模型准备数据</td>
+<td>场景 <code>uplink-r1r5</code> 只降一条上联，处理同一主机对的双峰样本；测不同数据量下的传输时间，为第 08 讲的 α-β 模型准备数据</td>
 </tr>
 <tr>
 <td>挑战</td>
@@ -1538,7 +1539,7 @@ ip netns list
 <li><em>思考提示：先用 3/n 法则反过来想：全通时上界约 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>3</mn><mo>&#x0002F;</mo><mi>n</mi></mrow></math></span>；要让上界低于 0.1%，<span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>n</mi></mrow></math></span> 至少是多少？再想想每秒发多少个探测才不会干扰业务。</em></li>
 </ul>
 </li>
-<li><strong>画像应该在空载时测，还是在有负载时测？</strong> 4.5 节中同一条路径的 RTT 从 0.2 ms 变到上百毫秒。Lab 9 的调度器读到的 RTT 应该是哪一个？
+<li><strong>画像应该在空载时测，还是在有负载时测？</strong> 4.5 节中同一条路径的 RTT 从 0.2 ms 变到上百毫秒。Lab 7 的调度器读到的 RTT 应该是哪一个？
 <ul>
 <li><em>思考提示：区分“链路固有的延迟”和“排队延迟”；调度决策发生在作业运行之前还是之中？可以两者都记录，并写明条件。</em></li>
 </ul>
@@ -1630,13 +1631,13 @@ ip netns list
 <h3 id="s7-4"><span class="sec-no">7.4</span>后续衔接实验</h3>
 <ul>
 <li>上游：<a href="datacenter_network.html" class="xref">第 05 讲</a>的流量矩阵、收敛比与 <code>tc class show</code>；<a href="../experiments/03/README.html" class="xref">Lab 3 指导书</a>任务 3 的帧级下界与 <code>tc -s</code> 计数。</li>
-<li>本讲：<a href="../experiments/README.md#lab-4%E7%BB%99%E7%BD%91%E7%BB%9C%E5%81%9A%E4%BD%93%E6%A3%80" class="xref">Lab 4 设计</a>；实验床脚本 <a href="../experiments/04/topo.sh" class="xref"><code>04/topo.sh</code></a>，Lab 4–9 共用。</li>
-<li>下一讲：第 07 讲解释为什么 TCP 会把 4.5 节的队列填满，以及多个发送端同时向一个接收端发送时会发生什么（incast）。</li>
-<li>后半程：第 09 讲把本讲的分位数用于长尾延迟；第 10 讲用“传输时间与数据量”的关系定义 α-β 模型；Lab 9 的调度器以 Lab 4 的网络画像为输入。</li>
+<li>本讲：<a href="../experiments/README.md#lab-4%E7%BB%99%E7%BD%91%E7%BB%9C%E5%81%9A%E4%BD%93%E6%A3%80" class="xref">Lab 4 设计</a>；实验床脚本 <a href="../experiments/04/topo.sh" class="xref"><code>04/topo.sh</code></a>，Lab 4–7 共用。</li>
+<li>下一讲：<a href="tail_latency.html" class="xref">第 07 讲</a>解释为什么 TCP 会把 4.5 节的队列填满，以及多个发送端同时向一个接收端发送时会发生什么（incast）。</li>
+<li>后半程：第 07 讲把本讲的分位数用于长尾延迟；第 08 讲用“传输时间与数据量”的关系定义 α-β 模型；Lab 7 的调度器以网络画像为输入。</li>
 </ul>
 </section>
 
-<footer class="colophon"><span>上海交通大学 ·《云网融合创新实践》第 06 讲</span><span>由 <a href="network_measurement.md">2026/docs/network_measurement.md</a> 生成 · sha256 9c4f56c7d1 · 2026-10-17</span></footer>
+<footer class="colophon"><span>上海交通大学 ·《云网融合创新实践》第 06 讲</span><span>由 <a href="network_measurement.md">2026/docs/network_measurement.md</a> 生成 · sha256 88dec77536 · 2026-11-07</span></footer>
 </main></div><script>
 (function () {
   // 打印按钮

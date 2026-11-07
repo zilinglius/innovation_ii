@@ -1,6 +1,6 @@
 # 2026 阅读版维护工具
 
-目前提供 **Lab 3、Lab 4 阅读版**、**第二、三、四、五讲回顾阅读版**和**第 06 讲讲义阅读版**的生成入口，不是全仓库通用转换器。第 06 讲与 Lab 4 的生成器共用 `reading_common.py`（命令行内高亮、生成页结构检查、链接与锚点核对、残留标记检查）。教师使用，不属于学生实验依赖；学生 Lab 3 仍只用 Python 标准库。
+目前提供 **Lab 3、Lab 4、Lab 5 阅读版**、**第二、三、四、五讲回顾阅读版**和**第 06、07 讲讲义阅读版**的生成入口，不是全仓库通用转换器。第 06、07 讲与 Lab 4、Lab 5 的生成器共用 `reading_common.py`（命令行内高亮、生成页结构检查、链接与锚点核对、残留标记检查）。教师使用，不属于学生实验依赖；学生 Lab 3 仍只用 Python 标准库。
 
 ## Lab 3 阅读版
 
@@ -144,3 +144,32 @@ uv run --project 2026/tools --frozen python 2026/tools/build_lab4_html.py --date
 - 3.3 节的字符数据流图由 `lab4_figures.py` 绘制为内嵌 SVG，图注取自其下方的 `*图 1：…*`；源图摘要保存在 `lab4_figure_sources.json`。修改字符图后先核对 SVG 的框、箭头、TODO 标签与说明，再更新摘要。
 - 链到仓库内 Markdown 时，若同目录有同名阅读版则改链到 `.html`。生成器自动核对命令／输出文本逐字一致、图号、唯一 ID、链接与锚点、源文摘要、外部资源依赖与残留标记；浏览器显示（桌面、约 390 px 手机、浅色／深色、打印与导出 PDF）须另行检查。
 
+## 第 07 讲讲义阅读版
+
+先修改 `2026/docs/tail_latency.md`，再从仓库根目录执行：
+
+```bash
+# 1. 按本目录锁文件准备依赖（与其他生成器共用）
+uv sync --project 2026/tools --frozen
+
+# 2. 生成第 07 讲阅读版，日期填写本次内容更新日期
+uv run --project 2026/tools --frozen python 2026/tools/build_tail_latency_html.py --date 2026-11-07
+```
+
+- 结构与第 06 讲生成器相同：输出 `2026/docs/tail_latency.html`，CSS、字体、目录与打印样式取自 `link_state_router.html`，输出块统一标为“实测样例”。
+- 四幅图由 `tail_latency_figures.py` 绘制为内嵌 SVG，与 Markdown 中带 `%% lecture07:<key>` 的 Mermaid 源图一一对应，摘要保存在 `tail_latency_figure_sources.json`。图注取自源图下方的 `*图示说明：…*`。修改源图后先核对 SVG 的节点、方向、标签与简化条件，再更新摘要。图 4 的三个场景节点位置相同，场景 C 按响应方向画箭头。
+- 生成器自动核对的项目与第 06 讲相同；浏览器显示（桌面、约 390 px 手机、浅色／深色、打印与导出 PDF）须另行检查。
+
+## Lab 5 阅读版
+
+先修改 `2026/experiments/05/README.md`，再从仓库根目录执行：
+
+```bash
+# 1. 按本目录锁文件准备依赖（与其他生成器共用）
+uv sync --project 2026/tools --frozen
+
+# 2. 生成 Lab 5 阅读版，日期填写本次内容更新日期
+uv run --project 2026/tools --frozen python 2026/tools/build_lab5_html.py --date 2026-11-07
+```
+
+- 输出 `2026/experiments/05/README.html`，结构与 Lab 4 生成器相同。本实验没有配图，场景对照图见第 07 讲 5.1 节，生成器要求配图数为 0。

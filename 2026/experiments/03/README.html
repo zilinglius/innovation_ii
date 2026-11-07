@@ -1,5 +1,5 @@
 <!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="generator" content="2026/tools/build_lab3_html.py；源文 sha256 a67589c8b2bb45378ce42a79dbf67c5d1652416a9b7a458e661fe9753deaff77；更新 2026-10-07">
+<meta name="generator" content="2026/tools/build_lab3_html.py；源文 sha256 49f87c17ce7972f380a5c6d198e1231026f1feb48a569d2b5be58e9bd99836ba；更新 2026-11-07">
 <title>Lab 3 · 搭一个迷你数据中心</title><style>
 /* ==========================================================================
    云网融合创新实践 · 讲义样式
@@ -495,7 +495,7 @@ h3 .h3-tag {
 </style></head><body><div class="layout">
 <nav class="toc no-print" aria-label="目录"><div class="toc-course">云网融合创新实践 · LAB 03<b>搭一个迷你数据中心</b></div><ol class="toc-mods"><li data-target="top"><a href="#top"><span class="n">00</span><span>实验导读</span></a></li><li data-target="m1"><a href="#m1"><span class="n">01</span><span>实验目标</span></a><ol class="toc-sub"></ol></li><li data-target="m2"><a href="#m2"><span class="n">02</span><span>预备知识与工具</span></a><ol class="toc-sub"></ol></li><li data-target="m3"><a href="#m3"><span class="n">03</span><span>目录与资源</span></a><ol class="toc-sub"><li><a href="#m3-s1">3.1 文件</a></li><li><a href="#m3-s2">3.2 实验床与地址约定</a></li><li><a href="#m3-s3">3.3 测量口径</a></li></ol></li><li data-target="m4"><a href="#m4"><span class="n">04</span><span>课堂观察回顾（第 05 讲已完成）</span></a><ol class="toc-sub"></ol></li><li data-target="m5"><a href="#m5"><span class="n">05</span><span>实验步骤</span></a><ol class="toc-sub"><li><a href="#m5-s1">基础任务</a></li><li><a href="#m5-s2">任务 1　补全 topo.sh：机架与上联</a></li><li><a href="#m5-s3">任务 2　连通性自检（TODO 3）与逐链路验证</a></li><li><a href="#m5-s4">任务 3　收敛比：先分散路径，再改变容量</a></li><li><a href="#m5-s5">任务 4　复现课堂对照：交换与路由的边界</a></li><li><a href="#m5-s6">进阶任务</a></li><li><a href="#m5-s7">任务 5　哈希碰撞：同路与分路</a></li><li><a href="#m5-s8">任务 6　双租户 VXLAN（选做）</a></li><li><a href="#m5-s9">挑战任务</a></li><li><a href="#m5-s10">任务 7　VTEP 的外层源端口与路由缓存</a></li><li><a href="#m5-s11">任务 8　封装开销：近似模型与实测边界</a></li></ol></li><li data-target="m6"><a href="#m6"><span class="n">06</span><span>故障排查</span></a><ol class="toc-sub"></ol></li><li data-target="m7"><a href="#m7"><span class="n">07</span><span>思考题</span></a><ol class="toc-sub"></ol></li><li data-target="m8"><a href="#m8"><span class="n">08</span><span>提交要求</span></a><ol class="toc-sub"><li><a href="#m8-s1">维护与验证</a></li></ol></li></ol><div class="toc-foot"><button class="btn-print js-print" type="button">打印 / 存为 PDF</button><p class="print-hint">A4 纵向；请关闭浏览器自己的页眉和页脚。</p></div></nav>
 <main class="doc" id="top"><header class="masthead"><div class="mast-eyebrow"><span>上海交通大学 · 云网融合创新实践</span><span class="lec">2026 · LAB 03</span></div><h1>搭一个<br>迷你数据中心</h1><p class="mast-sub">Build a Mini Data Center: Clos Fabric, ECMP &amp; VXLAN</p><div class="legend"><span><i class="k-l2"></i>二层 · 交换与隔离</span><span><i class="k-l3"></i>三层 · 路由与多路径</span><span><i class="k-l4"></i>四层 · 连接与传输</span></div><div class="lead"><span class="lead-label">实验导读</span><blockquote>
-<p>对应第 05 讲　｜　建议用时 1 周（基础约 3 小时；进阶任务 5 约 1.5 小时、任务 6 约 2 小时；挑战任务 7、8 各约 1.5 小时）　｜　产出：2 spine × 4 leaf × 8 host 的数据中心实验床——Lab 4 至 Lab 9 都在它上面跑</p>
+<p>对应第 05 讲　｜　建议用时 1 周（基础约 3 小时；进阶任务 5 约 1.5 小时、任务 6 约 2 小时；挑战任务 7、8 各约 1.5 小时）　｜　产出：2 spine × 4 leaf × 8 host 的数据中心实验床——Lab 4 至 Lab 7 都在它上面跑</p>
 </blockquote>
 <p>第 05 讲的课堂观察里，你已经在一张<strong>给定的</strong> leaf-spine 实验床上预测、观察、解释过六组现象。本实验把这张&quot;老师给的实验床&quot;变成&quot;你自己搭的实验床&quot;：把课堂脚本里的拓扑整理成你自己的 <code>topo.sh</code>，接入你在 Lab 2 写的路由守护进程，再把课堂上看到的现象亲手做出来、量出来——收敛比、哈希与上联、VXLAN 租户。这张实验床一旦稳定，后续实验都直接复用，<strong>约定比跑通更重要</strong>。</p>
 <p>任务分三层：<strong>基础</strong>（任务 1–4）人人完成；<strong>进阶</strong>拉开区分度；<strong>挑战</strong>深入内核实现与测量口径。进阶任务 5 不依赖 overlay；进阶任务 6 与挑战任务 7、8 是同一条 VXLAN 选做链——任务 6 没做，7、8 就没有前提——时间紧可以整条跳过，这也是全课程预留的缓冲点，计分见第八节。</p>
@@ -636,7 +636,7 @@ uv sync --project 2026/experiments/03 --frozen
 </tr>
 </tbody>
 </table></div>
-<p>限速：host 接入口两个方向固定 100 Mbit/s；leaf–spine 链路两个方向可切换 100 / 50 Mbit/s（<code>topo.sh rate</code>）。<strong>这张表就是 Lab 4–9 依赖的约定</strong>：节点名、接口名、地址与档位都在这里固化。</p>
+<p>限速：host 接入口两个方向固定 100 Mbit/s；leaf–spine 链路两个方向可切换 100 / 50 Mbit/s（<code>topo.sh rate</code>）。<strong>这张表就是 Lab 4–7 依赖的约定</strong>：节点名、接口名、地址与档位都在这里固化。</p>
 <h3 id="m3-s3">3.3 测量口径</h3>
 <p>与课堂一致的四个习惯，报告里要一直带着：</p>
 <ul>
@@ -980,7 +980,7 @@ PY
 done
 </code></pre></div>
 <p>填写 <code>协议 / 五元组 / 尝试次数 / r5 与 r6 的观测 / 边界</code>。TCP SYN 重传不能当作新连接，结合源端口、绝对初始序号 <code>seq</code> 和尝试次数核对；不要直接把原始行数当连接数。若 TCP 相同五元组的新连接选路不同，说明本实验的哈希输入不止你看到的报文字段；这不证明单条连接在逐包轮流转发。Linux 6.8 的 <a href="https://github.com/torvalds/linux/blob/v6.8/net/ipv4/route.c"><code>fib_multipath_hash</code></a> 会复用已有 L4 哈希，<a href="https://github.com/torvalds/linux/blob/v6.8/include/net/sock.h">socket 哈希代码</a>提供实现线索，作为拓展而非基础实现要求。</p>
-<p>对后续实验的含义：在这张实验床上，转发 TCP 时复用的是发送端 socket 的随机哈希，连接超时重传后这个哈希还可能重选。自然 ECMP 因而近似&quot;按连接随机&quot;，换端口不能把流稳定地放到指定上联。Lab 4–9 需要可重复的路径时，应像任务 3 那样显式钉路，并在报告中写明。</p>
+<p>对后续实验的含义：在这张实验床上，转发 TCP 时复用的是发送端 socket 的随机哈希，连接超时重传后这个哈希还可能重选。自然 ECMP 因而近似&quot;按连接随机&quot;，换端口不能把流稳定地放到指定上联。Lab 4–7 需要可重复的路径时，应像任务 3 那样显式钉路，并在报告中写明。</p>
 <p><strong>5.2 并发测量，当场分类</strong></p>
 <div class="table-wrap"><table>
 <thead>
@@ -1389,7 +1389,7 @@ ip netns list
 <em>思考提示：区分 VTEP 本机的路由查找与下游路由器的转发哈希；考虑缓存、CPU 与路由变化。</em></li>
 <li><strong>隔离与保证有什么不同？</strong> 给 A 保证带宽时，在哪里分类、预留或调度？只有限制 A 的最大发送速率，能否保证它的最小速率？
 <em>思考提示：限速、共享链路容量与最低保障不是同一概念。</em></li>
-<li><strong>哪些约定供 Lab 4–9 复用？</strong> 列出节点、接口、地址、限速档位与测量指标；为什么通信完成时间还不是完整 JCT？需要可重复的路径时，用什么方式固定？</li>
+<li><strong>哪些约定供 Lab 4–7 复用？</strong> 列出节点、接口、地址、限速档位与测量指标；为什么通信完成时间还不是完整 JCT？需要可重复的路径时，用什么方式固定？</li>
 <li><strong>为什么继续使用 lsrd？</strong> 区分教学复用与生产网络协议选择；不同控制协议能否安装相同的内核 multipath FIB？</li>
 </ol>
 </section><section class="module" id="m8"><header class="module-head"><div class="module-eyebrow"><span class="module-no">08</span><span class="tag">LAB 3</span></div><h2>提交要求</h2></header><div class="table-wrap"><table>
@@ -1462,7 +1462,7 @@ tar -tzf &quot;$HOME/lab03-summaries.tgz&quot; | head
 </table></div>
 <p>两次验证都使用 Lab 2 参考路由实现与临时补全的拓扑副本，仓库中的学生 TODO 保持未完成。结果只覆盖上述环境，不代表所有学生 Linux 环境或学生实现都已验证；学生应保存自己的数据，不以样例端口、路径比例或用时作为验收标准。完整验证记录、离线检查入口与阅读版生成方法见 <a href="MAINTENANCE.md">MAINTENANCE.md</a>。</p>
 </section>
-<footer class="colophon"><span>上海交通大学 · 云网融合创新实践 · Lab 3</span><span>由 <a href="README.md">README.md</a> 生成 · sha256 a67589c8b2bb · 2026-10-07</span></footer></main></div><script>
+<footer class="colophon"><span>上海交通大学 · 云网融合创新实践 · Lab 3</span><span>由 <a href="README.md">README.md</a> 生成 · sha256 49f87c17ce79 · 2026-11-07</span></footer></main></div><script>
 (function () {
   // 打印按钮
   document.querySelectorAll(".js-print").forEach(function (b) {

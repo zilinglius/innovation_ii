@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="generator" content="由 2026/docs/datacenter_network.md 生成（sha256 7a122a42f065c5ff3fb8bff25d9615c889976b8d35fba9d5e0d97b2f9cce2796）；版式参考 2026/docs/link_state_router.html；请改 Markdown 源文件后重新生成">
+<meta name="generator" content="由 2026/docs/datacenter_network.md 生成（sha256 5c44892b116b8adf3bfe288d250203fe35ff8c7d6c32818d429873a6ade27f72）；版式参考 2026/docs/link_state_router.html；请改 Markdown 源文件后重新生成">
 <title>第05讲 数据中心网络：拓扑、多路径与虚拟网络</title>
 <style>
 /* ==========================================================================
@@ -719,7 +719,7 @@ svg .t-warn { fill: var(--warn); }
 <td>Lab 2 基础版只选一个首跳，还不足以分流</td>
 </tr>
 </tbody></table></div>
-<p>课堂脚本已核验接口发现、启动参数、往返连通、重复搭建和清理；Lab 3 指导书 3.2 节已固化节点、接口、地址与限速档位，供 Lab 4–9 复用。</p>
+<p>课堂脚本已核验接口发现、启动参数、往返连通、重复搭建和清理；Lab 3 指导书 3.2 节已固化节点、接口、地址与限速档位，供 Lab 4–7 复用。</p>
 <h3 id="s2-3"><span class="sec-no">2.3</span>追踪两条路径</h3>
 <p>同机架通信 <code>h1a → h1b</code>：帧在 <code>r1</code> 内的 <code>br1</code> 上交换，不进入 spine。跨机架通信 <code>h1a → h3a</code>：主机把帧交给默认网关，<code>r1</code> 按目的 IP 查路由，路径可以是：</p>
 <ul>
@@ -1209,7 +1209,7 @@ svg .t-warn { fill: var(--warn); }
 </tr>
 </tbody></table></div>
 <p><strong>带入 Lab 时先核对口径</strong>：课堂 <code>ecmp</code> 用 <code>iperf3</code> 测 1／8 条连接的接收吞吐；<code>matrix</code>、<code>capacity</code> 用 <code>transfer.py</code> 测两流共 60 MB 的共同窗口。Lab 3 任务 3 扩展为四流共 120 MB，任务 5 为两流共 60 MB 的自然 ECMP；不能沿用课堂总量或把 <code>iperf3</code> 接收速率当成共同窗口速率。<code>measure.py</code> 从启动第一个客户端前计时，以每 5 ms 检查退出状态的方式记录最后一个客户端成功退出；它与课堂脚本遵循相同的应用回执原则，但计时开销不同。Lab 还核对目标数据包出口与抓包丢失，课堂 SYN 分组则依赖连接路径稳定。六组课堂观察与讲义位置见指导书第四节。</p>
-<p>开始 Lab 3 前，先执行 <code>classroom.sh down</code>，再按指导书补全并启动自己的 <code>topo.sh</code>；两者使用相同节点名、独立资源登记，不能同时搭建或混用清理入口。任务 1–4 跑通后再一次只改一个因素；任务 6–8 是可整条跳过的 VXLAN 选做链。沿用已固化的接口约定，Lab 4 可生成网络画像，Lab 7–9 可在同一 host namespace 中运行计算作业。课堂观察通过不替代学生拓扑、路由实现与选做任务的独立验证。</p>
+<p>开始 Lab 3 前，先执行 <code>classroom.sh down</code>，再按指导书补全并启动自己的 <code>topo.sh</code>；两者使用相同节点名、独立资源登记，不能同时搭建或混用清理入口。任务 1–4 跑通后再一次只改一个因素；任务 6–8 是可整条跳过的 VXLAN 选做链。沿用已固化的接口约定，Lab 4 可生成网络画像，Lab 5–7 可在同一 host namespace 中运行服务与计算作业。课堂观察通过不替代学生拓扑、路由实现与选做任务的独立验证。</p>
 <h3 id="s6-7"><span class="sec-no">6.7</span>恢复与清理（3 分钟）</h3>
 <p><code>matrix</code>、<code>capacity</code> 正常结束会删除临时分路策略；<code>capacity</code> 结束时上联仍为 50 Mbit/s。先确认回到自然选路、恢复课堂基线，再清理资源：</p>
 <div class="code cmd"><span class="code-tag">bash</span><pre><code><span class="ln"><span class="c step"><span class="step-n"># 1.</span> 确认没有 priority 105 / 106 的临时策略</span></span><span class="ln"><span class="su">sudo</span> ip -n <span class="ns">r1</span> rule show</span><span class="ln">&#10;</span><span class="ln"><span class="c step"><span class="step-n"># 2.</span> 恢复容量基线，便于理解配置的生命周期</span></span><span class="ln"><span class="su">sudo</span> bash 2026/experiments/03/classroom.sh rate 100</span><span class="ln">&#10;</span><span class="ln"><span class="c step"><span class="step-n"># 3.</span> 结束路由器、业务与抓包进程，并删除脚本登记的拓扑和 overlay</span></span><span class="ln"><span class="su">sudo</span> bash 2026/experiments/03/classroom.sh down</span><span class="ln">&#10;</span><span class="ln"><span class="c step"><span class="step-n"># 4.</span> 重复清理应成功；确认课堂 namespace 没有残留</span></span><span class="ln"><span class="su">sudo</span> bash 2026/experiments/03/classroom.sh down</span><span class="ln">ip netns list</span></code></pre></div>
@@ -1298,11 +1298,11 @@ svg .t-warn { fill: var(--warn); }
 <li>上游：<a class="xref" href="../experiments/02/README.html">Lab 2 指导书</a>的 R7、R8 与 ECMP 进阶任务；<a class="xref" href="link_state_router.html">第 04 讲</a>的首跳集合与路由安装。</li>
 <li>本讲：<a class="xref" href="../experiments/03/README.html">Lab 3 指导书</a>，在课堂观察基础上完成自己的 leaf-spine 实验床、分层任务与测量验收；课堂演示入口为 <a class="xref" href="../experiments/03/classroom.sh"><code>classroom.sh</code></a>，课程依赖见 <a class="xref" href="../experiments/README.md#lab-3%E6%90%AD%E4%B8%80%E4%B8%AA%E8%BF%B7%E4%BD%A0%E6%95%B0%E6%8D%AE%E4%B8%AD%E5%BF%83">Lab 3 设计</a>。</li>
 <li>下一讲：<a class="xref" href="../experiments/README.md#lab-4%E7%BB%99%E7%BD%91%E7%BB%9C%E5%81%9A%E4%BD%93%E6%A3%80">Lab 4 设计</a>，把连通性、吞吐和延迟变成可比较的网络画像。</li>
-<li>后半程：<a class="xref" href="../experiments/README.md">Lab 7–9 与综合项目</a>，用同一实验床解释通信代价，并把拓扑、路径和共享容量纳入计算决策。</li>
+<li>后半程：<a class="xref" href="../experiments/README.md">Lab 6–7 与综合项目</a>，用同一实验床解释通信代价，并把拓扑、路径和共享容量纳入计算决策。</li>
 </ul>
 <p>去年 <a class="xref" href="../../2025/docs/network_impact_distributed_frameworks.md#4-%E7%BD%91%E7%BB%9C%E6%8B%93%E6%89%91%E5%AF%B9%E5%88%86%E5%B8%83%E5%BC%8F%E6%A1%86%E6%9E%B6%E7%9A%84%E5%BD%B1%E5%93%8D">分布式框架讲义</a>中讨论了拓扑与通信代价，可作为后续学习参考；本讲的 2×4×8 拓扑、容量算例和任务分层按 2026 课程规划设计。</p>
 </section>
-<footer class="colophon"><span>上海交通大学 ·《云网融合创新实践》第 05 讲</span><span>由 <a href="datacenter_network.md">2026/docs/datacenter_network.md</a> 生成 · sha256 7a122a42f0 · 2026-10-07</span></footer>
+<footer class="colophon"><span>上海交通大学 ·《云网融合创新实践》第 05 讲</span><span>由 <a href="datacenter_network.md">2026/docs/datacenter_network.md</a> 生成 · sha256 5c44892b11 · 2026-11-07</span></footer>
 </main></div><script>
 (function () {
   // 打印按钮

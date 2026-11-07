@@ -113,7 +113,7 @@ rsync -a \
 4. `tcpdump` 抓取真实 ICMP 往返、`iperf3` 传输真实 TCP 流量。
 5. namespace 内的 `iptables` 规则操作；另外探测可选的 VXLAN 设备创建。
 
-自检还会显示 cgroup v2 与当前 TCP 拥塞控制算法。缺少 `fq` 或 VXLAN 时会明确提示；这些可选能力的缺失不影响基础检查的退出状态。**ECMP 分流比例、完整 VXLAN overlay、FRR 路由收敛、DCTCP / BBR 行为、Lab 9 的 CPU 控制器委派与限额需要按各实验另行验证**，不因基础环境自检通过而自动视为这些实验完成。
+自检还会显示 cgroup v2 与当前 TCP 拥塞控制算法。缺少 `fq` 或 VXLAN 时会明确提示；这些可选能力的缺失不影响基础检查的退出状态。**ECMP 分流比例、完整 VXLAN overlay、FRR 路由收敛、DCTCP / BBR 行为、Lab 7 的 CPU 控制器委派与限额需要按各实验另行验证**，不因基础环境自检通过而自动视为这些实验完成。
 
 只检查工具安装时可执行 `course-check tools`，不需要特权容器。发生异常中断后，可用 `sudo course-check down` 清理自检 namespace；它只处理 `course-check-a`、`course-check-b`、`course-check-s`。
 
@@ -131,7 +131,7 @@ Lab 2 的学生骨架保留 TODO。其初始离线测试出现 5 项通过、9 �
 | Lab 2 参考实现 | 单独加载 `reference/lsrd`，17 项离线测试通过；在三角形拓扑上启用 ECMP、Ack 和链路监测，Full 邻接、LSDB 一致、跨机架往返与双下一跳路由通过。此次未覆盖全部故障注入与收敛时间测量 |
 | 后续实验限制 | `fq` 安装报 `Specified qdisc kind is unknown`；当前可用 TCP 拥塞算法显示 `reno cubic`。cgroup v2 存在且列出 `cpu`，但 CPU 控制器委派与限额未验证 |
 
-以上测试使用只读源仓库和容器内的独立 Linux 工作副本；未修改学生 TODO。Lab 3–9 的状态仍以 [实验总览](../experiments/README.md) 为准。
+以上测试使用只读源仓库和容器内的独立 Linux 工作副本；未修改学生 TODO。Lab 3–7 的状态仍以 [实验总览](../experiments/README.md) 为准。
 
 ## 故障排查
 
@@ -143,7 +143,7 @@ Lab 2 的学生骨架保留 TODO。其初始离线测试出现 5 项通过、9 �
 | Python 无法执行、虚拟环境路径错误 | 使用 `/workspace` 内新建的 Linux `.venv`；不要直接运行 `/course-src` 中的 Mac `.venv` |
 | 源仓库修改没有反映到容器 | `/workspace` 是独立副本，按上面的同步步骤更新或重新创建容器 |
 | FRR 的 `systemctl` 报错 | 容器没有运行 systemd；沿用讲义中的 `/usr/lib/frr/frrinit.sh` 和 pathspace 启动方式 |
-| Lab 9 找不到可用 CPU 控制器 | cgroup v2 存在不等于已委派控制器；按 Lab 9 单独准备可写的 cgroup 层级 |
+| Lab 7 找不到可用 CPU 控制器 | cgroup v2 存在不等于已委派控制器；按 Lab 7 单独准备可写的 cgroup 层级 |
 
 ## 导出成果与清理
 

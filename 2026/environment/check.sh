@@ -151,9 +151,9 @@ echo '[OK] iptables 规则'
 
 if [[ -f /sys/fs/cgroup/cgroup.controllers ]]; then
   echo "[信息] cgroup v2，当前控制器：$(cat /sys/fs/cgroup/cgroup.controllers)"
-  echo '[信息] Lab 9 的 CPU 控制器委派与限额仍需单独验证。'
+  echo '[信息] Lab 7 的 CPU 控制器委派与限额仍需单独验证。'
 else
-  echo '[提示] 当前未挂载 cgroup v2；Lab 9 需要另行准备。'
+  echo '[提示] 当前未挂载 cgroup v2；Lab 7 需要另行准备。'
 fi
 echo "[信息] TCP 拥塞算法：$(ip netns exec "$CIC_NS_A" sysctl -n net.ipv4.tcp_available_congestion_control)"
 echo "[完成] 基础环境自检通过，可选能力提示 $CIC_WARNINGS 项；临时资源将自动清理。"

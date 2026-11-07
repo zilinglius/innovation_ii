@@ -1,6 +1,6 @@
 # 《云网融合创新实践》2026
 
-本目录存放 2026 学年的讲义与实验。课程共 15 讲、9 个实验加一个综合项目，最终目标是让学生亲手实践**计算与网络的相互融合**：感知网络、感知算力、联合决策，让同样的计算跑得更快。
+本目录存放 2026 学年的讲义与实验。课程共 12 讲、7 个实验（Lab 4 选做）加一个综合项目，最终目标是让学生亲手实践**计算与网络的相互融合**：感知网络、感知算力、联合决策，让同样的计算跑得更快。
 
 去年的材料归档在 [`../2025/`](../2025/README.md)，仅作参考；今年的实验是重新设计的。
 
@@ -17,6 +17,8 @@
 > 状态：✅ 已完成 ｜ 📝 撰写中 ｜ ⏳ 未开始
 >
 > 2026-09-27 调整：因假期停课一次，全课由 16 讲压缩为 15 讲——原第 05、06 讲合并为第 05 讲，原 Lab 3、Lab 4 合并为 Lab 3（VXLAN 多租户改为进阶任务），其后的讲次与实验编号依次前移一位。
+>
+> 2026-11-07 调整：学生进度偏紧，11-02 的课留给学生做实验。全课由 15 讲压缩为 12 讲：第三部分（原 07–09 讲）并为第 07 讲，以长尾延迟为重点，拥塞控制、pacing 与时间戳主要做知识讲授；第四部分（原 10–12 讲）并为第 08、09 讲；第五部分内容不变，顺延为第 10–12 讲。每部分只做一个实验：第一部分的 Lab 1、Lab 2 已完成，不再改动；第二部分必做 Lab 3，Lab 4 改为选做；原 Lab 6 改为 Lab 5，原 Lab 7、Lab 8 并为 Lab 6，原 Lab 9 改为 Lab 7。原 Lab 5 的 incast 并入新 Lab 5 的挑战任务。
 
 | 讲次 | 主题 | 讲义 | 配套实验 | 状态 |
 | --- | --- | --- | --- | --- |
@@ -27,19 +29,18 @@
 | 04 | 动手实现一个链路状态路由器：邻居发现、LSA 泛洪、SPF | [`docs/link_state_router.md`](docs/link_state_router.md)；[课堂回顾](docs/link_state_router_review.md) | [Lab 2](experiments/02/README.md) | 📝 |
 | **二、云数据中心网络** | | | | |
 | 05 | 数据中心网络：Clos / leaf-spine、ECMP、收敛比；overlay 与 VXLAN 多租户，容器网络与 SDN 一瞥 | [`docs/datacenter_network.md`](docs/datacenter_network.md)；[课堂回顾](docs/datacenter_network_review.md) | [Lab 3](experiments/03/README.md) | ✅ |
-| 06 | 网络性能测量与流量控制：带宽 / 延迟 / 抖动 / 丢包，`iperf3`、`tc` | [`docs/network_measurement.md`](docs/network_measurement.md) | [Lab 4](experiments/04/README.md) | ✅ |
+| 06 | 网络性能测量与流量控制：带宽 / 延迟 / 抖动 / 丢包，`iperf3`、`tc` | [`docs/network_measurement.md`](docs/network_measurement.md) | [Lab 4](experiments/04/README.md)（选做） | ✅ |
 | **三、传输、时间与延迟** | | | | |
-| 07 | 传输层与拥塞控制：CUBIC / BBR / DCTCP，incast 问题 | — | Lab 5 | ⏳ |
-| 08 | 发送节奏与报文时间戳：pacing、`SO_TXTIME`、ETF qdisc | — | Lab 5 | ⏳ |
-| 09 | 长尾延迟：成因、放大效应与缓解手段 | — | Lab 6 | ⏳ |
+| 07 | 从拥塞控制到长尾延迟：CUBIC / BBR / DCTCP、incast；pacing、`SO_TXTIME`、报文时间戳；长尾的放大、成因与对冲请求（重点） | [`docs/tail_latency.md`](docs/tail_latency.md) | [Lab 5](experiments/05/README.md) | 📝 |
 | **四、网络视角下的分布式计算** | | | | |
-| 10 | 分布式计算的通信模式与代价模型：BSP / barrier、shuffle、参数服务器、AllReduce，α-β 模型 | — | Lab 7 | ⏳ |
-| 11 | 网络对分布式框架的影响：跨机架瓶颈与 straggler | — | Lab 7；布置综合项目 | ⏳ |
-| 12 | 集合通信与 AI 训练网络：Ring / Tree AllReduce、RDMA / RoCE、在网计算 | — | Lab 8 | ⏳ |
+| 08 | 分布式作业的通信代价：BSP / barrier、shuffle、参数服务器，α-β 模型；跨机架瓶颈与 straggler | — | Lab 6；布置综合项目 | ⏳ |
+| 09 | 集合通信与 AI 训练网络：Ring AllReduce 与拓扑感知环序；Tree AllReduce、RDMA / RoCE、在网计算只讲知识 | — | Lab 6 | ⏳ |
 | **五、算网融合** | | | | |
-| 13 | 拓扑感知调度：让计算“看见”网络 | — | Lab 9 | ⏳ |
-| 14 | 算力网络与算网协同：算力度量、算力感知路由（IETF CATS）、云边协同、算力星座 | — | Lab 9 | ⏳ |
-| 15 | 综合项目展示与课程总结 | — | 综合项目 | ⏳ |
+| 10 | 拓扑感知调度：让计算“看见”网络 | — | Lab 7 | ⏳ |
+| 11 | 算力网络与算网协同：算力度量、算力感知路由（IETF CATS）、云边协同、算力星座 | — | Lab 7 | ⏳ |
+| 12 | 综合项目展示与课程总结 | — | 综合项目 | ⏳ |
+
+**后续排期（推算）**：下次课为 2026-11-09（第 07 讲）。原计划按每周一次排到 12 月底，压缩后多出 2 次课，建议一次放在第 09 讲之后作为 Lab 周，一次放在项目展示之前作为项目周：11-09 第 07 讲、11-16 第 08 讲、11-23 第 09 讲、11-30 Lab 周、12-07 第 10 讲、12-14 第 11 讲、12-21 项目周、12-28 第 12 讲。除 11-09 外的日期都是按每周一次推算的，学期结束日未在仓库中记录，以教师安排为准。
 
 实验的设计原则、各实验内容与相互依赖见 [`experiments/README.md`](experiments/README.md)。
 
@@ -58,7 +59,7 @@
 | 05 | [第五讲回顾](docs/datacenter_network_review.md)（[HTML 阅读版](docs/datacenter_network_review.html)） | 32 道分层题、约 40 分钟课堂路线，5 幅图串起流量矩阵、leaf-spine 地址、多对一下界、VXLAN 封装与上联故障对照 |
 | 05 | [第五讲回顾参考答案](docs/datacenter_network_review_answers.md)（[HTML 阅读版](docs/datacenter_network_review_answers.html)） | 32 题逐题讲评、6 幅推演图、三个现场的诊断表；含 2026-10-24 补测（哈希策略 0／1 对照、上联故障前后的收敛与容量、短暂抖动后的 spine 路由缺失） |
 
-前六讲、上述补充资料与 Lab 1–Lab 4 指导书均有同目录、同名的 `.html` 阅读版。编写时以 `.md` 为源文件，修改后应同步检查对应阅读版。第 05 讲于 2026-10-07 完成定稿审查：已同步完整 Lab 3 的入口、分层任务与测量口径，并核对阅读版内容、本地链接及桌面、手机、深色与打印样式显示；本轮未重跑 Linux 实验。Lab 3 已交付修订指导书、学生拓扑骨架、测量助手与清理工具；2026-10-05 已按修订命令在备课沙箱中验证主要对照，具体范围见 [Lab 3 维护与验证](experiments/03/README.md#维护与验证)。学生 TODO 保持留白，学生实现仍须独立验收。第 06 讲于 2026-10-17 定稿：讲义全部命令块按原文在完整实验床（`experiments/04/topo.sh`）上逐块重跑通过，实测环境为 Ubuntu 26.04 / Linux 7.0 备课虚拟机；阅读版由 `tools/build_network_measurement_html.py` 生成，已核对内容、链接，以及桌面、手机、深色与导出 PDF 的显示。尚未在 Ubuntu 22.04／24.04 上复核。第四讲回顾与参考答案于 2026-10-18 完成，阅读版由 `tools/build_link_state_router_review_html.py` 生成，已核对桌面、手机、深色与导出 PDF 的显示；答案中的重启场景（题 30）在同一备课虚拟机上用 Lab 2 参考实现补测，其余数字引用第四讲原记录。同日据此修订第 04 讲：2.2 节说明定时器重排时 `now` 的取值时刻，4.1 节写清 R5 两个条件的分工，6.12 节补充回程与 `rp_filter` 的补测数据和两步复现命令（原 6.13 节步骤顺延为 40、41）。第 04 讲阅读版仓库内没有生成脚本，本次为手工同步，已逐块核对 80 个代码／输出块与源文一致。第五讲回顾与参考答案于 2026-10-24 完成，阅读版由 `tools/build_datacenter_network_review_html.py` 生成，已核对桌面、约 390 px 手机、深色与导出 PDF 的显示；题 10、24、27–31 的数据是同日在同一备课虚拟机上用课堂实验床（`classroom.sh up --reference`）补测的，其余数字引用第五讲原记录。同日据该回顾题 31 的补测修复 Lab 2 给定的 `router.py`（骨架与参考实现同一份）：新增每 2 秒一次的内核路由对账 `_resync()`，链路短暂关闭、邻居来不及 Down 时，也能补装被内核删掉的路由；`--no-install` 时不启用，学生 TODO 未改动。第 04 讲 2.5 节定时器表与 5.4 节随之补充，阅读版为手工同步。`classroom.sh check` 与 `experiments/04/topo.sh check` 改为逐条列出不通的往返。修复后的验证：Lab 2 离线测试中骨架仍为 5 项通过、9 项失败、3 项错误，参考实现 17 项全部通过；在同一备课虚拟机上复测了课堂实验床的抖动与上联故障、Lab 2 三角形实验床的拔线与抖动，以及 Lab 4 实验床的搭建、自检与清理。
+前七讲、上述补充资料与 Lab 1–Lab 5 指导书均有同目录、同名的 `.html` 阅读版。编写时以 `.md` 为源文件，修改后应同步检查对应阅读版。第 05 讲于 2026-10-07 完成定稿审查：已同步完整 Lab 3 的入口、分层任务与测量口径，并核对阅读版内容、本地链接及桌面、手机、深色与打印样式显示；本轮未重跑 Linux 实验。Lab 3 已交付修订指导书、学生拓扑骨架、测量助手与清理工具；2026-10-05 已按修订命令在备课沙箱中验证主要对照，具体范围见 [Lab 3 维护与验证](experiments/03/README.md#维护与验证)。学生 TODO 保持留白，学生实现仍须独立验收。第 06 讲于 2026-10-17 定稿：讲义全部命令块按原文在完整实验床（`experiments/04/topo.sh`）上逐块重跑通过，实测环境为 Ubuntu 26.04 / Linux 7.0 备课虚拟机；阅读版由 `tools/build_network_measurement_html.py` 生成，已核对内容、链接，以及桌面、手机、深色与导出 PDF 的显示。尚未在 Ubuntu 22.04／24.04 上复核。第四讲回顾与参考答案于 2026-10-18 完成，阅读版由 `tools/build_link_state_router_review_html.py` 生成，已核对桌面、手机、深色与导出 PDF 的显示；答案中的重启场景（题 30）在同一备课虚拟机上用 Lab 2 参考实现补测，其余数字引用第四讲原记录。同日据此修订第 04 讲：2.2 节说明定时器重排时 `now` 的取值时刻，4.1 节写清 R5 两个条件的分工，6.12 节补充回程与 `rp_filter` 的补测数据和两步复现命令（原 6.13 节步骤顺延为 40、41）。第 04 讲阅读版仓库内没有生成脚本，本次为手工同步，已逐块核对 80 个代码／输出块与源文一致。第五讲回顾与参考答案于 2026-10-24 完成，阅读版由 `tools/build_datacenter_network_review_html.py` 生成，已核对桌面、约 390 px 手机、深色与导出 PDF 的显示；题 10、24、27–31 的数据是同日在同一备课虚拟机上用课堂实验床（`classroom.sh up --reference`）补测的，其余数字引用第五讲原记录。同日据该回顾题 31 的补测修复 Lab 2 给定的 `router.py`（骨架与参考实现同一份）：新增每 2 秒一次的内核路由对账 `_resync()`，链路短暂关闭、邻居来不及 Down 时，也能补装被内核删掉的路由；`--no-install` 时不启用，学生 TODO 未改动。第 04 讲 2.5 节定时器表与 5.4 节随之补充，阅读版为手工同步。`classroom.sh check` 与 `experiments/04/topo.sh check` 改为逐条列出不通的往返。修复后的验证：Lab 2 离线测试中骨架仍为 5 项通过、9 项失败、3 项错误，参考实现 17 项全部通过；在同一备课虚拟机上复测了课堂实验床的抖动与上联故障、Lab 2 三角形实验床的拔线与抖动，以及 Lab 4 实验床的搭建、自检与清理。第 07 讲与 Lab 5 于 2026-11-07 完成初稿，待教师审阅：全部命令按原文在 Ubuntu 26.04 / Linux 7.0 备课虚拟机的完整实验床上运行，Lab 5 的 TODO 用不入库的参考实现验证；阅读版分别由 `tools/build_tail_latency_html.py` 与 `tools/build_lab5_html.py` 生成。这台虚拟机的系统默认拥塞控制是 `bbr`（`/etc/sysctl.d/99-xxd-vps.conf`，2026-11-03 写入），因此新工具都显式指定算法；同日用 CUBIC 复现了第 06 讲 4.5 节的数据。尚未在 Ubuntu 22.04／24.04 上复核。
 
 ### 可参考的 2025 材料
 
@@ -68,13 +69,12 @@
 | --- | --- |
 | 01–02 | [`network.md`](../2025/docs/network.md)、[`route.md`](../2025/docs/route.md) |
 | 03–04 | [`routing_protocol.md`](../2025/docs/routing_protocol.md) |
-| 08 | [`udp_app_send_timing.md`](../2025/docs/udp_app_send_timing.md)、[`timestamped_packet_transmission.md`](../2025/docs/timestamped_packet_transmission.md) |
-| 09 | [`network_latency_long_tail.md`](../2025/docs/network_latency_long_tail.md) |
-| 10–11 | [`network_impact_distributed_frameworks.md`](../2025/docs/network_impact_distributed_frameworks.md) |
-| 13 | [`topology_aware_distributed_framework.md`](../2025/docs/topology_aware_distributed_framework.md) |
-| 14 | [`compute_constellation.md`](../2025/docs/compute_constellation.md) |
+| 07 | [`udp_app_send_timing.md`](../2025/docs/udp_app_send_timing.md)、[`timestamped_packet_transmission.md`](../2025/docs/timestamped_packet_transmission.md)、[`network_latency_long_tail.md`](../2025/docs/network_latency_long_tail.md) |
+| 08 | [`network_impact_distributed_frameworks.md`](../2025/docs/network_impact_distributed_frameworks.md) |
+| 10 | [`topology_aware_distributed_framework.md`](../2025/docs/topology_aware_distributed_framework.md) |
+| 11 | [`compute_constellation.md`](../2025/docs/compute_constellation.md) |
 
-第 05、06、07、12 讲没有完整对应的旧讲义，需要新写；第 05 讲可参考去年 `network_impact_distributed_frameworks.md` 中的拓扑讨论。
+第 05、06、09 讲没有完整对应的旧讲义，需要新写；第 05 讲可参考去年 `network_impact_distributed_frameworks.md` 中的拓扑讨论。第 06 讲起教师要求新讲义用全新思路设计，第 06、07 讲没有参考上表材料，后续讲次默认同样处理。
 
 ## 备课与维护
 
@@ -108,9 +108,9 @@ Lab 2 骨架初始结果为 **17 项测试中 5 项通过、9 项失败、3 项�
 
 - 学生自行准备 Ubuntu Linux 主机或虚拟机，并按各实验指导书安装工具、检查内核能力。仓库中的 `environment/` 是教师与 AI 助手的备课验证沙箱。
 - 一台 Linux 主机或虚拟机即可完成全部实验，不需要 GPU 或多机环境。建议至少 4 核 CPU、4 GB 内存，具备 `sudo` 权限。
-- 推荐 Ubuntu 22.04 及以上（Lab 9 需要 cgroup v2，较新的发行版默认启用）。
+- 推荐 Ubuntu 22.04 及以上（Lab 7 需要 cgroup v2，较新的发行版默认启用）。
 - 必需：`iproute2`、`iputils-ping`、`tcpdump`、`traceroute`（Ubuntu 默认不带）、`iperf3`、`iptables`、Python 3（3.10 及以上）与 [`uv`](https://docs.astral.sh/uv/)。一次装齐：`sudo apt install -y iproute2 iputils-ping tcpdump traceroute iperf3 iptables`。
-- 部分讲次另需：第 03 讲动手模块用 FRRouting（`sudo apt install -y frr`，Ubuntu 22.04 为 8.1、24.04 为 8.4）；第 05 讲课堂观察用 `ethtool`（`sudo apt install -y ethtool`），需内核支持 HTB、fq 和 VXLAN；Lab 1 任务 4 需要内核带 `sch_netem`（部分精简内核没有，检查方法见 Lab 1 指导书第二节）。
+- 部分讲次另需：第 03 讲动手模块用 FRRouting（`sudo apt install -y frr`，Ubuntu 22.04 为 8.1、24.04 为 8.4）；第 05 讲课堂观察用 `ethtool`（`sudo apt install -y ethtool`），需内核支持 HTB、fq 和 VXLAN；Lab 1 任务 4 需要内核带 `sch_netem`（部分精简内核没有，检查方法见 Lab 1 指导书第二节）；第 07 讲教师演示与 Lab 5 任务 7 需要 `tcp_bbr`、`tcp_dctcp`、`sch_red` 模块（缺少时安装 `linux-modules-extra-$(uname -r)`）。
 - macOS / Windows 用户请使用 Linux 虚拟机或云主机；network namespace 是 Linux 内核特性。
 - 所有实验命令默认从**仓库根目录**执行。
 

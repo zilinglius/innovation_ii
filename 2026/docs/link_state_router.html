@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="generator" content="由 2026/docs/link_state_router.md 生成（sha1 810d95fb91）；请改 Markdown 源文件后重新生成，不要手改本文件">
+<meta name="generator" content="由 2026/docs/link_state_router.md 生成（sha1 5cd926fad8）；请改 Markdown 源文件后重新生成，不要手改本文件">
 <title>第04讲 动手实现一个链路状态路由器</title>
 <style>
 /* ==========================================================================
@@ -1455,7 +1455,7 @@ h3 .h3-tag {
 <p><strong>单向探针与时钟</strong></p>
 <ul>
 <li><code>probe.py</code> 用<strong>发送端</strong>的时间戳算空洞，从不看接收端的时钟（<a class="xref" href="#s5-6">5.6 节</a>）。为什么这样选？它量出来的“中断 2010 ms”，与接收端“多久没收到包”这个数，在什么情况下会不一样？如果发送端和接收端在两台真实机器上、各用自己的时钟，能测出单向延迟吗？需要什么？</li>
-<li class="hint"><em>思考提示：实验床上所有 namespace 共用一个内核时钟，所以这个问题在这里看不出来。查一下 NTP 能把两台机器对到多准、PTP（IEEE 1588）又能到多准；第 08 讲会回到报文时间戳。</em></li>
+<li class="hint"><em>思考提示：实验床上所有 namespace 共用一个内核时钟，所以这个问题在这里看不出来。查一下 NTP 能把两台机器对到多准、PTP（IEEE 1588）又能到多准；第 07 讲会回到报文时间戳。</em></li>
 </ul>
 </li>
 <li>
@@ -1487,7 +1487,7 @@ h3 .h3-tag {
 <li>RFC 1122：<em>Requirements for Internet Hosts — Communication Layers</em>（1.<a class="xref" href="#s2-2">2.2 节</a>“Robustness Principle”，与 <a class="xref" href="#s2-4">2.4 节</a>“先校验再处理”对照）</li>
 </ul>
 </section>
-<footer class="colophon"><span>上海交通大学 ·《云网融合创新实践》第 04 讲</span><span>由 2026/docs/link_state_router.md 生成 · sha1 810d95fb91 · 2026-10-24</span></footer>
+<footer class="colophon"><span>上海交通大学 ·《云网融合创新实践》第 04 讲</span><span>由 2026/docs/link_state_router.md 生成 · sha1 5cd926fad8 · 2026-11-07</span></footer>
 </main>
 </div>
 <script>
