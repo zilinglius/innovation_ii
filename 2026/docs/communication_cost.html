@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="generator" content="2026/tools/build_communication_cost_html.py；源文 sha256 4b3c90d0a6dba09d5811db299d7df54c212067329bb9ce9fc8dff7614a1b8eae；更新 2026-11-08">
+<meta name="generator" content="2026/tools/build_communication_cost_html.py；源文 sha256 c5115125593028aa1ebd07a3acb0e6358f74818e807ac3602267ec2d429a3c1a；更新 2026-11-08">
 <title>第08讲 分布式作业的通信代价：时间花在哪，加机器为什么会变慢</title><style>
 /* ==========================================================================
    云网融合创新实践 · 讲义样式
@@ -497,11 +497,6 @@ svg.lec08 .active { fill:var(--l4-bg); stroke:var(--l4); stroke-width:1.4; }
 <main class="doc" id="top">
 <header class="masthead"><div class="mast-eyebrow"><span>上海交通大学 · 云网融合创新实践</span><span class="lec">2026 · LECTURE 08 · 讲义</span></div><h1>分布式作业的通信代价：<br>时间花在哪，加机器为什么会变慢</h1><p class="mast-sub">The Communication Cost of Distributed Jobs</p><div class="pathstrip"><svg viewBox="0 0 300 40" role="img" aria-label="多个 worker 的数据都要经过参数服务器的接入链路"><rect x="2" y="1" width="46" height="10" rx="2" class="n-host"/><rect x="2" y="15" width="46" height="10" rx="2" class="n-host"/><rect x="2" y="29" width="46" height="10" rx="2" class="n-host"/><path d="M 48 6 L 150 20 M 48 20 L 150 20 M 48 34 L 150 20" class="wire"/><rect x="150" y="16" width="90" height="8" rx="2" class="n-l4"/><rect x="240" y="10" width="56" height="20" rx="3" class="n-l3"/></svg><div class="legend"><span><i class="k-l4"></i>四层 · 传输时间</span><span><i class="k-l3"></i>三层 · 路径与瓶颈位置</span></div></div><div class="lead"><span class="lead-label">课程导读</span><p>第 07 讲看的是一个前端等 N 个后端。本讲把同样的结构放进分布式计算：每一轮都要等所有 worker 到齐才能继续。你会看到一个反直觉的现象：<strong>总计算量不变，7 个 worker 的作业比 3 个 worker 慢 41%。</strong> 计算确实被分摊了，但通信没有。学完后，你应能把作业完成时间拆成计算、上传、等待、下载四段，用两个参数预测它，算出最划算的 worker 数，并判断一个慢节点到底要付出多少代价。</p>
 </div></header>
-<aside class="callout note long"><div class="callout-label">NOTE<span>课堂安排与准备</span></div><p>本讲对应<a href="../README.md" class="xref">课程大纲</a>第 08 讲和 <a href="../experiments/06/README.html" class="xref">Lab 6 指导书</a>的 A 段，按 <strong>90 分钟有效授课时间</strong>设计。原理部分每次只用少量命令取证据，模块五用一个完整的小任务把它们串起来。Shuffle 只讲原理和计算，不实测。集合通信（Ring AllReduce）留给第 09 讲。</p>
-<p><strong>材料状态</strong>：待教师审阅（2026-11-08）。标为“实测样例”的输出来自 2026-11-08 的备课虚拟机：Ubuntu 26.04.1、Linux <code>7.0.0-43-generic</code>、x86_64、2 核 2.8 GB，iproute2 6.19.0、Python 3.14；使用<a href="../experiments/04/topo.sh" class="xref">完整实验床</a>与 Lab 2 参考路由。为便于阅读省略了无关字段；单次读数以自己的测量为准，算例另标为教学设定或理论值。本文命令已按原文在该环境运行；尚未在 Ubuntu 24.04 上复核，也没有多台机器的对照。</p>
-<p><strong>一个容易踩的坑</strong>：这台备课机的系统默认拥塞控制算法是 <code>bbr</code>，而 Ubuntu 的默认值通常是 <code>cubic</code>。本讲的工具都<strong>显式指定 <code>cubic</code></strong>，不依赖系统默认值。</p>
-<p><strong>课堂组织</strong>：模块一讲清计时口径；模块二到模块四讲原理，其中的观察都由学生自己运行；模块五每人完成一次“预测、测量、解释”。课前搭建一次实验床，全程沿用 <strong>100 Mbit/s 档位</strong>。课上只用给定的工具读原始时间戳、手算；把这些手算写成程序是 Lab 6 的内容。</p>
-</aside>
 <section class="plain-sec goals" id="objectives"><h2>学习目标</h2><ol>
 <li>说清 BSP 与 barrier 的含义，把一轮作业分成计算、上传、等待、下载四段，并说明每一段的计时起止。</li>
 <li>读懂原始时间戳，手算一轮的四段时间，解释为什么公平分享会把“等待”藏进通信。</li>
@@ -552,7 +547,7 @@ svg.lec08 .active { fill:var(--l4-bg); stroke:var(--l4); stroke-width:1.4; }
 </tr>
 </tbody>
 </table></div>
-<p><strong>课前准备（不计入上述 90 分钟）</strong>：学生自行准备 Ubuntu Linux，工具与第 07 讲相同。不同小组各用独立主机或虚拟机，同一台机器由一人操作。本讲复用<a href="../experiments/04/topo.sh" class="xref">完整实验床脚本</a>，Lab 3 没有做完也不影响。</p>
+<p><strong>课前准备（不计入上述 90 分钟）</strong>：学生自行准备 Ubuntu Linux，工具与第 07 讲相同。不同小组各用独立主机或虚拟机，同一台机器由一人操作。本讲复用<a href="../experiments/04/topo.sh" class="xref">完整实验床脚本</a>，Lab 3 没有做完也不影响。本讲标为“实测样例”的输出来自 2026-11-08 的备课虚拟机（Ubuntu 26.04.1、Linux <code>7.0.0-43-generic</code>、x86_64、2 核 2.8 GB），单次读数以自己的测量为准。</p>
 <div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="c step"><span class="step-n"># 1.</span> 清理第 05 讲课堂网络与 Lab 3 网络（节点重名，不能同时存在）</span>
 <span class="su">sudo</span> bash 2026/experiments/03/classroom.sh down
 <span class="su">sudo</span> bash 2026/experiments/03/topo.sh down
@@ -1369,7 +1364,7 @@ cp -r /tmp/lab06-results &quot;$HOME/lab06-lecture-results&quot;
 </ul>
 </section>
 
-<footer class="colophon"><span>上海交通大学 ·《云网融合创新实践》第 08 讲</span><span>由 <a href="communication_cost.md">2026/docs/communication_cost.md</a> 生成 · sha256 4b3c90d0a6 · 2026-11-08</span></footer>
+<footer class="colophon"><span>上海交通大学 ·《云网融合创新实践》第 08 讲</span><span>由 <a href="communication_cost.md">2026/docs/communication_cost.md</a> 生成 · sha256 c511512559 · 2026-11-08</span></footer>
 </main></div><script>
 (function () {
   // 打印按钮

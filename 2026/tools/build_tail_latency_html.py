@@ -1,7 +1,7 @@
 """从第 07 讲 Markdown 重建单文件阅读版，并核对代码、配图、链接与外部依赖。
 
 版式复用 link_state_router.html 的公共 CSS、字体、目录与打印行为；页面结构对照 datacenter_network.html
-（导读、课堂安排提示、学习目标、本讲路线、时间安排、各模块）。正文以 Markdown 为唯一来源。
+（导读、学习目标、本讲路线、时间安排、各模块）。正文以 Markdown 为唯一来源。
 """
 
 import argparse
@@ -154,14 +154,13 @@ def build(updated):
     head, subhead = topic.split("：", 1)
     chunks = re.split(r"^## (.+)\n", source, flags=re.M)
 
-    # 导读：引用块进 lead，其余段落进“课堂安排与准备”提示框。
+    # 导读：引用块进 lead。
     intro_tokens = md.parse(chunks[0].split("\n", 1)[1].replace("\n---\n", "\n"))
     quote_end = next(i for i, t in enumerate(intro_tokens) if t.type == "blockquote_close")
     lead_inline = intro_tokens[2]
     lead_inline.content = lead_inline.content.removeprefix("**课程导读**：")
     lead_inline.children = md.parseInline(lead_inline.content, {})[0].children
     lead = md.renderer.render(intro_tokens[1:quote_end], md.options, {})
-    note = md.renderer.render(intro_tokens[quote_end + 1:], md.options, {})
 
     sections, toc, hops, figures = [], [], [], []
     goals = schedule = ""
@@ -211,7 +210,6 @@ def build(updated):
 </nav>
 <main class="doc" id="top">
 <header class="masthead"><div class="mast-eyebrow"><span>上海交通大学 · 云网融合创新实践</span><span class="lec">2026 · LECTURE {lecture} · 讲义</span></div><h1>{html.escape(head)}：<br>{html.escape(subhead)}</h1><p class="mast-sub">From Congestion Control to Tail Latency</p><div class="pathstrip">{pathstrip}<div class="legend"><span><i class="k-l4"></i>四层 · 拥塞控制与重传</span><span><i class="k-l3"></i>三层 · 路径与队列位置</span></div></div><div class="lead"><span class="lead-label">课程导读</span>{lead}</div></header>
-<aside class="callout note long"><div class="callout-label">NOTE<span>课堂安排与准备</span></div>{note}</aside>
 <section class="plain-sec goals" id="objectives"><h2>学习目标</h2>{goals}</section>
 <nav class="hops" aria-label="本讲路线"><p class="hops-cmd">$ traceroute -n <b>lecture-{lecture}</b><br>traceroute to lecture-{lecture} ({html.escape(head)}), {len(hops)} hops max</p><ol>{"".join(hops)}</ol></nav>
 <section class="plain-sec" style="margin-top:40px" id="schedule"><h2>课堂时间安排</h2>{schedule}</section>

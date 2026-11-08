@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="generator" content="2026/tools/build_network_measurement_html.py；源文 sha256 e7273691304cf4bb5da74631c1aafc87acce5fb12536f17c434a62fe8c741ec2；更新 2026-11-08">
+<meta name="generator" content="2026/tools/build_network_measurement_html.py；源文 sha256 7e771860be14113aaefbe2e81a83843aefe52b764640e8802d9872870a840cbd；更新 2026-11-08">
 <title>第06讲 给网络做体检：性能测量与流量控制</title><style>
 /* ==========================================================================
    云网融合创新实践 · 讲义样式
@@ -492,10 +492,6 @@ svg.lec06 .frame { fill:none; stroke:var(--rule-2); stroke-width:1.2; stroke-das
 <main class="doc" id="top">
 <header class="masthead"><div class="mast-eyebrow"><span>上海交通大学 · 云网融合创新实践</span><span class="lec">2026 · LECTURE 06 · 讲义</span></div><h1>给网络做体检：<br>性能测量与流量控制</h1><p class="mast-sub">Network Check-up: Measurement &amp; Traffic Control</p><div class="pathstrip"><svg viewBox="0 0 300 40" role="img" aria-label="探测报文从主机出发，经过限速与排队的路由器到达另一台主机，往返计时"><line x1="16" y1="26" x2="284" y2="26" class="wire"/><rect x="2" y="19" width="14" height="14" rx="2" class="n-host"/><circle cx="96" cy="26" r="10" class="n-l3"/><rect x="134" y="18" width="34" height="16" rx="3" class="n-l4"/><circle cx="204" cy="26" r="10" class="n-l3"/><rect x="284" y="19" width="14" height="14" rx="2" class="n-host"/><path d="M 24 10 H 270" class="ar ar-l3 dash"/><path d="M 266 6 L 274 10 L 266 14" class="ar ar-l3"/></svg><div class="legend"><span><i class="k-l3"></i>三层 · 延迟、丢包与路径</span><span><i class="k-l4"></i>四层 · 连接与吞吐</span></div></div><div class="lead"><span class="lead-label">课程导读</span><p>上一讲我们用 <code>tc</code> 给链路限速，用 <code>iperf3</code> 和 <code>transfer.py</code> 量过吞吐，每次关心的都是一个结果。本讲从调度器的一个问题出发：“h1a 到 h3a 有多快？”同一对主机，可以量出 0.2 ms 或 121 ms 的往返时间，也可以量出 47 Mbit/s 或 91 Mbit/s 的速率（4.4、4.5 节）。这些数都是真的，差别在于<strong>测的是什么、怎么测、在什么条件下测、测得有多准</strong>。学完后，你应能为一对主机交出一张“体检单”：每个数字都写明指标、方法、条件和不确定度，并能用它为不同的作业选择放置。</p>
 </div></header>
-<aside class="callout note long"><div class="callout-label">NOTE<span>课堂安排与准备</span></div><p>本讲对应<a href="../README.md" class="xref">课程大纲</a>第 06 讲和 <a href="../experiments/README.md#lab-4%E7%BB%99%E7%BD%91%E7%BB%9C%E5%81%9A%E4%BD%93%E6%A3%80" class="xref">Lab 4 设计</a>，按 <strong>90 分钟有效授课时间</strong>设计。延迟、丢包、吞吐的定义与读数为基础要求；令牌桶与负载下延迟要求看懂现象并会计算；统计区间要求会算一次。TCP 为什么会把队列填满、长尾怎样放大留给第 07 讲，α-β 模型怎样定义留给第 08 讲。</p>
-<p><strong>材料状态</strong>：✅ 已定稿（2026-10-17）。标为“实测样例”的输出来自 2026-10-17 的备课虚拟机：Ubuntu 26.04.1、Linux <code>7.0.0-38-generic</code>、x86_64、2 核 2.8 GB，iproute2 6.19.0、iputils 20250605、iperf3 3.20；使用<a href="../experiments/04/topo.sh" class="xref">完整实验床</a>与 Lab 2 参考路由。为便于阅读省略了无关字段；端口、时间与单次读数以自己的测量为准，算例另标为教学设定或理论值。定稿时按原文逐块重跑了全部命令，并核对了阅读版的内容与显示。本文命令尚未在 Ubuntu 24.04 上复核，<code>tc</code> 的部分行为随内核版本变化（见 2.2 节）。</p>
-<p><strong>课堂组织</strong>：前五个模块各讲一类体检项目，每次短观察只回答一个问题：用什么工具、在哪个接口和方向观察、读哪些字段、这些数据支持什么判断。模块六给一张藏了条件的实验床完整做一次体检。课前搭建一次，全程沿用 <strong>100 Mbit/s 档位</strong>；每个短观察结束时恢复基线，用 <code>topo.sh status</code> 确认后再进入下一个。</p>
-</aside>
 <section class="plain-sec goals" id="objectives"><h2>学习目标</h2><ol>
 <li>写出测量结果的五要素（指标、结果、参考范围、方法、条件），区分单次测量、样本与统计量；说明只报一个平均值为什么往往不够。</li>
 <li>定义并测量往返时间、单向延迟、两种延迟变化和丢包率；能说出单方向加延迟时往返时间增加多少，会为丢包率给出区间，包括“全部收到”时的上界。</li>
@@ -551,7 +547,7 @@ svg.lec06 .frame { fill:none; stroke:var(--rule-2); stroke-width:1.2; stroke-das
 </tr>
 </tbody>
 </table></div>
-<p><strong>课前准备（不计入上述 90 分钟）</strong>：学生自行准备 Ubuntu Linux，工具与 Lab 3 相同（<code>iproute2</code>、<code>iputils-ping</code>、<code>iperf3</code>、Python 3 与 <code>uv</code>）。所有命令从仓库根目录执行；不同小组各用独立主机或虚拟机，同一台机器由一人操作，避免几个人同时测量互相干扰（原因见 5.3 节）。本讲使用<a href="../experiments/04/topo.sh" class="xref">完整实验床脚本</a>，它与 Lab 3 的节点名、接口、地址与档位完全一致，另提供条件注入与基线核对。</p>
+<p><strong>课前准备（不计入上述 90 分钟）</strong>：学生自行准备 Ubuntu Linux，工具与 Lab 3 相同（<code>iproute2</code>、<code>iputils-ping</code>、<code>iperf3</code>、Python 3 与 <code>uv</code>）。所有命令从仓库根目录执行；不同小组各用独立主机或虚拟机，同一台机器由一人操作，避免几个人同时测量互相干扰（原因见 5.3 节）。本讲使用<a href="../experiments/04/topo.sh" class="xref">完整实验床脚本</a>，它与 Lab 3 的节点名、接口、地址与档位完全一致，另提供条件注入与基线核对。本讲标为“实测样例”的输出来自 2026-10-17 的备课虚拟机（Ubuntu 26.04.1、Linux <code>7.0.0-38-generic</code>、x86_64、2 核 2.8 GB），端口、时间与单次读数以自己的测量为准。</p>
 <div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="c step"><span class="step-n"># 1.</span> 清理第 05 讲课堂网络与 Lab 3 网络（节点重名，不能同时存在）</span>
 <span class="su">sudo</span> bash 2026/experiments/03/classroom.sh down
 <span class="su">sudo</span> bash 2026/experiments/03/topo.sh down
@@ -1637,7 +1633,7 @@ ip netns list
 </ul>
 </section>
 
-<footer class="colophon"><span>上海交通大学 ·《云网融合创新实践》第 06 讲</span><span>由 <a href="network_measurement.md">2026/docs/network_measurement.md</a> 生成 · sha256 e727369130 · 2026-11-08</span></footer>
+<footer class="colophon"><span>上海交通大学 ·《云网融合创新实践》第 06 讲</span><span>由 <a href="network_measurement.md">2026/docs/network_measurement.md</a> 生成 · sha256 7e771860be · 2026-11-08</span></footer>
 </main></div><script>
 (function () {
   // 打印按钮

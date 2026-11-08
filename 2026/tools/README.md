@@ -140,7 +140,7 @@ uv sync --project 2026/tools --frozen
 uv run --project 2026/tools --frozen python 2026/tools/build_network_measurement_html.py --date 2026-10-17
 ```
 
-- 输出 `2026/docs/network_measurement.html`。CSS、字体、目录行为与打印样式取自 `link_state_router.html`；页面结构对照 `datacenter_network.html`：导读、“课堂安排与准备”提示框、学习目标、本讲路线、课堂时间安排、各模块。
+- 输出 `2026/docs/network_measurement.html`。CSS、字体、目录行为与打印样式取自 `link_state_router.html`；页面结构对照 `datacenter_network.html`：导读、学习目标、本讲路线、课堂时间安排、各模块。
 - 命令块只加行内高亮（步骤注释、`sudo`、namespace 名），不加逐行的块级容器，保证复制出的文本与源文逐字一致。输出块统一标为“实测样例”；出现其他代码类型时生成器会报错，需先补渲染规则。
 - 链到仓库内 Markdown 时，若同目录有同名阅读版，改链到 `.html`；否则保留 `.md` 链接。
 - 两幅图由 `network_measurement_figures.py` 绘制为内嵌 SVG，与 Markdown 中带 `%% lecture06:<key>` 的 Mermaid 源图一一对应，源图摘要保存在 `network_measurement_figure_sources.json`。图注取自源图下方的 `*图示说明：…*`。修改源图后先核对 SVG 的节点、方向、标签与简化条件，再更新摘要。

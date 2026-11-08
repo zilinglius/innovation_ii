@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="generator" content="2026/tools/build_tail_latency_html.py；源文 sha256 c5c940db94b5752e55ea6e1834216057cb3113adbf1ed8770a9aa678a0a02444；更新 2026-11-08">
+<meta name="generator" content="2026/tools/build_tail_latency_html.py；源文 sha256 5fbbc84ef96fe22c8ecbcbcb8695b298d777a2360753e5d610bdb072c4452f17；更新 2026-11-08">
 <title>第07讲 从拥塞控制到长尾延迟：最慢的一个决定整体</title><style>
 /* ==========================================================================
    云网融合创新实践 · 讲义样式
@@ -496,11 +496,6 @@ svg.lec07 .ar-drop { stroke:var(--drop); stroke-width:2; }
 <main class="doc" id="top">
 <header class="masthead"><div class="mast-eyebrow"><span>上海交通大学 · 云网融合创新实践</span><span class="lec">2026 · LECTURE 07 · 讲义</span></div><h1>从拥塞控制到长尾延迟：<br>最慢的一个决定整体</h1><p class="mast-sub">From Congestion Control to Tail Latency</p><div class="pathstrip"><svg viewBox="0 0 300 40" role="img" aria-label="前端同时向多个分片发请求，其中一个分片变慢，整轮要等它"><rect x="2" y="13" width="26" height="14" rx="2" class="n-host"/><path d="M 28 20 L 120 6 M 28 20 L 120 20 M 28 20 L 120 34" class="wire"/><rect x="120" y="1" width="60" height="10" rx="2" class="n-host"/><rect x="120" y="15" width="150" height="10" rx="2" class="n-l4"/><rect x="120" y="29" width="60" height="10" rx="2" class="n-host"/></svg><div class="legend"><span><i class="k-l4"></i>四层 · 拥塞控制与重传</span><span><i class="k-l3"></i>三层 · 路径与队列位置</span></div></div><div class="lead"><span class="lead-label">课程导读</span><p>第 06 讲留下一个现象：同一条路径、同样的吞吐，换一种队列，往返时间可以差几百倍。本讲先回答它：TCP 为什么会把队列填满，有哪些算法不这样做。接着把目光移到作业上：一个前端要等 100 个后端都回话，只要每个后端有 1% 的请求变慢，就有约 63% 的前端请求变慢。<strong>平均值很好看，用户等的却是最慢的那一个。</strong> 学完后，你应能算出尾部如何随扇出放大，读懂慢在哪里的证据，并判断对冲请求救得了哪一种慢、救不了哪一种。</p>
 </div></header>
-<aside class="callout note long"><div class="callout-label">NOTE<span>课堂安排与准备</span></div><p>本讲对应<a href="../README.md" class="xref">课程大纲</a>第 07 讲和 <a href="../experiments/05/README.html" class="xref">Lab 5 指导书</a>，由原第 07、08、09 讲合并而成（2026-11-07 调整），按 <strong>90 分钟有效授课时间</strong>设计。模块一每人动手对照三种算法并复现 incast，学生要求亲手测出读数并能解释；模块二只讲知识；重点在模块三到模块五，学生要求会算、会测、会判断。BBR 与 DCTCP 的内部算法、<code>SO_TXTIME</code> 与 ETF 的用法都只讲到“足以看懂现象”，不要求实现。</p>
-<p><strong>材料状态</strong>：✅ 已定稿（2026-11-08 教师审阅通过；同日按教师要求把模块一的教师演示改为学生动手）。标为“实测样例”的输出来自 2026-11-07 的备课虚拟机：Ubuntu 26.04.1、Linux <code>7.0.0-43-generic</code>、x86_64、2 核 2.8 GB，iproute2 6.19.0、iperf3 3.20、Python 3.14；使用<a href="../experiments/04/topo.sh" class="xref">完整实验床</a>与 Lab 2 参考路由。为便于阅读省略了无关字段；单次读数以自己的测量为准，算例另标为教学设定或理论值。本文命令已按原文在该环境逐块运行，模块一改写后的命令 2026-11-08 重新运行过，样例仍保留 11-07 的那次；尚未在 Ubuntu 24.04 上复核，也没有多台机器的对照。</p>
-<p><strong>一个容易踩的坑</strong>：这台备课机的系统默认拥塞控制算法是 <code>bbr</code>，而 Ubuntu 的默认值通常是 <code>cubic</code>，算法不同，结果可以差几十倍（1.3 节）。本讲所有工具都<strong>显式指定算法</strong>，不依赖系统默认值。自己测 TCP 行为时也应如此，并把算法写进体检单的“条件”一栏。</p>
-<p><strong>课堂组织</strong>：模块一每人动手，亲手对照三种算法的队列行为并复现 incast；模块二只讲知识。模块三起继续动手：两次短观察看放大和丢包，模块五用一个小任务把它们串起来，判断三种“慢”分别该怎么办。课前搭建一次实验床，全程沿用 <strong>100 Mbit/s 档位</strong>；每个观察结束时恢复基线。</p>
-</aside>
 <section class="plain-sec goals" id="objectives"><h2>学习目标</h2><ol>
 <li>用拥塞窗口和带宽时延积解释队列为什么被填满；说出 CUBIC、BBR、DCTCP 各靠什么信号判断拥塞，并能从 <code>ss</code>、<code>tc</code> 的读数验证。</li>
 <li>解释 incast 的成因，从丢包、重传和超时计数器判断它是否发生；说出 pacing、<code>SO_TXTIME</code> 与 ETF、报文时间戳分别解决什么问题。</li>
@@ -551,7 +546,7 @@ svg.lec07 .ar-drop { stroke:var(--drop); stroke-width:2; }
 </tr>
 </tbody>
 </table></div>
-<p><strong>课前准备（不计入上述 90 分钟）</strong>：学生自行准备 Ubuntu Linux，工具与第 06 讲相同（<code>iproute2</code>、<code>iputils-ping</code>、<code>iperf3</code>、Python 3 与 <code>uv</code>）。不同小组各用独立主机或虚拟机，同一台机器由一人操作。本讲复用<a href="../experiments/04/topo.sh" class="xref">完整实验床脚本</a>，Lab 3 没有做完也不影响；Lab 4 改为选做，本讲不依赖它。</p>
+<p><strong>课前准备（不计入上述 90 分钟）</strong>：学生自行准备 Ubuntu Linux，工具与第 06 讲相同（<code>iproute2</code>、<code>iputils-ping</code>、<code>iperf3</code>、Python 3 与 <code>uv</code>）。不同小组各用独立主机或虚拟机，同一台机器由一人操作。本讲复用<a href="../experiments/04/topo.sh" class="xref">完整实验床脚本</a>，Lab 3 没有做完也不影响；Lab 4 改为选做，本讲不依赖它。本讲标为“实测样例”的输出来自 2026-11-07 的备课虚拟机（Ubuntu 26.04.1、Linux <code>7.0.0-43-generic</code>、x86_64、2 核 2.8 GB），单次读数以自己的测量为准。</p>
 <div class="code cmd"><span class="code-tag">bash</span><pre><code><span class="c step"><span class="step-n"># 1.</span> 清理第 05 讲课堂网络与 Lab 3 网络（节点重名，不能同时存在）</span>
 <span class="su">sudo</span> bash 2026/experiments/03/classroom.sh down
 <span class="su">sudo</span> bash 2026/experiments/03/topo.sh down
@@ -1503,7 +1498,7 @@ cp -r /tmp/lab05-results &quot;$HOME/lab05-lecture-results&quot;
 </ul>
 </section>
 
-<footer class="colophon"><span>上海交通大学 ·《云网融合创新实践》第 07 讲</span><span>由 <a href="tail_latency.md">2026/docs/tail_latency.md</a> 生成 · sha256 c5c940db94 · 2026-11-08</span></footer>
+<footer class="colophon"><span>上海交通大学 ·《云网融合创新实践》第 07 讲</span><span>由 <a href="tail_latency.md">2026/docs/tail_latency.md</a> 生成 · sha256 5fbbc84ef9 · 2026-11-08</span></footer>
 </main></div><script>
 (function () {
   // 打印按钮
