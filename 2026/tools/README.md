@@ -1,6 +1,6 @@
 # 2026 阅读版维护工具
 
-目前提供 **Lab 3、Lab 4、Lab 5 阅读版**、**第二、三、四、五、六讲回顾阅读版**和**第 06、07 讲讲义阅读版**的生成入口，不是全仓库通用转换器。第 06、07 讲与 Lab 4、Lab 5 的生成器共用 `reading_common.py`（命令行内高亮、生成页结构检查、链接与锚点核对、残留标记检查）。教师使用，不属于学生实验依赖；学生 Lab 3 仍只用 Python 标准库。
+目前提供 **Lab 3、Lab 4、Lab 5、Lab 6 阅读版**、**第二、三、四、五、六讲回顾阅读版**和**第 06、07、08 讲讲义阅读版**的生成入口，不是全仓库通用转换器。第 06、07、08 讲与 Lab 4、Lab 5、Lab 6 的生成器共用 `reading_common.py`（命令行内高亮、生成页结构检查、链接与锚点核对、残留标记检查）。教师使用，不属于学生实验依赖；学生 Lab 3 仍只用 Python 标准库。
 
 ## Lab 3 阅读版
 
@@ -192,3 +192,28 @@ uv run --project 2026/tools --frozen python 2026/tools/build_lab5_html.py --date
 ```
 
 - 输出 `2026/experiments/05/README.html`，结构与 Lab 4 生成器相同。本实验没有配图，场景对照图见第 07 讲 5.1 节，生成器要求配图数为 0。
+
+## 第 08 讲讲义阅读版
+
+先修改 `2026/docs/communication_cost.md`，再从仓库根目录执行：
+
+```bash
+# 1. 按本目录锁文件准备依赖（与其他生成器共用）
+uv sync --project 2026/tools --frozen
+
+# 2. 生成第 08 讲阅读版，日期填写本次内容更新日期
+uv run --project 2026/tools --frozen python 2026/tools/build_communication_cost_html.py --date 2026-11-08
+```
+
+- 结构与第 07 讲生成器相同。4 幅配图由 `communication_cost_figures.py` 绘制，Mermaid 源图的摘要在 `communication_cost_figure_sources.json`。改源图时先核对 SVG 的节点、方向、标签与简化条件，再更新摘要。
+- 公式里的希腊字母改用直立体（`reading_common.upright_greek()`，第 07、08 讲与 Lab 4、Lab 6 的生成器都调用它）：默认的斜体落在 Unicode 数学字母区，系统没有数学字体时显示成方框。
+
+## Lab 6 阅读版
+
+先修改 `2026/experiments/06/README.md`，再从仓库根目录执行：
+
+```bash
+uv run --project 2026/tools --frozen python 2026/tools/build_lab6_html.py --date 2026-11-08
+```
+
+- 输出 `2026/experiments/06/README.html`，结构与 Lab 5 生成器相同，生成器要求配图数为 0。
