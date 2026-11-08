@@ -946,6 +946,6 @@ ip netns list
 - 上游：[Lab 2 指导书](../experiments/02/README.md)的 R7、R8 与 ECMP 进阶任务；[第 04 讲](link_state_router.md)的首跳集合与路由安装。
 - 本讲：[Lab 3 指导书](../experiments/03/README.md)，在课堂观察基础上完成自己的 leaf-spine 实验床、分层任务与测量验收；课堂演示入口为 [`classroom.sh`](../experiments/03/classroom.sh)，课程依赖见 [Lab 3 设计](../experiments/README.md#lab-3搭一个迷你数据中心)。
 - 下一讲：[Lab 4 设计](../experiments/README.md#lab-4给网络做体检)，把连通性、吞吐和延迟变成可比较的网络画像。
-- 后半程：[Lab 6–7 与综合项目](../experiments/README.md)，用同一实验床解释通信代价，并把拓扑、路径和共享容量纳入计算决策。
+- 后半程：[Lab 6–7](../experiments/README.md)，用同一实验床解释通信代价，并把拓扑、路径和共享容量纳入计算决策。
 
 去年 [分布式框架讲义](../../2025/docs/network_impact_distributed_frameworks.md#4-网络拓扑对分布式框架的影响)中讨论了拓扑与通信代价，可作为后续学习参考；本讲的 2×4×8 拓扑、容量算例和任务分层按 2026 课程规划设计。

@@ -796,4 +796,4 @@ sudo bash 2026/experiments/04/topo.sh down
 - 上游：[第 06 讲](network_measurement.md)的分位数、负载下延迟与 4.5 节的队列对照；[完整实验床](../experiments/04/topo.sh)。
 - 本讲：[Lab 5 指导书](../experiments/05/README.md)。
 - 下一讲：第 08 讲把“等最慢的一个”放进分布式计算：barrier 就是一轮扇出，straggler 就是那个慢分片；再用 α-β 模型计算通信代价。
-- 后半程：Lab 7 的调度器用网络画像选择放置；综合项目可以组合放置、环序、对冲等手段。
+- 后半程：Lab 7 的调度器用网络画像选择放置。
