@@ -17,7 +17,7 @@ from latex2mathml.converter import convert
 from markdown_it import MarkdownIt
 from mdit_py_plugins.dollarmath import dollarmath_plugin
 from lab4_figures import FIGURE_CSS, figure
-from reading_common import Page, check_leftovers, check_links, highlight, html_token
+from reading_common import Page, check_leftovers, check_links, highlight, html_token, upright_greek
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "2026/experiments/04/README.md"
@@ -38,8 +38,8 @@ EXTRA_CSS = """
 
 def markdown():
     md = MarkdownIt("commonmark", {"html": False}).enable("table")
-    md.use(dollarmath_plugin, renderer=lambda text, options: convert(
-        text, display="block" if options["display_mode"] else "inline"))
+    md.use(dollarmath_plugin, renderer=lambda text, options: upright_greek(convert(
+        text, display="block" if options["display_mode"] else "inline")))
 
     def fence(tokens, idx, options, env):
         token = tokens[idx]

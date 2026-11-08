@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="generator" content="2026/tools/build_lab4_html.py；源文 sha256 dd6dfd48e982566e50498417ef0d26f22ca1fd34d58aefeac8ff52adb314300d；更新 2026-11-07">
+<meta name="generator" content="2026/tools/build_lab4_html.py；源文 sha256 db80996a10a2c63ea08cc0821190d86849c633717a72f9db90926c060e22054b；更新 2026-11-08">
 <title>Lab 4 · 给网络做体检</title><style>
 /* ==========================================================================
    云网融合创新实践 · 讲义样式
@@ -1134,7 +1134,7 @@ ck --pairs h1a:h3a,h1a:h2b,h1a:h4a --skip-rtt --skip-tput --curve 10000,100000,1
 <ol>
 <li><strong><span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>b</mi></mrow></math></span> 与吞吐一致</strong>：h1a→h3a、h1a→h2b 的 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>b</mi></mrow></math></span> 约 95.4–95.5 Mbit/s，h1a→h4a 约 28.6 Mbit/s，分别对应 100 与 30 Mbit/s 端口的帧级上界（95.6、28.7）。4 ms 的单向延迟没有降低 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>b</mi></mrow></math></span>。</li>
 <li><strong><span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi></mrow></math></span> 把延迟变成了成本</strong>：h1a→h2b 的 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi></mrow></math></span> 约 12 ms，约为其往返时间（4.24 ms，见第一步）的 3 倍。建立连接要一个往返，开头的数据受拥塞窗口限制要再走几个往返，接收端的回执还要一个往返。另外两对的往返时间约 0.16 ms，<span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi></mrow></math></span> 只有 1 ms 左右，主要是进程与系统调用的开销。</li>
-<li><strong>对两类作业意味着什么</strong>：传 10 KB 时，h1a→h2b 要 11.0 ms，h1a→h3a 只要 2.9 ms，固定开销决定了小消息的成本；传 10 MB 时，h1a→h4a 要 2.8 s，h1a→h3a 只要 0.84 s，<span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>b</mi></mrow></math></span> 决定了大数据量的成本。这正是第 06 讲 1.1 节的作业 B 与作业 A；第 08 讲的 α-β 模型 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>T</mi><mo>&#x0003D;</mo><mi>&#x003B1;</mi><mo>&#x0002B;</mo><mi>&#x003B2;</mi><mi>m</mi></mrow></math></span> 中，<span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi></mrow></math></span> 对应 α，<span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>8</mn><mo>&#x0002F;</mo><mo stretchy="false">&#x00028;</mo><mi>b</mi><mo>&#x000D7;</mo><msup><mn>10</mn><mn>6</mn></msup><mo stretchy="false">&#x00029;</mo></mrow></math></span> 对应每字节的 β。</li>
+<li><strong>对两类作业意味着什么</strong>：传 10 KB 时，h1a→h2b 要 11.0 ms，h1a→h3a 只要 2.9 ms，固定开销决定了小消息的成本；传 10 MB 时，h1a→h4a 要 2.8 s，h1a→h3a 只要 0.84 s，<span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>b</mi></mrow></math></span> 决定了大数据量的成本。这正是第 06 讲 1.1 节的作业 B 与作业 A；第 08 讲的 α-β 模型 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>T</mi><mo>&#x0003D;</mo><mi mathvariant="normal">&#x003B1;</mi><mo>&#x0002B;</mo><mi mathvariant="normal">&#x003B2;</mi><mi>m</mi></mrow></math></span> 中，<span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi></mrow></math></span> 对应 α，<span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>8</mn><mo>&#x0002F;</mo><mo stretchy="false">&#x00028;</mo><mi>b</mi><mo>&#x000D7;</mo><msup><mn>10</mn><mn>6</mn></msup><mo stretchy="false">&#x00029;</mo></mrow></math></span> 对应每字节的 β。</li>
 <li><strong>看残差再信 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi></mrow></math></span></strong>：h1a→h2b 的最大残差约 2 ms，说明直线只是近似：小传输要等整数个往返，不是严格线性。备课时再测一次，三对的 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi></mrow></math></span> 分别为 0.7、11.8、0.4 ms，<span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>b</mi></mrow></math></span> 几乎不变：往返时间很小时，<span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi></mrow></math></span> 的读数在 ±1 ms 内波动，只有 h1a→h2b 的 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi></mrow></math></span> 明显高于这个范围。</li>
 <li><strong>数据量要覆盖你关心的区间</strong>：备课时曾只用 0.1、1、10、30 MB 四档拟合 h1a→h3a，得到 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi><mo>&#x0003D;</mo><mo>&#x02212;</mo><mn>5.5</mn></mrow></math></span> ms。固定开销不可能为负：30 MB 那一档的速率略低于 10 MB，最小二乘被大数据量的点主导，截距就被“拉”到了负值。要估计 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi></mrow></math></span>，就要有足以让 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>a</mi></mrow></math></span> 显现的小数据量，并检查残差。</li>
 </ol>
@@ -1308,14 +1308,14 @@ tar -tzf &quot;$HOME/lab04-submission.tgz&quot; | head
 </tr>
 <tr>
 <td style="text-align:left">未覆盖</td>
-<td style="text-align:left">Ubuntu 22.04／24.04；学生自己的实现与 <code>up --own</code>；<code>--hosts</code> 指定的其他拓扑；六类盲测条件中的“主机接入单方向延迟”与“机架入方向限速”只在第 06 讲场景中出现过，没有作为盲测条件单独验证</td>
+<td style="text-align:left">Ubuntu 24.04；学生自己的实现与 <code>up --own</code>；<code>--hosts</code> 指定的其他拓扑；六类盲测条件中的“主机接入单方向延迟”与“机架入方向限速”只在第 06 讲场景中出现过，没有作为盲测条件单独验证</td>
 </tr>
 </tbody>
 </table></div>
 <p>阅读版 <code>README.html</code> 由 <code>2026/tools/build_lab4_html.py</code> 从本文生成，用法见 <a href="../../tools/README.md" class="xref"><code>tools/README.md</code></a>。仓库中的 TODO 保持留白；参考实现只用于备课验证，没有放进仓库。学生实现须独立验收，样例中的端口、用时与单次读数不作为验收标准。<code>tests/fixtures/</code> 中的 <code>ping</code> 输出与 <code>iperf3</code> JSON 采自上述环境：丢包与重复回复由 <code>topo.sh impair</code> 注入 netem 产生，连接被拒的 JSON 来自不存在服务端的端口。</p>
 </section>
 
-<footer class="colophon"><span>上海交通大学 · 云网融合创新实践 · Lab 4</span><span>由 <a href="README.md">README.md</a> 生成 · sha256 dd6dfd48e982 · 2026-11-07</span></footer>
+<footer class="colophon"><span>上海交通大学 · 云网融合创新实践 · Lab 4</span><span>由 <a href="README.md">README.md</a> 生成 · sha256 db80996a10a2 · 2026-11-08</span></footer>
 </main></div><script>
 (function () {
   // 打印按钮

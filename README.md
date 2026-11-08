@@ -22,7 +22,7 @@
 
 ## 实验环境
 
-- 一台 Linux 主机或虚拟机，推荐 Ubuntu 22.04 及以上、至少 4 核 CPU 和 4 GB 内存，具备 `sudo` 权限；Lab 7 需要 cgroup v2
+- 一台 Linux 主机或虚拟机，推荐 Ubuntu 24.04 及以上、至少 4 核 CPU 和 4 GB 内存，具备 `sudo` 权限；Lab 7 需要 cgroup v2
 - 必需：`iproute2`、`iputils-ping`、`tcpdump`、`traceroute`、`iperf3`、`iptables`、Python 3.10 及以上与 [`uv`](https://docs.astral.sh/uv/)
 - 个别讲次另需 FRRouting 或特定内核模块，详见 [2026 环境说明](2026/README.md#实验环境) 与各实验指导书；`shellcheck` 用于脚本静态检查
 - macOS / Windows 用户请使用 Linux 虚拟机或云主机

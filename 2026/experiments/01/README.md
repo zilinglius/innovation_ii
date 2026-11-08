@@ -25,7 +25,7 @@
 - 第 01 讲　计算机网络基础与 Linux 网络虚拟化
 - 第 02 讲　二层交换与静态路由，尤其是 2.2 节（网桥三条规矩）、3.1 节（转发决策流程）、4.2 节（"ping 不通"的定位顺序）
 
-**环境**：一台 Linux 主机或虚拟机，需要 `sudo`。推荐 Ubuntu 22.04 及以上。macOS / Windows 无法直接运行，network namespace 是 Linux 内核特性，请用虚拟机或云主机。
+**环境**：一台 Linux 主机或虚拟机，需要 `sudo`。推荐 Ubuntu 24.04 及以上。macOS / Windows 无法直接运行，network namespace 是 Linux 内核特性，请用虚拟机或云主机。
 
 **工具检查**（缺哪个装哪个）：
 

@@ -642,7 +642,7 @@ table.fill td:empty:not(:first-child) { border-left: 1px solid var(--rule); }
 <li>第 01 讲　计算机网络基础与 Linux 网络虚拟化</li>
 <li>第 02 讲　二层交换与静态路由，尤其是 2.2 节（网桥三条规矩）、3.1 节（转发决策流程）、4.2 节（"ping 不通"的定位顺序）</li>
 </ul>
-<p><strong>环境</strong>：一台 Linux 主机或虚拟机，需要 <code class="nw">sudo</code>。推荐 Ubuntu 22.04 及以上。macOS / Windows 无法直接运行，network namespace 是 Linux 内核特性，请用虚拟机或云主机。</p>
+<p><strong>环境</strong>：一台 Linux 主机或虚拟机，需要 <code class="nw">sudo</code>。推荐 Ubuntu 24.04 及以上。macOS / Windows 无法直接运行，network namespace 是 Linux 内核特性，请用虚拟机或云主机。</p>
 <p><strong>工具检查</strong>（缺哪个装哪个）：</p>
 <div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="ln"><span class="c step"><span class="step-n"># 1.</span> iproute2（提供 ip / bridge / tc）、ping、tcpdump 通常已自带；traceroute 多数发行版需要手工安装</span></span><span class="ln">which ip bridge tc ping tcpdump traceroute</span><span class="ln"><span class="su">sudo</span> apt install -y iproute2 iputils-ping tcpdump traceroute</span></code></pre></div>
 <div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="ln"><span class="c step"><span class="step-n"># 2.</span> 确认内核带 netem（进阶任务需要）。四条命令都不报错即可</span></span><span class="ln"><span class="su">sudo</span> ip link add nettest0 type veth peer name nettest1</span><span class="ln"><span class="su">sudo</span> tc qdisc add dev nettest0 root netem delay 1ms</span><span class="ln"><span class="su">sudo</span> tc qdisc del dev nettest0 root</span><span class="ln"><span class="su">sudo</span> ip link del nettest0</span></code></pre></div>

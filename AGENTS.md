@@ -110,7 +110,7 @@
 
 通用规范：
 
-- 实验环境：一台 Linux 主机或虚拟机（推荐 Ubuntu 22.04 及以上，至少 4 核、4 GB；Lab 7 需要 cgroup v2），需要 `iproute2`、`iputils-ping`、`tcpdump`、`iperf3`、Python 3 与 `uv`。macOS 上无法直接运行 namespace 实验，需在 Linux 虚拟机或云主机中进行。
+- 实验环境：一台 Linux 主机或虚拟机（推荐 Ubuntu 24.04 及以上，至少 4 核、4 GB；Lab 7 需要 cgroup v2），需要 `iproute2`、`iputils-ping`、`tcpdump`、`iperf3`、Python 3 与 `uv`。macOS 上无法直接运行 namespace 实验，需在 Linux 虚拟机或云主机中进行。
 - 所有实验命令约定**从仓库根目录执行**，需要 root 的步骤显式写 `sudo`。
 - Bash 脚本：
   - 首行 `#!/usr/bin/env bash`，紧跟 `set -Eeuo pipefail`；
