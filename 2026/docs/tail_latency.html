@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="generator" content="2026/tools/build_tail_latency_html.py；源文 sha256 bcda61fdb71fbae6aa8ac2f8b5f66d97f4ba374f63b7a8cf0c3983a62f763158；更新 2026-11-07">
+<meta name="generator" content="2026/tools/build_tail_latency_html.py；源文 sha256 e866bd72041f0716c65f8c449401cf78a72d01f75a777d8e8c17509fe48b2918；更新 2026-11-08">
 <title>第07讲 从拥塞控制到长尾延迟：最慢的一个决定整体</title><style>
 /* ==========================================================================
    云网融合创新实践 · 讲义样式
@@ -490,16 +490,16 @@ svg.lec07 .ar-drop { stroke:var(--drop); stroke-width:2; }
 </style></head><body><div class="layout">
 <nav class="toc no-print" aria-label="目录">
 <div class="toc-course">云网融合创新实践 · 07<b>从拥塞控制到长尾延迟</b></div>
-<ol class="toc-mods"><li data-target="top"><a href="#top"><span class="n">00</span><span>导读与学习目标</span></a></li><li data-layer="l4" data-target="m1"><a href="#m1"><span class="n">01</span><span>拥塞控制：谁把队列填满了</span></a><ol class="toc-sub"><li><a href="#s1-1">1.1　拥塞窗口决定路上有多少数据</a></li><li><a href="#s1-2">1.2　三种算法，三种信号</a></li><li><a href="#s1-3">1.3　教师演示：同样的吞吐，队列差几十倍</a></li><li><a href="#s1-4">1.4　两条流为什么大致平分</a></li><li><a href="#s1-5">1.5　教师演示：incast，多个发送端同时回话</a></li></ol></li><li data-layer="l4" data-target="m2"><a href="#m2"><span class="n">02</span><span>发送节奏与报文时间戳</span></a><ol class="toc-sub"><li><a href="#s2-1">2.1　pacing：把突发摊开</a></li><li><a href="#s2-2">2.2　定时发送：SO_TXTIME 与 ETF</a></li><li><a href="#s2-3">2.3　时间戳打在哪一层，决定你能看清什么</a></li></ol></li><li data-layer="" data-target="m3"><a href="#m3"><span class="n">03</span><span>长尾延迟：放大与成因</span></a><ol class="toc-sub"><li><a href="#s3-1">3.1　为什么要看尾部</a></li><li><a href="#s3-2">3.2　放大规律</a></li><li><a href="#s3-3">3.3　测量工具做了什么</a></li><li><a href="#s3-4">3.4　短观察：尾部怎样随扇出放大</a></li><li><a href="#s3-5">3.5　长尾从哪里来</a></li><li><a href="#s3-6">3.6　短观察：一次丢包变成 200 ms</a></li></ol></li><li data-layer="" data-target="m4"><a href="#m4"><span class="n">04</span><span>缓解手段与对冲请求</span></a><ol class="toc-sub"><li><a href="#s4-1">4.1　手段总览</a></li><li><a href="#s4-2">4.2　对冲请求</a></li></ol></li><li data-layer="l3" data-target="m5"><a href="#m5"><span class="n">05</span><span>综合动手——对冲救得了哪一种慢</span></a><ol class="toc-sub"><li><a href="#s5-1">5.1　任务与条件</a></li><li><a href="#s5-2">5.2　先填预测（4 分钟）</a></li><li><a href="#s5-3">5.3　基线与场景 A（4 分钟）</a></li><li><a href="#s5-4">5.4　场景 B：一台后端的路径堵塞（5 分钟）</a></li><li><a href="#s5-5">5.5　场景 C：前端自己的入口堵塞（5 分钟）</a></li><li><a href="#s5-6">5.6　汇总与诊断（6 分钟）</a></li><li><a href="#s5-7">5.7　恢复与清理（2 分钟）</a></li><li><a href="#s5-8">5.8　从课堂走向 Lab 5</a></li></ol></li><li data-layer="" data-target="m6"><a href="#m6"><span class="n">06</span><span>课后思考与拓展</span></a><ol class="toc-sub"><li><a href="#s6-1">6.1　离堂检查（3 分钟）</a></li><li><a href="#s6-2">6.2　思考题</a></li><li><a href="#s6-3">6.3　拓展资料与 RFC 列表</a></li><li><a href="#s6-4">6.4　后续衔接实验</a></li></ol></li></ol>
+<ol class="toc-mods"><li data-target="top"><a href="#top"><span class="n">00</span><span>导读与学习目标</span></a></li><li data-layer="l4" data-target="m1"><a href="#m1"><span class="n">01</span><span>拥塞控制：谁把队列填满了</span></a><ol class="toc-sub"><li><a href="#s1-1">1.1　拥塞窗口决定路上有多少数据</a></li><li><a href="#s1-2">1.2　三种算法，三种信号</a></li><li><a href="#s1-3">1.3　动手实践：同样的吞吐，队列差几十倍</a></li><li><a href="#s1-4">1.4　两条流为什么大致平分</a></li><li><a href="#s1-5">1.5　动手实践：incast，多个发送端同时回话</a></li></ol></li><li data-layer="l4" data-target="m2"><a href="#m2"><span class="n">02</span><span>发送节奏与报文时间戳</span></a><ol class="toc-sub"><li><a href="#s2-1">2.1　pacing：把突发摊开</a></li><li><a href="#s2-2">2.2　定时发送：SO_TXTIME 与 ETF</a></li><li><a href="#s2-3">2.3　时间戳打在哪一层，决定你能看清什么</a></li></ol></li><li data-layer="" data-target="m3"><a href="#m3"><span class="n">03</span><span>长尾延迟：放大与成因</span></a><ol class="toc-sub"><li><a href="#s3-1">3.1　为什么要看尾部</a></li><li><a href="#s3-2">3.2　放大规律</a></li><li><a href="#s3-3">3.3　测量工具做了什么</a></li><li><a href="#s3-4">3.4　短观察：尾部怎样随扇出放大</a></li><li><a href="#s3-5">3.5　长尾从哪里来</a></li><li><a href="#s3-6">3.6　短观察：一次丢包变成 200 ms</a></li></ol></li><li data-layer="" data-target="m4"><a href="#m4"><span class="n">04</span><span>缓解手段与对冲请求</span></a><ol class="toc-sub"><li><a href="#s4-1">4.1　手段总览</a></li><li><a href="#s4-2">4.2　对冲请求</a></li></ol></li><li data-layer="l3" data-target="m5"><a href="#m5"><span class="n">05</span><span>综合动手——对冲救得了哪一种慢</span></a><ol class="toc-sub"><li><a href="#s5-1">5.1　任务与条件</a></li><li><a href="#s5-2">5.2　先填预测（4 分钟）</a></li><li><a href="#s5-3">5.3　基线与场景 A（4 分钟）</a></li><li><a href="#s5-4">5.4　场景 B：一台后端的路径堵塞（5 分钟）</a></li><li><a href="#s5-5">5.5　场景 C：前端自己的入口堵塞（5 分钟）</a></li><li><a href="#s5-6">5.6　汇总与诊断（5 分钟）</a></li><li><a href="#s5-7">5.7　恢复与清理（2 分钟）</a></li><li><a href="#s5-8">5.8　从课堂走向 Lab 5</a></li></ol></li><li data-layer="" data-target="m6"><a href="#m6"><span class="n">06</span><span>课后思考与拓展</span></a><ol class="toc-sub"><li><a href="#s6-1">6.1　离堂检查（3 分钟）</a></li><li><a href="#s6-2">6.2　思考题</a></li><li><a href="#s6-3">6.3　拓展资料与 RFC 列表</a></li><li><a href="#s6-4">6.4　后续衔接实验</a></li></ol></li></ol>
 <div class="toc-foot"><button type="button" class="btn-print js-print">打印 / 存为 PDF</button><p class="print-hint">版式按 A4 纵向设计，自带页眉与页码；打印对话框里请关掉浏览器自己的“页眉和页脚”。</p></div>
 </nav>
 <main class="doc" id="top">
 <header class="masthead"><div class="mast-eyebrow"><span>上海交通大学 · 云网融合创新实践</span><span class="lec">2026 · LECTURE 07 · 讲义</span></div><h1>从拥塞控制到长尾延迟：<br>最慢的一个决定整体</h1><p class="mast-sub">From Congestion Control to Tail Latency</p><div class="pathstrip"><svg viewBox="0 0 300 40" role="img" aria-label="前端同时向多个分片发请求，其中一个分片变慢，整轮要等它"><rect x="2" y="13" width="26" height="14" rx="2" class="n-host"/><path d="M 28 20 L 120 6 M 28 20 L 120 20 M 28 20 L 120 34" class="wire"/><rect x="120" y="1" width="60" height="10" rx="2" class="n-host"/><rect x="120" y="15" width="150" height="10" rx="2" class="n-l4"/><rect x="120" y="29" width="60" height="10" rx="2" class="n-host"/></svg><div class="legend"><span><i class="k-l4"></i>四层 · 拥塞控制与重传</span><span><i class="k-l3"></i>三层 · 路径与队列位置</span></div></div><div class="lead"><span class="lead-label">课程导读</span><p>第 06 讲留下一个现象：同一条路径、同样的吞吐，换一种队列，往返时间可以差几百倍。本讲先回答它：TCP 为什么会把队列填满，有哪些算法不这样做。接着把目光移到作业上：一个前端要等 100 个后端都回话，只要每个后端有 1% 的请求变慢，就有约 63% 的前端请求变慢。<strong>平均值很好看，用户等的却是最慢的那一个。</strong> 学完后，你应能算出尾部如何随扇出放大，读懂慢在哪里的证据，并判断对冲请求救得了哪一种慢、救不了哪一种。</p>
 </div></header>
-<aside class="callout note long"><div class="callout-label">NOTE<span>课堂安排与准备</span></div><p>本讲对应<a href="../README.md" class="xref">课程大纲</a>第 07 讲和 <a href="../experiments/05/README.html" class="xref">Lab 5 指导书</a>，由原第 07、08、09 讲合并而成（2026-11-07 调整），按 <strong>90 分钟有效授课时间</strong>设计。前两个模块是知识讲授，配教师演示，学生要求看懂读数；重点在模块三到模块五，学生要求会算、会测、会判断。BBR 与 DCTCP 的内部算法、<code>SO_TXTIME</code> 与 ETF 的用法都只讲到“足以看懂现象”，不要求实现。</p>
-<p><strong>材料状态</strong>：待教师审阅（2026-11-07）。标为“实测样例”的输出来自 2026-11-07 的备课虚拟机：Ubuntu 26.04.1、Linux <code>7.0.0-43-generic</code>、x86_64、2 核 2.8 GB，iproute2 6.19.0、iperf3 3.20、Python 3.14；使用<a href="../experiments/04/topo.sh" class="xref">完整实验床</a>与 Lab 2 参考路由。为便于阅读省略了无关字段；单次读数以自己的测量为准，算例另标为教学设定或理论值。本文命令已按原文在该环境逐块运行；尚未在 Ubuntu 22.04／24.04 上复核，也没有多台机器的对照。</p>
+<aside class="callout note long"><div class="callout-label">NOTE<span>课堂安排与准备</span></div><p>本讲对应<a href="../README.md" class="xref">课程大纲</a>第 07 讲和 <a href="../experiments/05/README.html" class="xref">Lab 5 指导书</a>，由原第 07、08、09 讲合并而成（2026-11-07 调整），按 <strong>90 分钟有效授课时间</strong>设计。模块一每人动手对照三种算法并复现 incast，学生要求亲手测出读数并能解释；模块二只讲知识；重点在模块三到模块五，学生要求会算、会测、会判断。BBR 与 DCTCP 的内部算法、<code>SO_TXTIME</code> 与 ETF 的用法都只讲到“足以看懂现象”，不要求实现。</p>
+<p><strong>材料状态</strong>：✅ 已定稿（2026-11-08 教师审阅通过；同日按教师要求把模块一的教师演示改为学生动手）。标为“实测样例”的输出来自 2026-11-07 的备课虚拟机：Ubuntu 26.04.1、Linux <code>7.0.0-43-generic</code>、x86_64、2 核 2.8 GB，iproute2 6.19.0、iperf3 3.20、Python 3.14；使用<a href="../experiments/04/topo.sh" class="xref">完整实验床</a>与 Lab 2 参考路由。为便于阅读省略了无关字段；单次读数以自己的测量为准，算例另标为教学设定或理论值。本文命令已按原文在该环境逐块运行，模块一改写后的命令 2026-11-08 重新运行过，样例仍保留 11-07 的那次；尚未在 Ubuntu 24.04 上复核，也没有多台机器的对照。</p>
 <p><strong>一个容易踩的坑</strong>：这台备课机的系统默认拥塞控制算法是 <code>bbr</code>，而 Ubuntu 的默认值通常是 <code>cubic</code>，算法不同，结果可以差几十倍（1.3 节）。本讲所有工具都<strong>显式指定算法</strong>，不依赖系统默认值。自己测 TCP 行为时也应如此，并把算法写进体检单的“条件”一栏。</p>
-<p><strong>课堂组织</strong>：模块一、二讲清传输层的三类手段，由教师演示。模块三起每人动手：两次短观察看放大和丢包，模块五用一个小任务把它们串起来，判断三种“慢”分别该怎么办。课前搭建一次实验床，全程沿用 <strong>100 Mbit/s 档位</strong>；每个观察结束时恢复基线。</p>
+<p><strong>课堂组织</strong>：模块一每人动手，亲手对照三种算法的队列行为并复现 incast；模块二只讲知识。模块三起继续动手：两次短观察看放大和丢包，模块五用一个小任务把它们串起来，判断三种“慢”分别该怎么办。课前搭建一次实验床，全程沿用 <strong>100 Mbit/s 档位</strong>；每个观察结束时恢复基线。</p>
 </aside>
 <section class="plain-sec goals" id="objectives"><h2>学习目标</h2><ol>
 <li>用拥塞窗口和带宽时延积解释队列为什么被填满；说出 CUBIC、BBR、DCTCP 各靠什么信号判断拥塞，并能从 <code>ss</code>、<code>tc</code> 的读数验证。</li>
@@ -520,27 +520,27 @@ svg.lec07 .ar-drop { stroke:var(--drop); stroke-width:2; }
 </thead>
 <tbody>
 <tr>
-<td>0–20 分钟</td>
+<td>0–26 分钟</td>
 <td>模块一：拥塞控制：谁把队列填满了</td>
-<td>读懂三种算法的 <code>ss</code> 与队列读数；看懂 incast 的计数器</td>
+<td>亲手测出三种算法的 <code>ss</code> 与队列读数；复现 incast 并读懂计数器</td>
 </tr>
 <tr>
-<td>20–30 分钟</td>
+<td>26–33 分钟</td>
 <td>模块二：发送节奏与报文时间戳</td>
 <td>从 <code>ss</code> 算出 <code>pacing_rate</code>；知道时间戳打在哪一层</td>
 </tr>
 <tr>
-<td>30–50 分钟</td>
+<td>33–52 分钟</td>
 <td>模块三：长尾延迟：放大与成因</td>
 <td>算出分位数跳变点并实测；用计数器解释 200 ms</td>
 </tr>
 <tr>
-<td>50–58 分钟</td>
+<td>52–59 分钟</td>
 <td>模块四：缓解手段与对冲请求</td>
 <td>估算对冲的效果与额外负载</td>
 </tr>
 <tr>
-<td>58–87 分钟</td>
+<td>59–87 分钟</td>
 <td>模块五：综合动手——对冲救得了哪一种慢</td>
 <td>预测表、三场景对照、诊断表</td>
 </tr>
@@ -552,7 +552,7 @@ svg.lec07 .ar-drop { stroke:var(--drop); stroke-width:2; }
 </tbody>
 </table></div>
 <p><strong>课前准备（不计入上述 90 分钟）</strong>：学生自行准备 Ubuntu Linux，工具与第 06 讲相同（<code>iproute2</code>、<code>iputils-ping</code>、<code>iperf3</code>、Python 3 与 <code>uv</code>）。不同小组各用独立主机或虚拟机，同一台机器由一人操作。本讲复用<a href="../experiments/04/topo.sh" class="xref">完整实验床脚本</a>，Lab 3 没有做完也不影响；Lab 4 改为选做，本讲不依赖它。</p>
-<div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="c step"><span class="step-n"># 1.</span> 清理第 05 讲课堂网络与 Lab 3 网络（节点重名，不能同时存在）</span>
+<div class="code cmd"><span class="code-tag">bash</span><pre><code><span class="c step"><span class="step-n"># 1.</span> 清理第 05 讲课堂网络与 Lab 3 网络（节点重名，不能同时存在）</span>
 <span class="su">sudo</span> bash 2026/experiments/03/classroom.sh down
 <span class="su">sudo</span> bash 2026/experiments/03/topo.sh down
 
@@ -566,8 +566,11 @@ uv sync --project 2026/experiments/02 --frozen
 <span class="c step"><span class="step-n"># 4.</span> 在 7 台 host 上启动后端，做一次往返验证</span>
 <span class="su">sudo</span> bash 2026/experiments/05/tail.sh up
 <span class="su">sudo</span> bash 2026/experiments/05/tail.sh check
+
+<span class="c step"><span class="step-n"># 5.</span> 载入模块一要用的算法与队列模块（只需一次，不报错即可）</span>
+<span class="su">sudo</span> modprobe -a tcp_bbr tcp_dctcp sch_red
 </code></pre></div>
-<p>准备完成应出现 <code>[OK] 8 条上联往返、8 台 host 网关可达、跨机架往返。</code> 与 <code>[OK] 7 个后端都完成了 20 轮往返。</code>。<a href="../experiments/05/tail.sh" class="xref"><code>tail.sh</code></a> 负责启停后端、设置队列和大象流；<a href="../experiments/05/tailbench.py" class="xref"><code>tailbench.py</code></a>、<a href="../experiments/05/compare.py" class="xref"><code>compare.py</code></a>、<a href="../experiments/05/bulk.py" class="xref"><code>bulk.py</code></a> 都只用 Python 标准库，直接用系统 <code>python3</code> 运行。<strong>中途不要拆拓扑；提前结束或中断时，执行 5.7 节的清理命令。</strong></p>
+<p>准备完成应出现 <code>[OK] 8 条上联往返、8 台 host 网关可达、跨机架往返。</code> 与 <code>[OK] 7 个后端都完成了 20 轮往返。</code>。<a href="../experiments/05/tail.sh" class="xref"><code>tail.sh</code></a> 负责启停后端、设置队列和大象流；<a href="../experiments/05/tailbench.py" class="xref"><code>tailbench.py</code></a>、<a href="../experiments/05/compare.py" class="xref"><code>compare.py</code></a>、<a href="../experiments/05/bulk.py" class="xref"><code>bulk.py</code></a> 都只用 Python 标准库，直接用系统 <code>python3</code> 运行。第 5 步报找不到模块时，课前安装 <code>linux-modules-extra-$(uname -r)</code> 后重试；实在装不上也不影响后面的内容，1.3 节跳过 DCTCP 那一组即可。<strong>中途不要拆拓扑；提前结束或中断时，执行 5.7 节的清理命令。</strong></p>
 </section>
 <section class="module" id="m1" data-layer="l4"><header class="module-head"><div class="module-eyebrow"><span class="module-no">模块一</span><span class="tag l4">L4 · 拥塞控制</span></div><h2>拥塞控制：谁把队列填满了</h2></header>
 <h3 id="s1-1"><span class="sec-no">1.1</span>拥塞窗口决定路上有多少数据</h3>
@@ -600,7 +603,7 @@ uv sync --project 2026/experiments/02 --frozen
 <td>怎样调整</td>
 <td>窗口按三次函数增长；丢包后乘 0.7（<a href="https://www.rfc-editor.org/rfc/rfc9438#section-4.6" class="ext">RFC 9438 §4.6</a>）</td>
 <td>按估计的带宽控制发送节奏，窗口取 BDP 的若干倍（<a href="https://queue.acm.org/detail.cfm?id=3022184" class="ext">BBR 论文</a>）</td>
-<td><span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mrow><mi mathvariant="normal">c</mi><mi mathvariant="normal">w</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">d</mi></mrow><mo>&#x02190;</mo><mrow><mi mathvariant="normal">c</mi><mi mathvariant="normal">w</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">d</mi></mrow><mo>&#x000D7;</mo><mo stretchy="false">&#x00028;</mo><mn>1</mn><mo>&#x02212;</mo><mi>&#x003B1;</mi><mo>&#x0002F;</mo><mn>2</mn><mo stretchy="false">&#x00029;</mo></mrow></math></span>，<span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B1;</mi></mrow></math></span> 是被标记字节比例的滑动平均（<a href="https://www.rfc-editor.org/rfc/rfc8257#section-3.3" class="ext">RFC 8257 §3.3</a>）</td>
+<td><span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mrow><mi mathvariant="normal">c</mi><mi mathvariant="normal">w</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">d</mi></mrow><mo>&#x02190;</mo><mrow><mi mathvariant="normal">c</mi><mi mathvariant="normal">w</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">d</mi></mrow><mo>&#x000D7;</mo><mo stretchy="false">&#x00028;</mo><mn>1</mn><mo>&#x02212;</mo><mi mathvariant="normal">&#x003B1;</mi><mo>&#x0002F;</mo><mn>2</mn><mo stretchy="false">&#x00029;</mo></mrow></math></span>，<span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi mathvariant="normal">&#x003B1;</mi></mrow></math></span> 是被标记字节比例的滑动平均（<a href="https://www.rfc-editor.org/rfc/rfc8257#section-3.3" class="ext">RFC 8257 §3.3</a>）</td>
 </tr>
 <tr>
 <td>对队列的预期</td>
@@ -616,38 +619,41 @@ uv sync --project 2026/experiments/02 --frozen
 </tr>
 </tbody>
 </table></div>
-<h3 id="s1-3"><span class="sec-no">1.3</span>教师演示：同样的吞吐，队列差几十倍</h3>
-<p><strong>问题与预测</strong>：h1b 向 h3a 发一条 15 秒的大流，瓶颈是 r3→h3a 的 50 Mbit/s。同时 h1a 持续 <code>ping</code> h3a，它和大流只在这个瓶颈共用队列。三种算法的吞吐和 <code>ping</code> 的往返时间分别是多少？</p>
-<p><strong>工具与观察点</strong>：<a href="../experiments/05/bulk.py" class="xref"><code>bulk.py</code></a> 发定时大流，两端都用套接字选项指定算法；<code>ss -tin</code> 在 h1b 读发送端状态；<code>tc -s qdisc</code> 在 r3 读队列。<code>modprobe</code> 报找不到模块时，安装 <code>linux-modules-extra-$(uname -r)</code>。</p>
-<div class="code cmd"><span class="code-tag">bash</span><pre><code><span class="c step"><span class="step-n"># 1.</span> 载入两个算法模块（只需一次）；瓶颈设为 50 Mbit/s + 单队列 pfifo，上限 1000 个报文</span>
-<span class="su">sudo</span> modprobe -a tcp_bbr tcp_dctcp
+<h3 id="s1-3"><span class="sec-no">1.3</span>动手实践：同样的吞吐，队列差几十倍</h3>
+<p>本节每人动手，约 9 分钟：写预测 1 分钟，运行约 1 分钟，其余时间读数据。</p>
+<p><strong>问题与预测</strong>：h1b 向 h3a 发一条 15 秒的大流，瓶颈是 r3→h3a 的 50 Mbit/s。同时 h1a 持续 <code>ping</code> h3a，它和大流只在这个瓶颈共用队列。<strong>运行前先写下你的预测</strong>：三种算法的吞吐和 <code>ping</code> 的往返时间分别是多少？哪一种会把队列填满？</p>
+<p><strong>工具与观察点</strong>：<a href="../experiments/05/bulk.py" class="xref"><code>bulk.py</code></a> 发定时大流，两端都用套接字选项指定算法；<code>ss -tin</code> 在 h1b 读发送端状态；<code>tc -s qdisc</code> 在 r3 读队列。下面把一次运行写成函数 <code>run_cc</code>，算法由参数决定，后面只换参数，不用手工改命令。</p>
+<div class="code cmd"><span class="code-tag">bash</span><pre><code><span class="c step"><span class="step-n"># 1.</span> 瓶颈设为 50 Mbit/s + 单队列 pfifo，上限 1000 个报文</span>
 <span class="su">sudo</span> bash 2026/experiments/05/tail.sh queue r3 r3-h3a 50 1000
 
-<span class="c step"><span class="step-n"># 2.</span> 先起接收端和 ping（每 0.1 秒一个，共 17 秒），1 秒后 h1b 开始发 15 秒大流</span>
-<span class="su">sudo</span> ip netns exec <span class="ns">h3a</span> python3 2026/experiments/05/bulk.py server --port 5301 --cc cubic &amp;
-<span class="su">sudo</span> ip netns exec <span class="ns">h1a</span> ping -c 170 -i 0.1 10.0.3.11 &gt; /tmp/ping-cubic.txt &amp;
-sleep 1
-<span class="su">sudo</span> ip netns exec <span class="ns">h1b</span> python3 2026/experiments/05/bulk.py client --destination 10.0.3.11 --port 5301 --cc cubic --seconds 15 &amp;
+<span class="c step"><span class="step-n"># 2.</span> 定义一次运行：先起接收端和 ping（每 0.1 秒一个，共 17 秒），1 秒后 h1b 发 15 秒大流；</span>
+<span class="c">#    第 12 秒读发送端状态与队列；结束后只统计负载稳定后的 ping（seq 40–150，窗口在运行前定好）</span>
+run_cc() {
+  local cc=$1
+  <span class="su">sudo</span> ip netns exec <span class="ns">h3a</span> python3 2026/experiments/05/bulk.py server --port 5301 --cc &quot;$cc&quot; &amp;
+  <span class="su">sudo</span> ip netns exec <span class="ns">h1a</span> ping -c 170 -i 0.1 10.0.3.11 &gt; &quot;/tmp/ping-$cc.txt&quot; &amp;
+  sleep 1
+  <span class="su">sudo</span> ip netns exec <span class="ns">h1b</span> python3 2026/experiments/05/bulk.py client --destination 10.0.3.11 --port 5301 --cc &quot;$cc&quot; --seconds 15 &amp;
+  sleep 12
+  <span class="su">sudo</span> ip netns exec <span class="ns">h1b</span> ss -tin dst 10.0.3.11
+  <span class="su">sudo</span> bash 2026/experiments/05/tail.sh backlog r3 r3-h3a
+  wait
+  grep -E &#x27;icmp_seq=([4-9][0-9]|1[0-4][0-9]|150) &#x27; &quot;/tmp/ping-$cc.txt&quot; | python3 2026/experiments/04/stats.py
+}
 
-<span class="c step"><span class="step-n"># 3.</span> 第 12 秒读发送端状态与队列；等全部结束</span>
-sleep 12
-<span class="su">sudo</span> ip netns exec <span class="ns">h1b</span> ss -tin dst 10.0.3.11
-<span class="su">sudo</span> bash 2026/experiments/05/tail.sh backlog r3 r3-h3a
-wait
+<span class="c step"><span class="step-n"># 3.</span> CUBIC 和 BBR 用同一个队列，各约 18 秒</span>
+run_cc cubic
+run_cc bbr
 
-<span class="c step"><span class="step-n"># 4.</span> 只统计负载稳定后的 ping（seq 40–150），窗口在运行前定好</span>
-grep -E &#x27;icmp_seq=([4-9][0-9]|1[0-4][0-9]|150) &#x27; /tmp/ping-cubic.txt | python3 2026/experiments/04/stats.py
-
-<span class="c step"><span class="step-n"># 5.</span> BBR：把第 2、4 步里的 cubic（算法参数和文件名）全部换成 bbr，重复第 2–4 步</span>
-<span class="c step"><span class="step-n"># 6.</span> DCTCP：先执行下面两条换队列，再把第 2、4 步里的 cubic 全部换成 dctcp，重复第 2–4 步。</span>
-<span class="c">#    RED 的 ecn 模式让队列超过约 30 KB（约 20 个报文）时打标记，而不是丢包</span>
+<span class="c step"><span class="step-n"># 4.</span> DCTCP 先换队列：RED 的 ecn 模式让队列超过约 30 KB（约 20 个报文）时打标记，而不是丢包</span>
 <span class="su">sudo</span> ip netns exec <span class="ns">r3</span> tc qdisc del dev r3-h3a parent 1:10
 <span class="su">sudo</span> ip netns exec <span class="ns">r3</span> tc qdisc add dev r3-h3a parent 1:10 handle 10: red limit 1000000 min 30000 max 31000 avpkt 1514 burst 21 bandwidth 50mbit probability 1 ecn
+run_cc dctcp
 
-<span class="c step"><span class="step-n"># 7.</span> 恢复基线</span>
+<span class="c step"><span class="step-n"># 5.</span> 恢复基线</span>
 <span class="su">sudo</span> bash 2026/experiments/05/tail.sh clear
 </code></pre></div>
-<p><strong>实测样例</strong>（<code>ss</code> 省略了窗口缩放、字节计数等字段，<code>tc</code> 省略了首行；<code>Sent</code> 是队列创建以来的累计值，BBR 那一行包含 CUBIC 留下的 50 个丢包）：</p>
+<p><strong>实测样例</strong>（<code>ss</code> 省略了窗口缩放、字节计数等字段，<code>tc</code> 省略了首行；<code>Sent</code> 是队列创建以来的累计值，BBR 那一行包含 CUBIC 留下的 50 个丢包；为便于对照，每组输出前加了算法标题）：</p>
 <div class="code out"><span class="code-tag">实测样例</span><pre><code>[CUBIC + pfifo]
 cubic rto:431 rtt:230.088/0.36 mss:1448 cwnd:955 ssthresh:735 send 48080387bps pacing_rate 57696336bps delivery_rate 47821888bps retrans:0/50
 Sent 74700188 bytes 49466 pkt (dropped 50, overlimits 0 requeues 0)
@@ -670,7 +676,7 @@ marked 7430 early 33 pdrop 0 other 0
 [dctcp] 接收端收到 90046464 B，用时 15.07 s，应用层 47.8 Mbit/s
 样本   n=76 min=3.780 p10=4.110 p50=4.770 p90=5.220 max=5.450 mean=4.744 sd=0.383
 </code></pre></div>
-<p><strong>一起读数据</strong>：</p>
+<p><strong>一起读数据</strong>：先用自己的输出填出下表，再和样例对照，看预测哪里错了。你的数字以自己的测量为准。</p>
 <div class="table-wrap" tabindex="0" role="region" aria-label="表格，可横向滚动"><table>
 <thead>
 <tr>
@@ -717,10 +723,11 @@ marked 7430 early 33 pdrop 0 other 0
 <li><strong>吞吐一样</strong>：三者都贴近帧级上界 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>50</mn><mo>&#x000D7;</mo><mn>1448</mn><mo>&#x0002F;</mo><mn>1514</mn><mo>&#x02248;</mo><mn>47.8</mn></mrow></math></span> Mbit/s。CUBIC 多排的队列没有换来任何吞吐。</li>
 <li><strong>CUBIC 为什么填满队列</strong>：<code>cwnd</code> 955，队列 953，二者几乎相等，正如 1.1 节所算。953 个报文要排 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>953</mn><mo>&#x000D7;</mo><mn>1514</mn><mo>&#x000D7;</mo><mn>8</mn><mo>&#x0002F;</mo><mo stretchy="false">&#x00028;</mo><mn>50</mn><mo>&#x000D7;</mo><msup><mn>10</mn><mn>6</mn></msup><mo stretchy="false">&#x00029;</mo><mo>&#x02248;</mo><mn>231</mn></mrow></math></span> ms，对上了 <code>rtt</code> 230 ms。丢包是它唯一的信号，队列不满就不丢包，所以它只能一直涨到队列上限。<code>dropped 50</code> 与 <code>retrans:0/50</code> 一一对应。<code>ssthresh</code> 735 约等于 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>1050</mn><mo>&#x000D7;</mo><mn>0.7</mn></mrow></math></span>，正是在队列上限附近丢包后乘 0.7 的结果。这就回答了第 06 讲 4.5 节留下的问题。</li>
 <li><strong>BBR</strong>：<code>bw</code> 48.9 Mbit/s 接近瓶颈，<code>mrtt</code> 0.057 ms 接近空载。17 个报文约等于 4.1 ms 的排队，与 <code>rtt</code> 3.6 ms 同一量级。队列没有被填满，它的丢包是 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>58</mn><mo>&#x02212;</mo><mn>50</mn><mo>&#x0003D;</mo><mn>8</mn></mrow></math></span> 个。<code>cwnd</code> 24 仍大于 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>2</mn><mo>&#x000D7;</mo><mrow><mi mathvariant="normal">B</mi><mi mathvariant="normal">D</mi><mi mathvariant="normal">P</mi></mrow></mrow></math></span>，实现里还有其他余量，本讲不展开。</li>
-<li><strong>DCTCP</strong>：21 个报文约 5.1 ms，对上 <code>rtt</code> 5.2 ms，也贴近约 20 个报文的标记门限。<code>alpha</code> 156 的刻度是 1024，<span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>156</mn><mo>&#x0002F;</mo><mn>1024</mn><mo>&#x0003D;</mo><mn>15.2</mn><mi>&#x00025;</mi></mrow></math></span>，与 <code>delivered_ce</code>／<code>delivered</code> <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo>&#x0003D;</mo><mn>7418</mn><mo>&#x0002F;</mo><mn>49238</mn><mo>&#x0003D;</mo><mn>15.1</mn><mi>&#x00025;</mi></mrow></math></span> 对得上。每次窗口只减 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B1;</mi><mo>&#x0002F;</mo><mn>2</mn><mo>&#x02248;</mo><mn>7.6</mn><mi>&#x00025;</mi></mrow></math></span>，而不是 CUBIC 的 30%，所以队列能稳在门限附近。</li>
+<li><strong>DCTCP</strong>：21 个报文约 5.1 ms，对上 <code>rtt</code> 5.2 ms，也贴近约 20 个报文的标记门限。<code>alpha</code> 156 的刻度是 1024，<span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>156</mn><mo>&#x0002F;</mo><mn>1024</mn><mo>&#x0003D;</mo><mn>15.2</mn><mi>&#x00025;</mi></mrow></math></span>，与 <code>delivered_ce</code>／<code>delivered</code> <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mo>&#x0003D;</mo><mn>7418</mn><mo>&#x0002F;</mo><mn>49238</mn><mo>&#x0003D;</mo><mn>15.1</mn><mi>&#x00025;</mi></mrow></math></span> 对得上。每次窗口只减 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi mathvariant="normal">&#x003B1;</mi><mo>&#x0002F;</mo><mn>2</mn><mo>&#x02248;</mo><mn>7.6</mn><mi>&#x00025;</mi></mrow></math></span>，而不是 CUBIC 的 30%，所以队列能稳在门限附近。</li>
 </ol>
 <p><strong>边界与异常</strong>：</p>
 <ul>
+<li>CUBIC 的 <code>cwnd</code> 是锯齿，第 12 秒读到的只是其中一点。2026-11-08 重跑时读到 <code>cwnd</code> 769、队列 769 个报文、<code>ping</code> p50 199 ms，和样例的 955、953、227 ms 不同，但 <code>cwnd</code> 与队列几乎相等、吞吐不变这两点没有变。你的数字不必和样例一致，看这些关系成不成立。</li>
 <li>DCTCP 的低延迟有代价：<code>ping</code> 只收到 76/111。<code>ping</code> 不声明 ECN 能力，RED 在 ecn 模式下对这类报文<a href="https://man7.org/linux/man-pages/man8/tc-red.8.html" class="ext">只能丢弃</a>，<code>early 33</code> 记录的就是这些丢弃。实际部署要给非 ECN 流量另安排队列。</li>
 <li>BBR 的读数不总这么平稳。备课时另一次运行的第 8 秒，<code>bw</code> 被估成 137 Mbit/s，队列涨到 68 个报文。这也是为什么要看分位数和多次采样。</li>
 <li>这里只有一条流、一个瓶颈、0.1 ms 的往返时间。不同算法竞争同一队列时谁占便宜，这组数据回答不了。</li>
@@ -733,9 +740,10 @@ marked 7430 early 33 pdrop 0 other 0
 <li><strong>fq 按流调度</strong>：实验床的基线队列按流轮流发送，直接把容量平分。</li>
 </ul>
 <p>本讲没有单独做实验区分二者。第 06 讲那组数据同时有 CUBIC 和 fq，所以不能把平分全部归功于其中一个。</p>
-<h3 id="s1-5"><span class="sec-no">1.5</span>教师演示：incast，多个发送端同时回话</h3>
+<h3 id="s1-5"><span class="sec-no">1.5</span>动手实践：incast，多个发送端同时回话</h3>
+<p>本节每人动手，约 6 分钟，两次运行合计约 40 秒。</p>
 <p><strong>incast</strong> 指多个发送端几乎同时向一个接收端发数据，接收端的入口队列在瞬间被冲垮。它不是罕见故障，而是扇出请求的日常：前端向 N 个后端要数据，N 个响应几乎同时回来。</p>
-<p><strong>问题与预测</strong>：前端 h1a 向 20 个分片各要 64 KB，同一轮的总量是 1.28 MB。入口 r1→h1a 为 100 Mbit/s。队列上限从 1000 个报文改成 30 个，一轮要多久？</p>
+<p><strong>问题与预测</strong>：前端 h1a 向 20 个分片各要 64 KB，同一轮的总量是 1.28 MB。入口 r1→h1a 为 100 Mbit/s。<strong>运行前先写下你的预测</strong>：队列上限从 1000 个报文改成 30 个，一轮要多久？重传和超时计数器会怎样变？</p>
 <div class="code cmd"><span class="code-tag">bash</span><pre><code><span class="c step"><span class="step-n"># 1.</span> 深队列：100 Mbit/s + pfifo 1000；运行前后各读一次累计计数器，相减即增量</span>
 <span class="su">sudo</span> bash 2026/experiments/05/tail.sh queue r1 r1-h1a 100 1000
 <span class="su">sudo</span> bash 2026/experiments/05/tail.sh tcpstat
@@ -753,7 +761,7 @@ marked 7430 early 33 pdrop 0 other 0
 <span class="su">sudo</span> bash 2026/experiments/05/tail.sh clear
 </code></pre></div>
 <p><code>tcpstat</code> 汇总 8 台 host 的 <code>nstat</code> 累计值：<code>TcpRetransSegs</code>（重传段）、<code>TcpExtTCPTimeouts</code>（超时）、<code>TcpExtTCPLossProbes</code>（尾部丢失探测，3.6 节解释）。</p>
-<p><strong>实测样例</strong>（省略了脚本的 <code>[*]</code> 提示行；计数器是累计值，第一行之前已跑过前面的演示）：</p>
+<p><strong>实测样例</strong>（省略了脚本的 <code>[*]</code> 提示行；计数器是累计值，第一行之前已跑过 1.3 节）：</p>
 <div class="code out short"><span class="code-tag">实测样例</span><pre><code>重传段 58，超时 0，尾部丢失探测 0
 [incast-deep] N=20 轮数=100 p=0 对冲=off cc=cubic
   轮次延迟 ms   n=100 p50=109.4 p90=109.8 p99=110.7 max=111.6 mean=109.4
@@ -766,7 +774,7 @@ qdisc pfifo 10: parent 1:10 limit 30p
  Sent 140675713 bytes 94560 pkt (dropped 8875, overlimits 0 requeues 0) 
  backlog 0b 0p requeues 0
 </code></pre></div>
-<p><strong>一起读数据</strong>：</p>
+<p><strong>一起读数据</strong>：用你自己的计数器做一遍减法，再和下面对照。</p>
 <ol>
 <li><strong>深队列符合预期</strong>：1.28 MB 折算成帧约 1.34 MB，在 100 Mbit/s 上需要 107 ms，加 1 ms 服务时间约 108 ms，实测 p50 109.4 ms。</li>
 <li><strong>浅队列变慢 2.7 倍</strong>：同样的数据，p50 变成 290 ms。折算成有效速率，<span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>1.28</mn><mo>&#x000D7;</mo><msup><mn>10</mn><mn>6</mn></msup><mo>&#x000D7;</mo><mn>8</mn><mo>&#x0002F;</mo><mn>0.290</mn><mo>&#x02248;</mo><mn>35</mn></mrow></math></span> Mbit/s，而深队列约 94 Mbit/s。这叫<strong>吞吐塌陷</strong>（Throughput Collapse）：链路并不忙，大部分时间在等定时器。</li>
@@ -1282,7 +1290,7 @@ qdisc pfifo 10: parent 1:10 limit 300p
 <li><strong>不要过度解读 p50 的差别</strong>：58.3 ms 变成 67.6 ms，不能说明对冲让它变慢了。大象流的锯齿会让队列在这个范围内波动，备课时另一次运行方向相反（61.9 ms 变成 59.9 ms）。能确定的是：没有变好，负载翻倍。</li>
 <li><strong>对症的措施</strong>：同样的 50 Mbit/s、同样的大象流，队列换回 fq，轮 p50 就回到 8.6 ms，不需要任何额外请求。fq 为每条流单独排队，小请求不用排在大象流后面，这是第 06 讲 4.5 节的同一机制。</li>
 </ol>
-<h3 id="s5-6"><span class="sec-no">5.6</span>汇总与诊断（6 分钟）</h3>
+<h3 id="s5-6"><span class="sec-no">5.6</span>汇总与诊断（5 分钟）</h3>
 <div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="c"># 把全部结果排成一张表</span>
 python3 2026/experiments/05/compare.py s0-off a-off a-on b-off b-on c-off c-on c-fq
 </code></pre></div>
@@ -1446,7 +1454,7 @@ cp -r /tmp/lab05-results &quot;$HOME/lab05-lecture-results&quot;
 <tr>
 <td><a href="https://www.rfc-editor.org/rfc/rfc8257" class="ext">RFC 8257：DCTCP</a></td>
 <td>§3</td>
-<td><span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x003B1;</mi></mrow></math></span> 的更新与窗口调整</td>
+<td><span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi mathvariant="normal">&#x003B1;</mi></mrow></math></span> 的更新与窗口调整</td>
 </tr>
 <tr>
 <td><a href="https://www.rfc-editor.org/rfc/rfc3168" class="ext">RFC 3168：ECN</a></td>
@@ -1495,7 +1503,7 @@ cp -r /tmp/lab05-results &quot;$HOME/lab05-lecture-results&quot;
 </ul>
 </section>
 
-<footer class="colophon"><span>上海交通大学 ·《云网融合创新实践》第 07 讲</span><span>由 <a href="tail_latency.md">2026/docs/tail_latency.md</a> 生成 · sha256 bcda61fdb7 · 2026-11-07</span></footer>
+<footer class="colophon"><span>上海交通大学 ·《云网融合创新实践》第 07 讲</span><span>由 <a href="tail_latency.md">2026/docs/tail_latency.md</a> 生成 · sha256 e866bd7204 · 2026-11-08</span></footer>
 </main></div><script>
 (function () {
   // 打印按钮

@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="generator" content="2026/tools/build_lab5_html.py；源文 sha256 22dde691ae1af5b74d64a9296070dc374f300259c153a6de6618e7a305d7f837；更新 2026-11-07">
+<meta name="generator" content="2026/tools/build_lab5_html.py；源文 sha256 b9fba30b48b0b69ff69cba0477032df4e18c8d2b78b832c7f1bb6f8411156a7d；更新 2026-11-08">
 <title>Lab 5 · 长尾延迟与对冲请求</title><style>
 /* ==========================================================================
    云网融合创新实践 · 讲义样式
@@ -477,7 +477,7 @@ h3 .h3-tag {
 <ol class="toc-mods"><li data-target="top"><a href="#top"><span class="n">00</span><span>实验导读</span></a></li><li data-target="m1"><a href="#m1"><span class="n">01</span><span>实验目标</span></a><ol class="toc-sub"></ol></li><li data-target="m2"><a href="#m2"><span class="n">02</span><span>预备知识与工具</span></a><ol class="toc-sub"></ol></li><li data-target="m3"><a href="#m3"><span class="n">03</span><span>目录与资源</span></a><ol class="toc-sub"><li><a href="#m3-s1">3.1 文件</a></li><li><a href="#m3-s2">3.2 实验床与测量口径</a></li><li><a href="#m3-s3">3.3 骨架与测试</a></li></ol></li><li data-target="m4"><a href="#m4"><span class="n">04</span><span>实验步骤</span></a><ol class="toc-sub"><li><a href="#m4-s1">基础任务</a></li><li class="toc-h4"><a href="#m4-s2">任务 1：搭好实验床，测出噪声底</a></li><li class="toc-h4"><a href="#m4-s3">任务 2：写放大模型，先算后测（TODO 1–3）</a></li><li class="toc-h4"><a href="#m4-s4">任务 3：网络也会制造尾部</a></li><li><a href="#m4-s5">进阶任务</a></li><li class="toc-h4"><a href="#m4-s6">任务 4：对冲延迟的取舍</a></li><li class="toc-h4"><a href="#m4-s7">任务 5：实现自适应延迟与对冲预算（TODO 4、5）</a></li><li><a href="#m4-s8">挑战任务</a></li><li class="toc-h4"><a href="#m4-s9">任务 6：复现 incast，限制在途请求数（TODO 6）</a></li><li class="toc-h4"><a href="#m4-s10">任务 7（选做）：DCTCP 能解决 incast 吗</a></li></ol></li><li data-target="m5"><a href="#m5"><span class="n">05</span><span>故障排查</span></a><ol class="toc-sub"></ol></li><li data-target="m6"><a href="#m6"><span class="n">06</span><span>思考题</span></a><ol class="toc-sub"></ol></li><li data-target="m7"><a href="#m7"><span class="n">07</span><span>提交要求</span></a><ol class="toc-sub"><li><a href="#m7-s1">维护与验证</a></li></ol></li></ol>
 <div class="toc-foot"><button class="btn-print js-print" type="button">打印 / 存为 PDF</button><p class="print-hint">版式按 A4 纵向设计，自带页眉与页码；打印对话框里请关掉浏览器自己的“页眉和页脚”。</p></div></nav>
 <main class="doc" id="top"><header class="masthead"><div class="mast-eyebrow"><span>上海交通大学 · 云网融合创新实践</span><span class="lec">2026 · LAB 05</span></div><h1>长尾延迟<br>与对冲请求</h1><p class="mast-sub">Tail Latency &amp; Hedged Requests</p><div class="legend"><span><i class="k-l4"></i>四层 · 重传与拥塞控制</span><span><i class="k-l3"></i>三层 · 路径与队列位置</span></div><div class="lead"><span class="lead-label">实验导读</span><blockquote>
-<p>对应第 07 讲　｜　建议用时 1 周（基础约 3 小时；进阶任务 4 约 1 小时、任务 5 约 1.5 小时；挑战任务 6 约 1.5 小时，任务 7 选做约 0.5 小时）　｜　产出：能预测尾部放大的模型、带预算的对冲策略，以及一份“哪种慢该用哪种措施”的证据</p>
+<p>对应第 07 讲　｜　建议用时 1 周（基础约 3 小时；进阶任务 4 约 1 小时、任务 5 约 1.5 小时；挑战任务 6 约 1.5 小时，任务 7 选做约 0.5 小时）　｜　截止：2026-11-30　｜　产出：能预测尾部放大的模型、带预算的对冲策略，以及一份“哪种慢该用哪种措施”的证据</p>
 </blockquote>
 <p>第 07 讲的综合动手里，你用给定的工具和固定的对冲延迟比较了三种“慢”。本实验往前走三步：把放大规律写成能和实测对账的预测函数；扫描对冲延迟，找到值得付出的代价；再实现自适应延迟和对冲预算，看它们能不能同时兼顾“对冲有用”和“对冲有害”的场景。</p>
 <p>任务分三层：<strong>基础</strong>（任务 1–3）人人完成；<strong>进阶</strong>（任务 4、5）实现并比较对冲策略；<strong>挑战</strong>（任务 6、7）用同一套工具研究 incast，任务 7 为选做。计分见第七节。</p>
@@ -1052,6 +1052,7 @@ inc-dctcp       20    239.4    290.0    304.0  100.0%       0.0%        0
 </ol>
 </section>
 <section class="module" id="m7"><header class="module-head"><div class="module-eyebrow"><span class="module-no">07</span><span class="tag">LAB 5</span></div><h2>提交要求</h2></header>
+<p><strong>截止时间</strong>：2026-11-30。</p>
 <div class="table-wrap" tabindex="0" role="region" aria-label="表格，可横向滚动"><table>
 <thead>
 <tr>
@@ -1123,14 +1124,14 @@ tar -tzf &quot;$HOME/lab05-submission.tgz&quot; | head
 </tr>
 <tr>
 <td style="text-align:left">未覆盖</td>
-<td style="text-align:left">Ubuntu 22.04／24.04；学生自己的实现；4 核以上的机器（CPU 噪声底会不同）；<code>bulk.py</code> 与任务 7 在其他内核上的 DCTCP 行为</td>
+<td style="text-align:left">Ubuntu 24.04；学生自己的实现；4 核以上的机器（CPU 噪声底会不同）；<code>bulk.py</code> 与任务 7 在其他内核上的 DCTCP 行为</td>
 </tr>
 </tbody>
 </table></div>
 <p>阅读版 <code>README.html</code> 由 <code>2026/tools/build_lab5_html.py</code> 从本文生成，用法见 <a href="../../tools/README.md" class="xref"><code>tools/README.md</code></a>。仓库中的 TODO 保持留白；参考实现只用于备课验证，没有放进仓库。学生实现须独立验收，样例中的单次读数不作为验收标准。</p>
 </section>
 
-<footer class="colophon"><span>上海交通大学 · 云网融合创新实践 · Lab 5</span><span>由 <a href="README.md">README.md</a> 生成 · sha256 22dde691ae1a · 2026-11-07</span></footer>
+<footer class="colophon"><span>上海交通大学 · 云网融合创新实践 · Lab 5</span><span>由 <a href="README.md">README.md</a> 生成 · sha256 b9fba30b48b0 · 2026-11-08</span></footer>
 </main></div><script>
 (function () {
   // 打印按钮

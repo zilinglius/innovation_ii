@@ -17,7 +17,7 @@ from latex2mathml.converter import convert
 from markdown_it import MarkdownIt
 from mdit_py_plugins.dollarmath import dollarmath_plugin
 from tail_latency_figures import FIGURE_CSS, figure
-from reading_common import Page, check_leftovers, check_links, highlight, html_token
+from reading_common import Page, check_leftovers, check_links, highlight, html_token, upright_greek
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "2026/docs/tail_latency.md"
@@ -46,8 +46,8 @@ def markdown():
     md = MarkdownIt("commonmark", {"html": False}).enable("table")
     # 显示公式放进可横向滚动的容器，窄屏时不撑开整页。
     md.use(dollarmath_plugin, renderer=lambda text, options: (
-        f'<div class="math-wrap">{convert(text, display="block")}</div>'
-        if options["display_mode"] else convert(text, display="inline")))
+        f'<div class="math-wrap">{upright_greek(convert(text, display="block"))}</div>'
+        if options["display_mode"] else upright_greek(convert(text, display="inline"))))
 
     def fence(tokens, idx, options, env):
         token = tokens[idx]

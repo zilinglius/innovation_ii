@@ -28,6 +28,11 @@ def highlight(code):
     return "\n".join(lines)
 
 
+def upright_greek(mathml):
+    """希腊字母改用直立体；默认的斜体落在数学字母区，缺数学字体的系统上显示成方框。"""
+    return re.sub(r"<mi>(&#x0*3[BbCc][0-9A-Fa-f];)</mi>", r'<mi mathvariant="normal">\1</mi>', mathml)
+
+
 def html_token(content):
     token = Token("html_block", "", 0)
     token.content = content
