@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# 第 07 讲课前准备用的副本，源自 2026/experiments/05/tail.sh，路径已改为本目录。
+# 第 07 讲用的副本，源自 2026/experiments/05/tail.sh，路径已改为本目录。
 # backend.py、tailbench.py、compare.py、bulk.py、tailkit/ 也是 2026/experiments/05 的副本，tailkit 的 TODO 保持留白。
 
 # ==============================================================================

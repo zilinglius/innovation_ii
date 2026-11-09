@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# 第 07 讲课前准备用的副本，源自 2026/experiments/03/classroom.sh，路径已改为本目录（transfer.py 同样是副本）。
+# 第 07 讲用的副本，源自 2026/experiments/03/classroom.sh，路径已改为本目录（transfer.py 同样是副本）。
 # 不带 --reference 时仍使用学生在 2026/experiments/02 里的 lsrd。
 
 # 第五讲课堂观察：一张 2 spine × 4 leaf × 8 host 拓扑，复用 Lab 2 的 lsrd。

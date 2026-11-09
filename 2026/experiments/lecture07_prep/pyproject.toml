@@ -1,7 +1,7 @@
 [project]
 name = "lecture07-prep"
 version = "1.0.0"
-description = "第 07 讲课前准备：实验床、后端与 Lab 2 参考路由"
+description = "第 07 讲：实验床、后端、测量工具与 Lab 2 参考路由"
 requires-python = ">=3.10"
 dependencies = []
 

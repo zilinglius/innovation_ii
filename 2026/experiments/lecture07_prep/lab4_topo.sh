@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# 第 07 讲课前准备用的副本，源自 2026/experiments/04/topo.sh，路径已改为本目录；reference/ 是 2026/experiments/02/reference 的副本。
+# 第 07 讲用的副本，源自 2026/experiments/04/topo.sh，路径已改为本目录；reference/ 是 2026/experiments/02/reference 的副本，stats.py 是 2026/experiments/04/stats.py 的副本。
 # --own 仍使用学生在 2026/experiments/02 里的 lsrd。
 
 # ==============================================================================

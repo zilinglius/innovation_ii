@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# 第 07 讲课前准备用的副本，源自 2026/experiments/03/topo.sh，路径已改为本目录；课前准备只用到 down。
+# 第 07 讲用的副本，源自 2026/experiments/03/topo.sh，路径已改为本目录；课前准备只用到 down。
 # 这里的 TODO 保持留白，Lab 3 请继续在 2026/experiments/03/topo.sh 里完成。
 
 # ==============================================================================
