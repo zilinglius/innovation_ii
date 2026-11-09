@@ -21,29 +21,29 @@
 | 59–87 分钟 | 模块五：综合动手——对冲救得了哪一种慢 | 预测表、三场景对照、诊断表 |
 | 87–90 分钟 | 模块六：离堂检查与课后衔接 | 提交三道短题 |
 
-**课前准备（不计入上述 90 分钟）**：学生自行准备 Ubuntu Linux，工具与第 06 讲相同（`iproute2`、`iputils-ping`、`iperf3`、Python 3 与 `uv`）。不同小组各用独立主机或虚拟机，同一台机器由一人操作。本讲复用[完整实验床脚本](../experiments/04/topo.sh)，Lab 3 没有做完也不影响；Lab 4 改为选做，本讲不依赖它。本讲标为“实测样例”的输出来自 2026-11-07 的备课虚拟机（Ubuntu 26.04.1、Linux `7.0.0-43-generic`、x86_64、2 核 2.8 GB），单次读数以自己的测量为准。
+**课前准备（不计入上述 90 分钟）**：学生自行准备 Ubuntu Linux，工具与第 06 讲相同（`iproute2`、`iputils-ping`、`iperf3`、Python 3 与 `uv`）。不同小组各用独立主机或虚拟机，同一台机器由一人操作。本讲复用[完整实验床脚本](../experiments/lecture07_prep/lab4_topo.sh)，Lab 3 没有做完也不影响；Lab 4 改为选做，本讲不依赖它。本讲标为“实测样例”的输出来自 2026-11-07 的备课虚拟机（Ubuntu 26.04.1、Linux `7.0.0-43-generic`、x86_64、2 核 2.8 GB），单次读数以自己的测量为准。
 
 ```bash
 # 1. 清理第 05 讲课堂网络与 Lab 3 网络（节点重名，不能同时存在）
-sudo bash 2026/experiments/03/classroom.sh down
-sudo bash 2026/experiments/03/topo.sh down
+sudo bash 2026/experiments/lecture07_prep/lab3_classroom.sh down
+sudo bash 2026/experiments/lecture07_prep/lab3_topo.sh down
 
-# 2. 路由守护进程复用 Lab 2 的环境
-uv sync --project 2026/experiments/02 --frozen
+# 2. 准备路由守护进程的 Python 环境
+uv sync --project 2026/experiments/lecture07_prep --frozen
 
 # 3. 搭建完整实验床（默认加载 Lab 2 参考路由），并自检
-sudo bash 2026/experiments/04/topo.sh up
-sudo bash 2026/experiments/04/topo.sh check
+sudo bash 2026/experiments/lecture07_prep/lab4_topo.sh up
+sudo bash 2026/experiments/lecture07_prep/lab4_topo.sh check
 
 # 4. 在 7 台 host 上启动后端，做一次往返验证
-sudo bash 2026/experiments/05/tail.sh up
-sudo bash 2026/experiments/05/tail.sh check
+sudo bash 2026/experiments/lecture07_prep/lab5_tail.sh up
+sudo bash 2026/experiments/lecture07_prep/lab5_tail.sh check
 
 # 5. 载入模块一要用的算法与队列模块（只需一次，不报错即可）
 sudo modprobe -a tcp_bbr tcp_dctcp sch_red
 ```
 
-准备完成应出现 `[OK] 8 条上联往返、8 台 host 网关可达、跨机架往返。` 与 `[OK] 7 个后端都完成了 20 轮往返。`。[`tail.sh`](../experiments/05/tail.sh) 负责启停后端、设置队列和大象流；[`tailbench.py`](../experiments/05/tailbench.py)、[`compare.py`](../experiments/05/compare.py)、[`bulk.py`](../experiments/05/bulk.py) 都只用 Python 标准库，直接用系统 `python3` 运行。第 5 步报找不到模块时，课前安装 `linux-modules-extra-$(uname -r)` 后重试；实在装不上也不影响后面的内容，1.3 节跳过 DCTCP 那一组即可。**中途不要拆拓扑；提前结束或中断时，执行 5.7 节的清理命令。**
+准备完成应出现 `[OK] 8 条上联往返、8 台 host 网关可达、跨机架往返。` 与 `[OK] 7 个后端都完成了 20 轮往返。`。课前准备用到的脚本、Lab 2 参考路由和 Python 环境配置都放在 `2026/experiments/lecture07_prep/` 目录，它们是 `02`–`05` 实验目录里相应文件的副本；后面各节的命令仍写 `04/topo.sh` 与 `05/tail.sh`，操作的是同一张实验床。[`lab5_tail.sh`](../experiments/lecture07_prep/lab5_tail.sh) 负责启停后端、设置队列和大象流；[`tailbench.py`](../experiments/lecture07_prep/tailbench.py)、[`compare.py`](../experiments/lecture07_prep/compare.py)、[`bulk.py`](../experiments/lecture07_prep/bulk.py) 都只用 Python 标准库，直接用系统 `python3` 运行。第 5 步报找不到模块时，课前安装 `linux-modules-extra-$(uname -r)` 后重试；实在装不上也不影响后面的内容，1.3 节跳过 DCTCP 那一组即可。**中途不要拆拓扑；提前结束或中断时，执行 5.7 节的清理命令。**
 
 ---
 

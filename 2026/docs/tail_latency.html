@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="generator" content="2026/tools/build_tail_latency_html.py；源文 sha256 5fbbc84ef96fe22c8ecbcbcb8695b298d777a2360753e5d610bdb072c4452f17；更新 2026-11-08">
+<meta name="generator" content="2026/tools/build_tail_latency_html.py；源文 sha256 b5e70a32a6ca1ee1739a650ef7af9552c1453c9dda1bad1d98baa230fc426c11；更新 2026-11-08">
 <title>第07讲 从拥塞控制到长尾延迟：最慢的一个决定整体</title><style>
 /* ==========================================================================
    云网融合创新实践 · 讲义样式
@@ -546,26 +546,26 @@ svg.lec07 .ar-drop { stroke:var(--drop); stroke-width:2; }
 </tr>
 </tbody>
 </table></div>
-<p><strong>课前准备（不计入上述 90 分钟）</strong>：学生自行准备 Ubuntu Linux，工具与第 06 讲相同（<code>iproute2</code>、<code>iputils-ping</code>、<code>iperf3</code>、Python 3 与 <code>uv</code>）。不同小组各用独立主机或虚拟机，同一台机器由一人操作。本讲复用<a href="../experiments/04/topo.sh" class="xref">完整实验床脚本</a>，Lab 3 没有做完也不影响；Lab 4 改为选做，本讲不依赖它。本讲标为“实测样例”的输出来自 2026-11-07 的备课虚拟机（Ubuntu 26.04.1、Linux <code>7.0.0-43-generic</code>、x86_64、2 核 2.8 GB），单次读数以自己的测量为准。</p>
+<p><strong>课前准备（不计入上述 90 分钟）</strong>：学生自行准备 Ubuntu Linux，工具与第 06 讲相同（<code>iproute2</code>、<code>iputils-ping</code>、<code>iperf3</code>、Python 3 与 <code>uv</code>）。不同小组各用独立主机或虚拟机，同一台机器由一人操作。本讲复用<a href="../experiments/lecture07_prep/lab4_topo.sh" class="xref">完整实验床脚本</a>，Lab 3 没有做完也不影响；Lab 4 改为选做，本讲不依赖它。本讲标为“实测样例”的输出来自 2026-11-07 的备课虚拟机（Ubuntu 26.04.1、Linux <code>7.0.0-43-generic</code>、x86_64、2 核 2.8 GB），单次读数以自己的测量为准。</p>
 <div class="code cmd"><span class="code-tag">bash</span><pre><code><span class="c step"><span class="step-n"># 1.</span> 清理第 05 讲课堂网络与 Lab 3 网络（节点重名，不能同时存在）</span>
-<span class="su">sudo</span> bash 2026/experiments/03/classroom.sh down
-<span class="su">sudo</span> bash 2026/experiments/03/topo.sh down
+<span class="su">sudo</span> bash 2026/experiments/lecture07_prep/lab3_classroom.sh down
+<span class="su">sudo</span> bash 2026/experiments/lecture07_prep/lab3_topo.sh down
 
-<span class="c step"><span class="step-n"># 2.</span> 路由守护进程复用 Lab 2 的环境</span>
-uv sync --project 2026/experiments/02 --frozen
+<span class="c step"><span class="step-n"># 2.</span> 准备路由守护进程的 Python 环境</span>
+uv sync --project 2026/experiments/lecture07_prep --frozen
 
 <span class="c step"><span class="step-n"># 3.</span> 搭建完整实验床（默认加载 Lab 2 参考路由），并自检</span>
-<span class="su">sudo</span> bash 2026/experiments/04/topo.sh up
-<span class="su">sudo</span> bash 2026/experiments/04/topo.sh check
+<span class="su">sudo</span> bash 2026/experiments/lecture07_prep/lab4_topo.sh up
+<span class="su">sudo</span> bash 2026/experiments/lecture07_prep/lab4_topo.sh check
 
 <span class="c step"><span class="step-n"># 4.</span> 在 7 台 host 上启动后端，做一次往返验证</span>
-<span class="su">sudo</span> bash 2026/experiments/05/tail.sh up
-<span class="su">sudo</span> bash 2026/experiments/05/tail.sh check
+<span class="su">sudo</span> bash 2026/experiments/lecture07_prep/lab5_tail.sh up
+<span class="su">sudo</span> bash 2026/experiments/lecture07_prep/lab5_tail.sh check
 
 <span class="c step"><span class="step-n"># 5.</span> 载入模块一要用的算法与队列模块（只需一次，不报错即可）</span>
 <span class="su">sudo</span> modprobe -a tcp_bbr tcp_dctcp sch_red
 </code></pre></div>
-<p>准备完成应出现 <code>[OK] 8 条上联往返、8 台 host 网关可达、跨机架往返。</code> 与 <code>[OK] 7 个后端都完成了 20 轮往返。</code>。<a href="../experiments/05/tail.sh" class="xref"><code>tail.sh</code></a> 负责启停后端、设置队列和大象流；<a href="../experiments/05/tailbench.py" class="xref"><code>tailbench.py</code></a>、<a href="../experiments/05/compare.py" class="xref"><code>compare.py</code></a>、<a href="../experiments/05/bulk.py" class="xref"><code>bulk.py</code></a> 都只用 Python 标准库，直接用系统 <code>python3</code> 运行。第 5 步报找不到模块时，课前安装 <code>linux-modules-extra-$(uname -r)</code> 后重试；实在装不上也不影响后面的内容，1.3 节跳过 DCTCP 那一组即可。<strong>中途不要拆拓扑；提前结束或中断时，执行 5.7 节的清理命令。</strong></p>
+<p>准备完成应出现 <code>[OK] 8 条上联往返、8 台 host 网关可达、跨机架往返。</code> 与 <code>[OK] 7 个后端都完成了 20 轮往返。</code>。课前准备用到的脚本、Lab 2 参考路由和 Python 环境配置都放在 <code>2026/experiments/lecture07_prep/</code> 目录，它们是 <code>02</code>–<code>05</code> 实验目录里相应文件的副本；后面各节的命令仍写 <code>04/topo.sh</code> 与 <code>05/tail.sh</code>，操作的是同一张实验床。<a href="../experiments/lecture07_prep/lab5_tail.sh" class="xref"><code>lab5_tail.sh</code></a> 负责启停后端、设置队列和大象流；<a href="../experiments/lecture07_prep/tailbench.py" class="xref"><code>tailbench.py</code></a>、<a href="../experiments/lecture07_prep/compare.py" class="xref"><code>compare.py</code></a>、<a href="../experiments/lecture07_prep/bulk.py" class="xref"><code>bulk.py</code></a> 都只用 Python 标准库，直接用系统 <code>python3</code> 运行。第 5 步报找不到模块时，课前安装 <code>linux-modules-extra-$(uname -r)</code> 后重试；实在装不上也不影响后面的内容，1.3 节跳过 DCTCP 那一组即可。<strong>中途不要拆拓扑；提前结束或中断时，执行 5.7 节的清理命令。</strong></p>
 </section>
 <section class="module" id="m1" data-layer="l4"><header class="module-head"><div class="module-eyebrow"><span class="module-no">模块一</span><span class="tag l4">L4 · 拥塞控制</span></div><h2>拥塞控制：谁把队列填满了</h2></header>
 <h3 id="s1-1"><span class="sec-no">1.1</span>拥塞窗口决定路上有多少数据</h3>
@@ -1498,7 +1498,7 @@ cp -r /tmp/lab05-results &quot;$HOME/lab05-lecture-results&quot;
 </ul>
 </section>
 
-<footer class="colophon"><span>上海交通大学 ·《云网融合创新实践》第 07 讲</span><span>由 <a href="tail_latency.md">2026/docs/tail_latency.md</a> 生成 · sha256 5fbbc84ef9 · 2026-11-08</span></footer>
+<footer class="colophon"><span>上海交通大学 ·《云网融合创新实践》第 07 讲</span><span>由 <a href="tail_latency.md">2026/docs/tail_latency.md</a> 生成 · sha256 b5e70a32a6 · 2026-11-08</span></footer>
 </main></div><script>
 (function () {
   // 打印按钮

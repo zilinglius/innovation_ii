@@ -1,0 +1,9 @@
+[project]
+name = "lecture07-prep"
+version = "1.0.0"
+description = "第 07 讲课前准备：实验床、后端与 Lab 2 参考路由"
+requires-python = ">=3.10"
+dependencies = []
+
+# 只用标准库。路由守护进程以 .venv/bin/python -m lsrd 启动。
+# 环境准备（从仓库根目录）：uv sync --project 2026/experiments/lecture07_prep --frozen
