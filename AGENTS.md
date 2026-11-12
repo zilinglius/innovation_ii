@@ -111,7 +111,7 @@
 通用规范：
 
 - 实验环境：一台 Linux 主机或虚拟机（推荐 Ubuntu 24.04 及以上，至少 4 核、4 GB；Lab 7 需要 cgroup v2），需要 `iproute2`、`iputils-ping`、`tcpdump`、`iperf3`、Python 3 与 `uv`。macOS 上无法直接运行 namespace 实验，需在 Linux 虚拟机或云主机中进行。
-- 所有实验命令约定**从仓库根目录执行**，需要 root 的步骤显式写 `sudo`。
+- 所有实验命令约定**从仓库根目录执行**，需要 root 的步骤显式写 `sudo`。例外：以压缩包分发给学生的单元目录（第 08 讲起的 `lectureNN_prep/`、Lab 6 起的实验目录）必须能单独运行：脚本按自身所在目录定位文件（`$(dirname "${BASH_SOURCE[0]}")`、`Path(__file__).parent`），不得依赖仓库根目录；讲义与指导书的命令写成先 `cd` 进入该目录、再用短路径执行（如 `sudo bash lab4_topo.sh up`）。验证时把目录复制到仓库外再运行。
 - Bash 脚本：
   - 首行 `#!/usr/bin/env bash`，紧跟 `set -Eeuo pipefail`；
   - 两空格缩进；常量大写带前缀（`V12A`、`LAN_L_GW`），函数小写 snake_case（`exists_ns`）；

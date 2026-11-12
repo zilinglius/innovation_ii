@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="generator" content="2026/tools/build_communication_cost_html.py；源文 sha256 7591e3dd519ec2fd513036acd0b08968dbf0cf72eb292695cda41ab04c3bee0d；更新 2026-11-11">
+<meta name="generator" content="2026/tools/build_communication_cost_html.py；源文 sha256 ada7b343cb7e98614a09f1fc88be23441a12d9a6dce51db0432af15397c1e274；更新 2026-11-11">
 <title>第08讲 分布式作业的通信代价：时间花在哪，加机器为什么会变慢</title><style>
 /* ==========================================================================
    云网融合创新实践 · 讲义样式
@@ -547,19 +547,22 @@ svg.lec08 .active { fill:var(--l4-bg); stroke:var(--l4); stroke-width:1.4; }
 </tr>
 </tbody>
 </table></div>
-<p><strong>课前准备（不计入上述 90 分钟）</strong>：学生自行准备 Ubuntu Linux，工具与第 07 讲相同。不同小组各用独立主机或虚拟机，同一台机器由一人操作。本讲复用<a href="../experiments/lecture08_prep/lab4_topo.sh" class="xref">完整实验床脚本</a>，Lab 3 没有做完也不影响。本讲标为“实测样例”的输出来自 2026-11-08 的备课虚拟机（Ubuntu 26.04.1、Linux <code>7.0.0-43-generic</code>、x86_64、2 核 2.8 GB），单次读数以自己的测量为准。</p>
-<div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="c step"><span class="step-n"># 1.</span> 清理第 05 讲课堂网络与 Lab 3 网络（节点重名，不能同时存在）</span>
-<span class="su">sudo</span> bash 2026/experiments/lecture08_prep/lab3_classroom.sh down
-<span class="su">sudo</span> bash 2026/experiments/lecture08_prep/lab3_topo.sh down
+<p><strong>课前准备（不计入上述 90 分钟）</strong>：学生自行准备 Ubuntu Linux，工具与第 07 讲相同。不同小组各用独立主机或虚拟机，同一台机器由一人操作。本讲的脚本以压缩包分发，解压后得到 <code>lecture08_prep</code> 目录，完整实验床就是其中的 <code>lab4_topo.sh</code>，Lab 3 没有做完也不影响。本讲标为“实测样例”的输出来自 2026-11-08 的备课虚拟机（Ubuntu 26.04.1、Linux <code>7.0.0-43-generic</code>、x86_64、2 核 2.8 GB），单次读数以自己的测量为准。</p>
+<div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="c step"><span class="step-n"># 1.</span> 进入本讲目录（lecture08_prep 压缩包解压后的目录，路径换成你自己的）；本讲所有命令都在这里执行</span>
+cd ~/lecture08_prep
 
-<span class="c step"><span class="step-n"># 2.</span> 准备路由守护进程的 Python 环境</span>
-uv sync --project 2026/experiments/lecture08_prep --frozen
+<span class="c step"><span class="step-n"># 2.</span> 清理第 05 讲课堂网络与 Lab 3 网络（节点重名，不能同时存在）</span>
+<span class="su">sudo</span> bash lab3_classroom.sh down
+<span class="su">sudo</span> bash lab3_topo.sh down
 
-<span class="c step"><span class="step-n"># 3.</span> 搭建完整实验床（默认加载 Lab 2 参考路由），并自检</span>
-<span class="su">sudo</span> bash 2026/experiments/lecture08_prep/lab4_topo.sh up
-<span class="su">sudo</span> bash 2026/experiments/lecture08_prep/lab4_topo.sh check
+<span class="c step"><span class="step-n"># 3.</span> 准备路由守护进程的 Python 环境</span>
+uv sync --frozen
+
+<span class="c step"><span class="step-n"># 4.</span> 搭建完整实验床（默认加载 Lab 2 参考路由），并自检</span>
+<span class="su">sudo</span> bash lab4_topo.sh up
+<span class="su">sudo</span> bash lab4_topo.sh check
 </code></pre></div>
-<p>准备完成应出现 <code>[OK] 8 条上联往返、8 台 host 网关可达、跨机架往返。</code>。本讲用到的脚本、Lab 2 参考路由和 Python 环境配置都放在 <code>2026/experiments/lecture08_prep/</code> 目录，它们是 <code>02</code>–<code>04</code>、<code>06</code> 实验目录里相应文件的副本。Lab 6 仍在 <code>2026/experiments/06/</code> 里完成，这里的 <code>jobkit/</code> 不用改。本讲的作业与测量工具默认只用 Python 标准库，直接用系统 <code>python3</code> 运行。<strong>中途不要拆拓扑；提前结束或中断时，执行 5.6 节的清理命令。</strong></p>
+<p>准备完成应出现 <code>[OK] 8 条上联往返、8 台 host 网关可达、跨机架往返。</code>。本讲用到的脚本、Lab 2 参考路由和 Python 环境配置都在 <code>lecture08_prep</code> 目录里，它们是 Lab 2–4 与 Lab 6 中相应文件的副本，脚本按自己所在的目录找其他文件，<strong>以下所有命令都在这个目录里执行</strong>（新开终端时先 <code>cd</code> 进去）。Lab 6 在它自己的目录里完成，这里的 <code>jobkit/</code> 不用改。本讲的作业与测量工具默认只用 Python 标准库，直接用系统 <code>python3</code> 运行。<strong>中途不要拆拓扑；提前结束或中断时，执行 5.6 节的清理命令。</strong></p>
 </section>
 <section class="module" id="m1"><header class="module-head"><div class="module-eyebrow"><span class="module-no">模块一</span><span class="tag ">方法 · 同步模型</span></div><h2>作业为什么要通信</h2></header>
 <h3 id="s1-1"><span class="sec-no">1.1</span>算不完的数据，分给很多机器</h3>
@@ -630,18 +633,18 @@ uv sync --project 2026/experiments/lecture08_prep --frozen
 <figure class="fig" id="fig-ps"><p class="fig-scroll-hint">左右滑动查看全图；键盘可聚焦图框后横向滚动。</p><div class="fig-body" tabindex="0" role="region" aria-label="图 2，可横向滚动"><svg class="lec08" viewBox="0 0 760 224" role="img" aria-labelledby="ps-title ps-desc" xmlns="http://www.w3.org/2000/svg"><title id="ps-title">图 2</title><desc id="ps-desc">物理拓扑，每个机架有 2 台 host。图中只标出 PS 模式下的瓶颈，没有画出具体的 ECMP 路径。无论 worker 在哪个机架，数据都要经过 h1a 的接入链路，所以它是每一轮的共同瓶颈。</desc><defs><marker id="ps-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" class="mk-ink"/></marker><marker id="ps-l4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" class="mk-l4"/></marker><marker id="ps-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" class="mk-warn"/></marker><marker id="ps-drop" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" class="mk-drop"/></marker></defs><path d="M 295 48 L 115 102" class="wire"/><path d="M 295 48 L 295 102" class="wire"/><path d="M 295 48 L 475 102" class="wire"/><path d="M 295 48 L 655 102" class="wire"/><path d="M 475 48 L 115 102" class="wire"/><path d="M 475 48 L 295 102" class="wire"/><path d="M 475 48 L 475 102" class="wire"/><path d="M 475 48 L 655 102" class="wire"/><ellipse cx="295" cy="48" rx="28" ry="16" class="n-l3"/><text x="295" y="53" text-anchor="middle" class="t-mono t-b t-l3">r5</text><ellipse cx="475" cy="48" rx="28" ry="16" class="n-l3"/><text x="475" y="53" text-anchor="middle" class="t-mono t-b t-l3">r6</text><path d="M 115 102 L 74 136" class="hotlink"/><path d="M 115 102 L 156 136" class="wire"/><ellipse cx="115" cy="102" rx="28" ry="16" class="n-l3"/><text x="115" y="107" text-anchor="middle" class="t-mono t-b t-l3">r1</text><rect x="38" y="136" width="72" height="30" rx="5" class="ps"/><text x="74.0" y="156.0" text-anchor="middle" class="t-mono t-b">h1a PS</text><rect x="120" y="136" width="72" height="30" rx="5" class="active"/><text x="156.0" y="156.0" text-anchor="middle" class="t-mono t-b">h1b</text><path d="M 295 102 L 254 136" class="wire"/><path d="M 295 102 L 336 136" class="wire"/><ellipse cx="295" cy="102" rx="28" ry="16" class="n-l3"/><text x="295" y="107" text-anchor="middle" class="t-mono t-b t-l3">r2</text><rect x="218" y="136" width="72" height="30" rx="5" class="active"/><text x="254.0" y="156.0" text-anchor="middle" class="t-mono t-b">h2a</text><rect x="300" y="136" width="72" height="30" rx="5" class="active"/><text x="336.0" y="156.0" text-anchor="middle" class="t-mono t-b">h2b</text><path d="M 475 102 L 434 136" class="wire"/><path d="M 475 102 L 516 136" class="wire"/><ellipse cx="475" cy="102" rx="28" ry="16" class="n-l3"/><text x="475" y="107" text-anchor="middle" class="t-mono t-b t-l3">r3</text><rect x="398" y="136" width="72" height="30" rx="5" class="active"/><text x="434.0" y="156.0" text-anchor="middle" class="t-mono t-b">h3a</text><rect x="480" y="136" width="72" height="30" rx="5" class="active"/><text x="516.0" y="156.0" text-anchor="middle" class="t-mono t-b">h3b</text><path d="M 655 102 L 614 136" class="wire"/><path d="M 655 102 L 696 136" class="wire"/><ellipse cx="655" cy="102" rx="28" ry="16" class="n-l3"/><text x="655" y="107" text-anchor="middle" class="t-mono t-b t-l3">r4</text><rect x="578" y="136" width="72" height="30" rx="5" class="active"/><text x="614.0" y="156.0" text-anchor="middle" class="t-mono t-b">h4a</text><rect x="660" y="136" width="72" height="30" rx="5" class="active"/><text x="696.0" y="156.0" text-anchor="middle" class="t-mono t-b">h4b</text><text x="20" y="42" text-anchor="start" class="t-sm t-2">spine</text><text x="20" y="106" text-anchor="start" class="t-sm t-2">leaf</text><text x="380" y="190" text-anchor="middle" class="t-sm t-drop">红线：r1 与 h1a 之间的接入链路，每轮上传 N×S 字节、下载 N×S 字节，是共同的瓶颈</text><text x="380" y="210" text-anchor="middle" class="t-sm t-2">host 接入与 leaf–spine 均 100 Mbit/s；紫框：worker，图中没有画出具体的 ECMP 路径</text></svg></div><figcaption><b>图 2</b><span>物理拓扑，每个机架有 2 台 host。图中只标出 PS 模式下的瓶颈，没有画出具体的 ECMP 路径。无论 worker 在哪个机架，数据都要经过 h1a 的接入链路，所以它是每一轮的共同瓶颈。</span></figcaption></figure>
 <p>工具分工：</p>
 <ul>
-<li><a href="../experiments/lecture08_prep/jobrun.py" class="xref"><code>jobrun.py</code></a> 在各个 namespace 里启动 PS 和 worker，运行结束后把全部时间戳合并成一个 JSON，写到 <code>/tmp/lab06-results/&lt;label&gt;.json</code>（同名标签会被覆盖），并打印实测 JCT。</li>
-<li>作业本身在 <a href="../experiments/lecture08_prep/job.py" class="xref"><code>job.py</code></a>：一个 worker 一条长连接，显式用 CUBIC；<code>--compute-ms</code> 指定每轮计算时间。<strong>默认用 <code>time.sleep</code> 占位</strong>，因为这些 namespace 共用同一台机器的 CPU，真实计算会互相抢 CPU，JCT 的差别就不只来自通信了。</li>
-<li><a href="../experiments/lecture08_prep/timeline.py" class="xref"><code>timeline.py</code></a> 只读这个 JSON，打印某一轮每个 worker 的原始时间戳。</li>
+<li><code>jobrun.py</code> 在各个 namespace 里启动 PS 和 worker，运行结束后把全部时间戳合并成一个 JSON，写到 <code>/tmp/lab06-results/&lt;label&gt;.json</code>（同名标签会被覆盖），并打印实测 JCT。</li>
+<li>作业本身在 <code>job.py</code>：一个 worker 一条长连接，显式用 CUBIC；<code>--compute-ms</code> 指定每轮计算时间。<strong>默认用 <code>time.sleep</code> 占位</strong>，因为这些 namespace 共用同一台机器的 CPU，真实计算会互相抢 CPU，JCT 的差别就不只来自通信了。</li>
+<li><code>timeline.py</code> 只读这个 JSON，打印某一轮每个 worker 的原始时间戳。</li>
 </ul>
 <h3 id="s2-2"><span class="sec-no">2.2</span>短观察：手算一轮的四段</h3>
 <p><strong>问题与预测</strong>：N=7，模型 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>S</mi><mo>&#x0003D;</mo><mn>1</mn></mrow></math></span> MB，每轮计算 200 ms。7 份梯度都要挤过 PS 的 100 Mbit/s 接入链路。运行之前估一下：上传要多久？哪一段最长？等待段大不大？</p>
 <p><strong>工具与观察点</strong>：用 PS 一侧的时间戳判断“到了没有”，用 worker 一侧的时间戳判断“算完没有”。这里读的是第 5 轮（从 0 数），避开开头的不稳定。</p>
 <div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="c step"><span class="step-n"># 1.</span> 基线作业：7 个 worker，模型 1 MB，每轮计算 200 ms，10 轮，约 14 秒</span>
-<span class="su">sudo</span> python3 2026/experiments/lecture08_prep/jobrun.py --label base
+<span class="su">sudo</span> python3 jobrun.py --label base
 
 <span class="c step"><span class="step-n"># 2.</span> 看第 5 轮的原始时间戳（只读文件，不需要 root）</span>
-python3 2026/experiments/lecture08_prep/timeline.py /tmp/lab06-results/base.json --round 5
+python3 timeline.py /tmp/lab06-results/base.json --round 5
 </code></pre></div>
 <p><strong>实测样例</strong>（单位 ms，以这一轮最早的计算开始为 0）：</p>
 <div class="code out short"><span class="code-tag">实测样例</span><pre><code>[base] ps N=7 模型 1 MB 10 轮 cubic：JCT = 13.705 s，结果 /tmp/lab06-results/base.json
@@ -701,7 +704,7 @@ h4b               0.0        200.2        387.8        781.7        800.0       
 </ol>
 <h3 id="s2-3"><span class="sec-no">2.3</span>等待少，不等于没有争用</h3>
 <p>第 4 点值得多想一下。这张表里 7 个 worker 几乎同时收齐，等待段接近 0，看起来没人在等谁。但其实每条流都只分到了 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>1</mn><mo>&#x0002F;</mo><mn>7</mn></mrow></math></span> 的带宽：TCP 的公平分享让大家<strong>一起变慢、一起结束</strong>，等待被藏进了上传段。</p>
-<p><strong>边界</strong>：这里只看了一轮，并且所有 worker 算得一样快。只凭“等待小”不能断定没有瓶颈，要结合上传段的绝对长度和理论值一起判断。如果你的数字差很多，先执行 <code>sudo bash 2026/experiments/lecture08_prep/lab4_topo.sh status</code>，看端口是否偏离基线，以及机器上有没有别的负载。</p>
+<p><strong>边界</strong>：这里只看了一轮，并且所有 worker 算得一样快。只凭“等待小”不能断定没有瓶颈，要结合上传段的绝对长度和理论值一起判断。如果你的数字差很多，先执行 <code>sudo bash lab4_topo.sh status</code>，看端口是否偏离基线，以及机器上有没有别的负载。</p>
 </section>
 <section class="module" id="m3" data-layer="l4"><header class="module-head"><div class="module-eyebrow"><span class="module-no">模块三</span><span class="tag l4">L4 · α-β 模型</span></div><h2>α-β 模型</h2></header>
 <h3 id="s3-1"><span class="sec-no">3.1</span>两个参数描述一次传输</h3>
@@ -736,9 +739,9 @@ h4b               0.0        200.2        387.8        781.7        800.0       
 <p>这就是 <strong>α-β 模型</strong>（也常叫 Hockney 模型）。小消息主要付 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi mathvariant="normal">&#x003B1;</mi></mrow></math></span>，大消息主要付 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi mathvariant="normal">&#x003B2;</mi><mi>m</mi></mrow></math></span>。</p>
 <h3 id="s3-2"><span class="sec-no">3.2</span>短观察：测一条传输曲线</h3>
 <p><strong>问题与预测</strong>：h1a→h3a，100 Mbit/s。传 16 MB 大约要多久？1 KB 呢？两者的比值接近 16000 倍吗？</p>
-<p><strong>工具与观察点</strong>：<a href="../experiments/lecture08_prep/curve.py" class="xref"><code>curve.py</code></a> 在一条长连接上按打乱的顺序发送不同大小的消息，<strong>接收端收齐后回一个字节，发送端收到回执才停表</strong>，这样测到的是“对端确实收齐”的时间。每个大小 9 次，取中位数；两次发送之间空闲 300 ms，模拟作业的计算阶段。</p>
+<p><strong>工具与观察点</strong>：<code>curve.py</code> 在一条长连接上按打乱的顺序发送不同大小的消息，<strong>接收端收齐后回一个字节，发送端收到回执才停表</strong>，这样测到的是“对端确实收齐”的时间。每个大小 9 次，取中位数；两次发送之间空闲 300 ms，模拟作业的计算阶段。</p>
 <div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="c step"><span class="step-n"># 1.</span> 测 h1a→h3a 的传输曲线，约 35 秒</span>
-<span class="su">sudo</span> python3 2026/experiments/lecture08_prep/curve.py --label curve
+<span class="su">sudo</span> python3 curve.py --label curve
 </code></pre></div>
 <p><strong>实测样例</strong>：</p>
 <div class="code out short"><span class="code-tag">实测样例</span><pre><code>[curve] h1a→h3a cubic，空闲 300 ms，每个大小 9 次
@@ -768,19 +771,19 @@ h4b               0.0        200.2        387.8        781.7        800.0       
 <p>本节每人动手，约 7 分钟：写预测 1 分钟，运行约 40 秒，其余时间读数据。</p>
 <p><strong>问题与预测</strong>：在 h1a 的出口加 5 ms 延迟。<strong>运行前先写下你的预测</strong>：<span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi mathvariant="normal">&#x003B1;</mi></mrow></math></span> 和 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi mathvariant="normal">&#x003B2;</mi></mrow></math></span> 分别会怎样变？连接空闲很久以后，<span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi mathvariant="normal">&#x003B1;</mi></mrow></math></span> 还是这个值吗？上传和下载都会多 5 ms 吗？</p>
 <div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="c step"><span class="step-n"># 1.</span> 只在 h1a 的出方向加 5 ms 延迟，保持 100 Mbit/s</span>
-<span class="su">sudo</span> bash 2026/experiments/lecture08_prep/lab4_topo.sh impair h1a eth0 delay 5ms
+<span class="su">sudo</span> bash lab4_topo.sh impair h1a eth0 delay 5ms
 
 <span class="c step"><span class="step-n"># 2.</span> 再测一条曲线，并测一组空闲 3 秒的 100 KB 传输，共约 25 秒</span>
-<span class="su">sudo</span> python3 2026/experiments/lecture08_prep/curve.py --label d5 --sizes 1000,100000,1000000,4000000 --trials 5
-<span class="su">sudo</span> python3 2026/experiments/lecture08_prep/curve.py --label d5-idle --sizes 100000 --trials 5 --gap-ms 3000
+<span class="su">sudo</span> python3 curve.py --label d5 --sizes 1000,100000,1000000,4000000 --trials 5
+<span class="su">sudo</span> python3 curve.py --label d5-idle --sizes 100000 --trials 5 --gap-ms 3000
 
 <span class="c step"><span class="step-n"># 3.</span> 一个 worker 的小作业，看上传和下载各自付了多少；计算时间设为 0</span>
-<span class="su">sudo</span> python3 2026/experiments/lecture08_prep/jobrun.py --label oneway --n 1 --model-mb 0.1 --compute-ms 0
-python3 2026/experiments/lecture08_prep/timeline.py /tmp/lab06-results/oneway.json --round 5
+<span class="su">sudo</span> python3 jobrun.py --label oneway --n 1 --model-mb 0.1 --compute-ms 0
+python3 timeline.py /tmp/lab06-results/oneway.json --round 5
 
 <span class="c step"><span class="step-n"># 4.</span> 恢复基线并核对</span>
-<span class="su">sudo</span> bash 2026/experiments/lecture08_prep/lab4_topo.sh clear h1a eth0
-<span class="su">sudo</span> bash 2026/experiments/lecture08_prep/lab4_topo.sh status
+<span class="su">sudo</span> bash lab4_topo.sh clear h1a eth0
+<span class="su">sudo</span> bash lab4_topo.sh status
 </code></pre></div>
 <p><strong>实测样例</strong>（节选，省略了 <code>impair</code>、<code>clear</code> 的提示与 <code>status</code> 的基线行）：</p>
 <div class="code out short"><span class="code-tag">实测样例</span><pre><code>[d5] h1a→h3a cubic，空闲 300 ms，每个大小 5 次
@@ -815,7 +818,7 @@ h3a               0.0          0.1          0.2          8.4          8.5       
 <p>10 轮约 13.72 s，实测 13.705 s。再验证另外几个 N：</p>
 <div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="c step"><span class="step-n"># 1.</span> N=1、2、4 各跑一次，约 18 秒；N=7 用前面的 base</span>
 for n in 1 2 4; do
-  <span class="su">sudo</span> python3 2026/experiments/lecture08_prep/jobrun.py --label n&quot;$n&quot; --n &quot;$n&quot;
+  <span class="su">sudo</span> python3 jobrun.py --label n&quot;$n&quot; --n &quot;$n&quot;
 done
 </code></pre></div>
 <p><strong>实测样例</strong>：</p>
@@ -903,7 +906,7 @@ done
 <p><strong>问题与预测</strong>：按 4.1 节的计算，上联降到 50 Mbit/s 后 PS 的 JCT 应该基本不变。但上联有两条，流量靠 ECMP 哈希分配。6 条跨机架流落到两条 50 Mbit/s 的上联上，理想情况是 3:3。<strong>运行前先写下你的预测</strong>：不是 3:3 时会怎样？</p>
 <p><strong>趁运行的时间算一算</strong>：一条 50 Mbit/s 上联的有效速率约 47.8 Mbit/s。<span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>k</mi></mrow></math></span> 条流各传 1 MB，这条上联要多久？<span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>k</mi><mo>&#x0003D;</mo><mn>3</mn></mrow></math></span>、4、5 时，分别和 h1a 接入链路的 0.59 s 比，谁更慢？</p>
 <div class="code cmd"><span class="code-tag">bash</span><pre><code><span class="c step"><span class="step-n"># 1.</span> 全部上联降到 50 Mbit/s，host 接入仍是 100 Mbit/s</span>
-<span class="su">sudo</span> bash 2026/experiments/lecture08_prep/lab4_topo.sh rate 50
+<span class="su">sudo</span> bash lab4_topo.sh rate 50
 
 <span class="c step"><span class="step-n"># 2.</span> 定义一个读端口累计发送字节的函数</span>
 sent() { <span class="su">sudo</span> ip netns exec <span class="ns">&quot;$1&quot;</span> tc -s class show dev &quot;$2&quot; classid 1:10 | awk &#x27;/Sent/{print $2; exit}&#x27;; }
@@ -911,13 +914,13 @@ sent() { <span class="su">sudo</span> ip netns exec <span class="ns">&quot;$1&qu
 <span class="c step"><span class="step-n"># 3.</span> 跑 5 次，记录 r1 出方向（下载）与两台 spine 到 r1 方向（上传）的字节</span>
 for i in 1 2 3 4 5; do
   a0=$(sent r1 r1-r5); b0=$(sent r1 r1-r6); c0=$(sent r5 r5-r1); d0=$(sent r6 r6-r1)
-  <span class="su">sudo</span> python3 2026/experiments/lecture08_prep/jobrun.py --label r50-&quot;$i&quot;
+  <span class="su">sudo</span> python3 jobrun.py --label r50-&quot;$i&quot;
   a1=$(sent r1 r1-r5); b1=$(sent r1 r1-r6); c1=$(sent r5 r5-r1); d1=$(sent r6 r6-r1)
   echo &quot;第 $i 次（MB）：下载 r1→r5 $(( (a1-a0)/1000000 ))，r1→r6 $(( (b1-b0)/1000000 ))；上传 r5→r1 $(( (c1-c0)/1000000 ))，r6→r1 $(( (d1-d0)/1000000 ))&quot;
 done
 
 <span class="c step"><span class="step-n"># 4.</span> 恢复 100 Mbit/s</span>
-<span class="su">sudo</span> bash 2026/experiments/lecture08_prep/lab4_topo.sh rate 100
+<span class="su">sudo</span> bash lab4_topo.sh rate 100
 </code></pre></div>
 <p><strong>实测样例</strong>（整理成表）。每条跨机架流 10 轮约传 10.5 MB（含报文头），所以 53、10 MB 对应 5 条流和 1 条流：</p>
 <div class="table-wrap" tabindex="0" role="region" aria-label="表格，可横向滚动"><table>
@@ -969,12 +972,12 @@ done
 <h3 id="s4-3"><span class="sec-no">4.3</span>短观察：同一个慢节点，两种代价</h3>
 <p><strong>问题与预测</strong>：让 h3a 的计算时间变成 4 倍，每轮多算 600 ms，10 轮一共多 6 s。barrier 要等它，所以 JCT 也应该多 6 s？模型 1 MB 和 0.1 MB 时都这样吗？</p>
 <div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="c step"><span class="step-n"># 1.</span> 模型 1 MB，h3a 的计算时间乘 4；基线用前面的 base</span>
-<span class="su">sudo</span> python3 2026/experiments/lecture08_prep/jobrun.py --label strag --straggler h3a:4
-python3 2026/experiments/lecture08_prep/timeline.py /tmp/lab06-results/strag.json --round 5
+<span class="su">sudo</span> python3 jobrun.py --label strag --straggler h3a:4
+python3 timeline.py /tmp/lab06-results/strag.json --round 5
 
 <span class="c step"><span class="step-n"># 2.</span> 模型 0.1 MB：基线与慢节点各跑一次</span>
-<span class="su">sudo</span> python3 2026/experiments/lecture08_prep/jobrun.py --label light --model-mb 0.1
-<span class="su">sudo</span> python3 2026/experiments/lecture08_prep/jobrun.py --label light-strag --model-mb 0.1 --straggler h3a:4
+<span class="su">sudo</span> python3 jobrun.py --label light --model-mb 0.1
+<span class="su">sudo</span> python3 jobrun.py --label light-strag --model-mb 0.1 --straggler h3a:4
 </code></pre></div>
 <p><strong>实测样例</strong>：</p>
 <div class="code out short"><span class="code-tag">实测样例</span><pre><code>[strag] ps N=7 模型 1 MB 10 轮 cubic：JCT = 14.690 s，结果 /tmp/lab06-results/strag.json
@@ -1126,12 +1129,12 @@ N* = 2.9
 <h3 id="s5-3"><span class="sec-no">5.3</span>实测组 A（4 分钟）</h3>
 <div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="c step"><span class="step-n"># 1.</span> 约 60 秒，每行打印一次 JCT</span>
 for n in 1 2 3 4 7; do
-  <span class="su">sudo</span> python3 2026/experiments/lecture08_prep/jobrun.py --label u&quot;$n&quot; --n &quot;$n&quot; --compute-total-ms 1400
+  <span class="su">sudo</span> python3 jobrun.py --label u&quot;$n&quot; --n &quot;$n&quot; --compute-total-ms 1400
 done
 
 <span class="c step"><span class="step-n"># 2.</span> 对比 N=3 和 N=7 的一轮</span>
-python3 2026/experiments/lecture08_prep/timeline.py /tmp/lab06-results/u3.json --round 5
-python3 2026/experiments/lecture08_prep/timeline.py /tmp/lab06-results/u7.json --round 5
+python3 timeline.py /tmp/lab06-results/u3.json --round 5
+python3 timeline.py /tmp/lab06-results/u7.json --round 5
 </code></pre></div>
 <p><strong>实测样例</strong>：</p>
 <div class="code out"><span class="code-tag">实测样例</span><pre><code>[u1] ps N=1 模型 1 MB 10 轮 cubic：JCT = 15.722 s，结果 /tmp/lab06-results/u1.json
@@ -1220,7 +1223,7 @@ print(&#x27;N* =&#x27;, round((W / (2 * beta * S)) ** 0.5, 1))&quot;
 
 <span class="c step"><span class="step-n"># 2.</span> 实测组 B，约 35 秒</span>
 for n in 1 3 5 6 7; do
-  <span class="su">sudo</span> python3 2026/experiments/lecture08_prep/jobrun.py --label v&quot;$n&quot; --n &quot;$n&quot; --compute-total-ms 1400 --model-mb 0.25
+  <span class="su">sudo</span> python3 jobrun.py --label v&quot;$n&quot; --n &quot;$n&quot; --compute-total-ms 1400 --model-mb 0.25
 done
 </code></pre></div>
 <p><strong>实测样例</strong>（把预测结果与实测放在一起）：</p>
@@ -1244,13 +1247,13 @@ N* = 5.8
 <p><strong>这份证据还不能证明</strong>：只测了一个瓶颈位置和一种拓扑，并且 worker 是对称的。把 PS 的瓶颈去掉（比如换成 Ring AllReduce）以后，这条 U 形曲线会不会变，是第 09 讲的问题。</p>
 <h3 id="s5-6"><span class="sec-no">5.6</span>恢复与清理（2 分钟）</h3>
 <div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="c step"><span class="step-n"># 1.</span> 核对全部端口已恢复基线</span>
-<span class="su">sudo</span> bash 2026/experiments/lecture08_prep/lab4_topo.sh status
+<span class="su">sudo</span> bash lab4_topo.sh status
 
 <span class="c step"><span class="step-n"># 2.</span> 需要保留结果就先复制；同名标签再次运行会被覆盖</span>
 cp -r /tmp/lab06-results &quot;$HOME/lab06-lecture-results&quot;
 
 <span class="c step"><span class="step-n"># 3.</span> 不做 Lab 6 的话，拆实验床（幂等）</span>
-<span class="su">sudo</span> bash 2026/experiments/lecture08_prep/lab4_topo.sh down
+<span class="su">sudo</span> bash lab4_topo.sh down
 </code></pre></div>
 <p>作业进程运行完就退出，不留后台进程。如果中途异常退出，执行第 3 步即可，<code>lab4_topo.sh down</code> 会结束所有 namespace 里的进程。</p>
 <h3 id="s5-7"><span class="sec-no">5.7</span>从课堂走向 Lab 6</h3>
@@ -1358,13 +1361,13 @@ cp -r /tmp/lab06-results &quot;$HOME/lab06-lecture-results&quot;
 <p>拓展阅读不作为本周必须实现的任务。</p>
 <h3 id="s6-4"><span class="sec-no">6.4</span>后续衔接实验</h3>
 <ul>
-<li>上游：<a href="datacenter_network.html" class="xref">第 05 讲</a>的收敛比与 ECMP；<a href="tail_latency.html" class="xref">第 07 讲</a>的扇出放大；<a href="../experiments/lecture08_prep/lab4_topo.sh" class="xref">完整实验床</a>。</li>
+<li>上游：<a href="datacenter_network.html" class="xref">第 05 讲</a>的收敛比与 ECMP；<a href="tail_latency.html" class="xref">第 07 讲</a>的扇出放大；本讲目录的 <code>lab4_topo.sh</code>。</li>
 <li>本讲：<a href="../experiments/06/README.html" class="xref">Lab 6 指导书</a>的 A 段，用本讲的工具把手算写成程序。</li>
-<li>下一讲：第 09 讲把“都找 PS”换成 worker 之间直接合并，看公式里的 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>N</mi></mrow></math></span> 还是不是 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>N</mi></mrow></math></span>，也就是 Lab 6 的 B 段。</li>
+<li>下一讲：<a href="collective_communication.html" class="xref">第 09 讲</a>把“都找 PS”换成 worker 之间直接合并，看公式里的 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>N</mi></mrow></math></span> 还是不是 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>N</mi></mrow></math></span>，也就是 Lab 6 的 B 段。</li>
 </ul>
 </section>
 
-<footer class="colophon"><span>上海交通大学 ·《云网融合创新实践》第 08 讲</span><span>由 <a href="communication_cost.md">2026/docs/communication_cost.md</a> 生成 · sha256 7591e3dd51 · 2026-11-11</span></footer>
+<footer class="colophon"><span>上海交通大学 ·《云网融合创新实践》第 08 讲</span><span>由 <a href="communication_cost.md">2026/docs/communication_cost.md</a> 生成 · sha256 ada7b343cb · 2026-11-11</span></footer>
 </main></div><script>
 (function () {
   // 打印按钮

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# Lab 6 用的副本，源自 2026/experiments/03/overlay_down.sh，由 lab3_topo.sh down 调用。
+# Lab 6 用的副本，源自课程仓库的 2026/experiments/03/overlay_down.sh，由 lab3_topo.sh down 调用。
 
 # 只回收任务 6 写入清单的资源；可单独执行，也由 lab3_topo.sh down 调用。
 L3_OVERLAY_STATE=/run/lab03/overlay-resources

@@ -1,0 +1,9 @@
+[project]
+name = "lecture09-prep"
+version = "1.0.0"
+description = "第 09 讲：实验床、作业与测量工具、Lab 2 参考路由"
+requires-python = ">=3.10"
+dependencies = []
+
+# 只用标准库。路由守护进程以 .venv/bin/python -m lsrd 启动；作业默认的占位计算也只用标准库。
+# 环境准备（在本目录执行）：uv sync --frozen

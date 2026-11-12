@@ -63,8 +63,8 @@ def interpreter(compute):
     if compute == "sleep":
         return sys.executable
     # 第 08 讲的副本只带标准库环境，课上只用占位计算。
-    raise SystemExit("第 08 讲的副本不支持 --compute numpy；请改用 2026/experiments/06/jobrun.py，"
-                     "并先执行 uv sync --project 2026/experiments/06 --frozen")
+    raise SystemExit("第 08 讲的副本不支持 --compute numpy；请改用 Lab 6 目录里的 jobrun.py，"
+                     "并先在那个目录执行 uv sync --frozen")
 
 
 def read_tx_bytes():
@@ -155,7 +155,7 @@ def run_job(args):
     if args.algo == "ps" and args.ps in workers:
         raise SystemExit(f"PS 所在主机 {args.ps} 不能同时当 worker；环上才能用全部 8 台")
     if not Path("/run/lab04/namespaces").exists():
-        raise SystemExit("实验床尚未搭建，请先执行 sudo bash 2026/experiments/lecture08_prep/lab4_topo.sh up。")
+        raise SystemExit("实验床尚未搭建，请先在本目录执行 sudo bash lab4_topo.sh up。")
     per_worker = args.compute_total_ms / len(workers) if args.compute_total_ms is not None else args.compute_ms
     stragglers = parse_straggler(args.straggler)
     model_bytes = int(args.model_mb * 1_000_000)
@@ -236,7 +236,7 @@ def main():
     parser.add_argument("--out", default=None)
     args = parser.parse_args()
     if os.geteuid() != 0:
-        raise SystemExit("需要 root：sudo python3 2026/experiments/lecture08_prep/jobrun.py ...")
+        raise SystemExit("需要 root：sudo python3 jobrun.py ...")
     result = run_job(args)
     out = Path(args.out) if args.out else RESULTS / f"{args.label}.json"
     out.parent.mkdir(parents=True, exist_ok=True)

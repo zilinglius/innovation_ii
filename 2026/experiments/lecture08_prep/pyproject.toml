@@ -6,4 +6,4 @@ requires-python = ">=3.10"
 dependencies = []
 
 # 只用标准库。路由守护进程以 .venv/bin/python -m lsrd 启动；作业默认的占位计算也只用标准库。
-# 环境准备（从仓库根目录）：uv sync --project 2026/experiments/lecture08_prep --frozen
+# 环境准备（在本目录执行）：uv sync --frozen

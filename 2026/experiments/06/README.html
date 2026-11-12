@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="generator" content="2026/tools/build_lab6_html.py；源文 sha256 d27ce70318d7649c8087b8ed28bf28af5e4f5b4680394fe1641acccf148f1ae0；更新 2026-11-11">
+<meta name="generator" content="2026/tools/build_lab6_html.py；源文 sha256 e7f574e3ff6bdbe4315d82878fc17e93d3b341ad260ed18d417cd07a441648e0；更新 2026-11-11">
 <title>Lab 6 · 分布式作业的时间花在哪，以及怎么省</title><style>
 /* ==========================================================================
    云网融合创新实践 · 讲义样式
@@ -501,6 +501,7 @@ h3 .h3-tag {
 <p><strong>约定</strong>：以下命令都<strong>从仓库根目录执行</strong>，需要 root 的步骤显式写了 <code>sudo</code>。所有工具都显式指定拥塞控制算法，默认 <code>cubic</code>，不依赖系统默认值。</p>
 </section>
 <section class="module" id="m3"><header class="module-head"><div class="module-eyebrow"><span class="module-no">03</span><span class="tag">LAB 6</span></div><h2>目录与资源</h2></header>
+<p>本实验以一个目录（压缩包）分发，下表的文件都在这个目录里。脚本按自己所在的目录找其他文件，<strong>本指导书的所有命令都在 Lab 6 目录里执行</strong>，新开终端时先 <code>cd</code> 进去。</p>
 <h3 id="m3-s1">3.1 文件</h3>
 <div class="table-wrap" tabindex="0" role="region" aria-label="表格，可横向滚动"><table>
 <thead>
@@ -560,16 +561,16 @@ h3 .h3-tag {
 </tr>
 <tr>
 <td style="text-align:left"><code>lab4_topo.sh</code>、<code>reference/</code></td>
-<td style="text-align:left">完整实验床与 Lab 2 参考路由（给定），是 <code>04/topo.sh</code> 与 <code>02/reference/</code> 的副本，路径已改为本目录</td>
+<td style="text-align:left">完整实验床与 Lab 2 参考路由（给定），是 Lab 4 <code>topo.sh</code> 与 Lab 2 参考实现的副本；<code>up --own DIR</code> 可改用 DIR（你的 Lab 2 目录）里自己的 lsrd</td>
 </tr>
 <tr>
 <td style="text-align:left"><code>lab3_classroom.sh</code>、<code>lab3_topo.sh</code>、<code>overlay_down.sh</code>、<code>transfer.py</code></td>
-<td style="text-align:left">第 05 讲课堂脚本与 Lab 3 脚本的副本（给定），本实验只用它们的 <code>down</code> 清理同名节点</td>
+<td style="text-align:left">第 05 讲课堂脚本与 Lab 3 脚本的副本（给定），本实验只用它们的 <code>down</code> 清理同名节点，<code>up</code> 只支持 <code>--reference</code></td>
 </tr>
 </tbody>
 </table></div>
 <h3 id="m3-s2">3.2 实验床与测量口径</h3>
-<p>实验床是本目录的 <a href="lab4_topo.sh" class="xref"><code>lab4_topo.sh</code></a>（<code>04/topo.sh</code> 的副本），与第 06–08 讲是同一张实验床：2 spine（<code>r5</code>、<code>r6</code>）× 4 leaf（<code>r1</code>–<code>r4</code>）× 8 host（<code>h1a</code>–<code>h4b</code>），host 接入口与 leaf–spine 链路都是 100 Mbit/s。PS 固定在 h1a，<code>--n N</code> 取 h3a、h2a、h4a、h1b、h2b、h3b、h4b 的前 N 台作为 worker。Ring 没有 PS，<code>--workers all</code> 表示全部 8 台。</p>
+<p>实验床是本目录的 <a href="lab4_topo.sh" class="xref"><code>lab4_topo.sh</code></a>（Lab 4 实验床脚本的副本），与第 06–08 讲是同一张实验床：2 spine（<code>r5</code>、<code>r6</code>）× 4 leaf（<code>r1</code>–<code>r4</code>）× 8 host（<code>h1a</code>–<code>h4b</code>），host 接入口与 leaf–spine 链路都是 100 Mbit/s。PS 固定在 h1a，<code>--n N</code> 取 h3a、h2a、h4a、h1b、h2b、h3b、h4b 的前 N 台作为 worker。Ring 没有 PS，<code>--workers all</code> 表示全部 8 台。</p>
 <div class="table-wrap" tabindex="0" role="region" aria-label="表格，可横向滚动"><table>
 <thead>
 <tr>
@@ -624,11 +625,12 @@ h3 .h3-tag {
 <p>结果写入 <code>/tmp/lab06-results/&lt;label&gt;.json</code>，<strong>同名标签会被覆盖</strong>，重启主机可能清除 <code>/tmp</code>，需要留存时另外复制。作业进程运行完就退出，不留后台进程。</p>
 <p><strong>为什么默认不用真实计算</strong>：所有 namespace 共用同一台机器的 CPU，真实计算会互相抢 CPU，JCT 的差别就不只来自通信了。任务 2 的选做部分让你亲眼看到这一点。</p>
 <h3 id="m3-s3">3.3 骨架与测试</h3>
-<div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="c step"><span class="step-n"># 1.</span> 准备 Python 环境（实验床的路由器与本实验的工具共用，含 numpy）</span>
-uv sync --project 2026/experiments/06 --frozen
+<div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="c step"><span class="step-n"># 1.</span> 进入 Lab 6 目录（压缩包解压后的目录，路径换成你自己的），准备 Python 环境（实验床的路由器与本实验的工具共用，含 numpy）</span>
+cd ~/lab06
+uv sync --frozen
 
 <span class="c step"><span class="step-n"># 2.</span> 离线测试：骨架原样应为 24 个测试中 1 个通过、4 个失败、19 个报错</span>
-(cd 2026/experiments/06 &amp;&amp; uv run --frozen python -m unittest 2&gt;&amp;1 | tail -1)
+uv run --frozen python -m unittest 2&gt;&amp;1 | tail -1
 </code></pre></div>
 <div class="code out short"><span class="code-tag">实测样例</span><pre><code>FAILED (failures=4, errors=19)
 </code></pre></div>
@@ -639,14 +641,14 @@ uv sync --project 2026/experiments/06 --frozen
 <h4 id="m4-s2">任务 1：跑通基线，手算一轮</h4>
 <p><strong>预测</strong>：N=7，模型 1 MB，每轮计算 200 ms，10 轮。课上的结果还记得吗？这次预计的 JCT 是多少？</p>
 <div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="c step"><span class="step-n"># 3.</span> 清理其他实验的网络（节点重名），搭完整实验床并自检</span>
-<span class="su">sudo</span> bash 2026/experiments/06/lab3_classroom.sh down
-<span class="su">sudo</span> bash 2026/experiments/06/lab3_topo.sh down
-<span class="su">sudo</span> bash 2026/experiments/06/lab4_topo.sh up
-<span class="su">sudo</span> bash 2026/experiments/06/lab4_topo.sh check
+<span class="su">sudo</span> bash lab3_classroom.sh down
+<span class="su">sudo</span> bash lab3_topo.sh down
+<span class="su">sudo</span> bash lab4_topo.sh up
+<span class="su">sudo</span> bash lab4_topo.sh check
 
 <span class="c step"><span class="step-n"># 4.</span> 基线作业与第 5 轮的原始时间戳</span>
-<span class="su">sudo</span> python3 2026/experiments/06/jobrun.py --label t1-base
-python3 2026/experiments/06/timeline.py /tmp/lab06-results/t1-base.json --round 5
+<span class="su">sudo</span> python3 jobrun.py --label t1-base
+python3 timeline.py /tmp/lab06-results/t1-base.json --round 5
 </code></pre></div>
 <p><strong>实测样例</strong>：</p>
 <div class="code out short"><span class="code-tag">实测样例</span><pre><code>[t1-base] ps N=7 模型 1 MB 10 轮 cubic：JCT = 13.695 s，结果 /tmp/lab06-results/t1-base.json
@@ -664,14 +666,14 @@ h4b               5.8        205.9        400.1        793.7        800.0       
 <h4 id="m4-s3">任务 2：把拆账写成程序（TODO 1、2）</h4>
 <p>打开 <a href="jobkit/decompose.py" class="xref"><code>jobkit/decompose.py</code></a>，按注释完成 <code>round_breakdown()</code> 与 <code>job_breakdown()</code>。上传段的终点要用 PS 一侧的 <code>grad_last</code>，不要用 <code>local_send_done</code>。</p>
 <div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="c step"><span class="step-n"># 5.</span> 测试通过后输出 OK</span>
-(cd 2026/experiments/06 &amp;&amp; uv run --frozen python -m unittest tests.test_decompose 2&gt;&amp;1 | tail -1)
+uv run --frozen python -m unittest tests.test_decompose 2&gt;&amp;1 | tail -1
 
 <span class="c step"><span class="step-n"># 6.</span> 打印整个作业的拆账（只读文件，不需要 root）</span>
-python3 2026/experiments/06/decompose.py /tmp/lab06-results/t1-base.json
+python3 decompose.py /tmp/lab06-results/t1-base.json
 
 <span class="c step"><span class="step-n"># 7.</span> 让 h3a 的计算时间变成 4 倍，看等待段出现在谁身上</span>
-<span class="su">sudo</span> python3 2026/experiments/06/jobrun.py --label t2-strag --straggler h3a:4
-python3 2026/experiments/06/decompose.py /tmp/lab06-results/t2-strag.json
+<span class="su">sudo</span> python3 jobrun.py --label t2-strag --straggler h3a:4
+python3 decompose.py /tmp/lab06-results/t2-strag.json
 </code></pre></div>
 <p><strong>实测样例</strong>（TODO 由备课用的参考实现补全）：</p>
 <div class="code out"><span class="code-tag">实测样例</span><pre><code>作业 t1-base：ps，N=7，模型 1 MB，10 轮，cubic
@@ -707,25 +709,25 @@ h4b          2.002     5.153     1.741     5.791    14.687
 </ol>
 <p><strong>选做：亲眼看 CPU 争用</strong>。占位计算不占 CPU，换成真实的 numpy 梯度试试。计算量相同，看 N 变大时单个 worker 的计算时间：</p>
 <div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="c step"><span class="step-n"># 8.</span> 真实 numpy 计算，N=1 和 N=7，每轮 60 次梯度计算</span>
-<span class="su">sudo</span> python3 2026/experiments/06/jobrun.py --label t2-np-n1 --n 1 --compute numpy --iters 60 --rounds 5
-<span class="su">sudo</span> python3 2026/experiments/06/jobrun.py --label t2-np-n7 --compute numpy --iters 60 --rounds 5
-python3 2026/experiments/06/decompose.py /tmp/lab06-results/t2-np-n1.json /tmp/lab06-results/t2-np-n7.json
+<span class="su">sudo</span> python3 jobrun.py --label t2-np-n1 --n 1 --compute numpy --iters 60 --rounds 5
+<span class="su">sudo</span> python3 jobrun.py --label t2-np-n7 --compute numpy --iters 60 --rounds 5
+python3 decompose.py /tmp/lab06-results/t2-np-n1.json /tmp/lab06-results/t2-np-n7.json
 </code></pre></div>
 <p>备课的 2 核虚拟机上，N=1 时平均计算 0.999 s，N=7 时 4.509 s，每个 worker 算同样的量却慢了 4.5 倍。你的机器核数不同，结果也会不同，这正是不能用真实计算比较通信方案的原因。</p>
 <h4 id="m4-s4">任务 3：拟合 α-β（TODO 3）</h4>
 <p>打开 <a href="jobkit/alphabeta.py" class="xref"><code>jobkit/alphabeta.py</code></a>，完成 <code>fit_alpha_beta()</code>。</p>
 <p><strong>预测</strong>：跨机架（h1a→h3a）和同机架（h1a→h1b）的 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi mathvariant="normal">&#x003B1;</mi></mrow></math></span>、<span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi mathvariant="normal">&#x003B2;</mi></mrow></math></span> 会有多大差别？</p>
 <div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="c step"><span class="step-n"># 9.</span> 测试通过后输出 OK</span>
-(cd 2026/experiments/06 &amp;&amp; uv run --frozen python -m unittest tests.test_alphabeta.FitCases 2&gt;&amp;1 | tail -1)
+uv run --frozen python -m unittest tests.test_alphabeta.FitCases 2&gt;&amp;1 | tail -1
 
 <span class="c step"><span class="step-n"># 10.</span> 测跨机架与同机架两条曲线，共约 70 秒</span>
-<span class="su">sudo</span> python3 2026/experiments/06/curve.py --label t3-cross --src h1a --dst h3a
-<span class="su">sudo</span> python3 2026/experiments/06/curve.py --label t3-rack --src h1a --dst h1b
+<span class="su">sudo</span> python3 curve.py --label t3-cross --src h1a --dst h3a
+<span class="su">sudo</span> python3 curve.py --label t3-rack --src h1a --dst h1b
 
 <span class="c step"><span class="step-n"># 11.</span> 拟合。第二条命令只用不超过 100 KB 的样本</span>
-python3 2026/experiments/06/fit.py /tmp/lab06-results/t3-cross.json
-python3 2026/experiments/06/fit.py /tmp/lab06-results/t3-cross.json --max-bytes 100000
-python3 2026/experiments/06/fit.py /tmp/lab06-results/t3-rack.json
+python3 fit.py /tmp/lab06-results/t3-cross.json
+python3 fit.py /tmp/lab06-results/t3-cross.json --max-bytes 100000
+python3 fit.py /tmp/lab06-results/t3-rack.json
 </code></pre></div>
 <p><strong>实测样例</strong>（TODO 由备课用的参考实现补全）：</p>
 <div class="code out"><span class="code-tag">实测样例</span><pre><code>h1a→h3a cubic，6 种大小（每种取中位数）
@@ -762,17 +764,17 @@ h1a→h1b cubic，6 种大小（每种取中位数）
 <h4 id="m4-s5">任务 4：预测 JCT 并对账（TODO 4）</h4>
 <p>完成 <code>predict_ps_round()</code>。在下面 6 个配置上用任务 3 的 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi mathvariant="normal">&#x003B1;</mi></mrow></math></span>、<span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi mathvariant="normal">&#x003B2;</mi></mrow></math></span> 预测，再实测对比。<strong>先把预测写下来，再运行。</strong></p>
 <div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="c step"><span class="step-n"># 12.</span> 测试通过后输出 OK</span>
-(cd 2026/experiments/06 &amp;&amp; uv run --frozen python -m unittest tests.test_alphabeta.PredictCases 2&gt;&amp;1 | tail -1)
+uv run --frozen python -m unittest tests.test_alphabeta.PredictCases 2&gt;&amp;1 | tail -1
 
 <span class="c step"><span class="step-n"># 13.</span> 另外 5 个配置，共约 45 秒；N=7、1 MB 用任务 1 的 t1-base</span>
 for n in 1 2 4; do
-  <span class="su">sudo</span> python3 2026/experiments/06/jobrun.py --label t4-n&quot;$n&quot; --n &quot;$n&quot;
+  <span class="su">sudo</span> python3 jobrun.py --label t4-n&quot;$n&quot; --n &quot;$n&quot;
 done
-<span class="su">sudo</span> python3 2026/experiments/06/jobrun.py --label t4-s025 --model-mb 0.25
-<span class="su">sudo</span> python3 2026/experiments/06/jobrun.py --label t4-s4 --model-mb 4 --rounds 5
+<span class="su">sudo</span> python3 jobrun.py --label t4-s025 --model-mb 0.25
+<span class="su">sudo</span> python3 jobrun.py --label t4-s4 --model-mb 4 --rounds 5
 
 <span class="c step"><span class="step-n"># 14.</span> 用 α、β 预测并和实测对账</span>
-python3 2026/experiments/06/fit.py /tmp/lab06-results/t3-cross.json --predict /tmp/lab06-results/t4-n1.json /tmp/lab06-results/t4-n2.json /tmp/lab06-results/t4-n4.json /tmp/lab06-results/t1-base.json /tmp/lab06-results/t4-s025.json /tmp/lab06-results/t4-s4.json
+python3 fit.py /tmp/lab06-results/t3-cross.json --predict /tmp/lab06-results/t4-n1.json /tmp/lab06-results/t4-n2.json /tmp/lab06-results/t4-n4.json /tmp/lab06-results/t1-base.json /tmp/lab06-results/t4-s025.json /tmp/lab06-results/t4-s4.json
 </code></pre></div>
 <p><strong>实测样例</strong>（节选，省略了与任务 3 相同的拟合表）：</p>
 <div class="code out short"><span class="code-tag">实测样例</span><pre><code>作业                N    预测 JCT s    实测 JCT s      偏差
@@ -791,11 +793,12 @@ t4-s4             7      24.430      24.495   -0.3%
 </ol>
 <p>A 段做完可以先清理（重复执行应成功），B 段开始时重新搭建：</p>
 <div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="c step"><span class="step-n"># 15.</span> 核对端口基线；需要留存结果就先复制；然后拆实验床</span>
-<span class="su">sudo</span> bash 2026/experiments/06/lab4_topo.sh status
+<span class="su">sudo</span> bash lab4_topo.sh status
 mkdir -p &quot;$HOME/lab06-results&quot; &amp;&amp; cp -r /tmp/lab06-results/. &quot;$HOME/lab06-results/&quot;
-<span class="su">sudo</span> bash 2026/experiments/06/lab4_topo.sh down
+<span class="su">sudo</span> bash lab4_topo.sh down
 </code></pre></div>
 <h3 id="m4-s6">B 段：第 09 讲后</h3>
+<p><a href="../../docs/collective_communication.html" class="xref">第 09 讲</a>课上用的 <code>lecture09_prep/jobkit/ring.py</code> 是只复现流量的替身，结果不正确，不能当作 TODO 5 的答案：放进本目录会通不过 <code>tests.test_ring</code> 和 <code>jobrun.py</code> 的结果核对。</p>
 <p><strong>Ring AllReduce 怎么工作</strong>。参数服务器让所有数据都过一条链路。Ring AllReduce 不要 PS：<span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>N</mi></mrow></math></span> 个节点排成环，每个节点只向右邻居发、从左邻居收，把向量切成 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>N</mi></mrow></math></span> 块，分两个阶段走完：</p>
 <ul>
 <li><strong>Reduce-Scatter</strong>（<span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>N</mi><mo>&#x02212;</mo><mn>1</mn></mrow></math></span> 步）：每块沿环走一圈，边走边合并。结束时每个节点手里有一块已经合并完的结果。</li>
@@ -843,19 +846,19 @@ mkdir -p &quot;$HOME/lab06-results&quot; &amp;&amp; cp -r /tmp/lab06-results/. &
 <p>打开 <a href="jobkit/ring.py" class="xref"><code>jobkit/ring.py</code></a>，完成 <code>ring_allreduce()</code>。</p>
 <p><strong>预测</strong>：同样 7 台 worker、同样的计算，只把参数服务器换成 Ring。每个 worker 发的字节是变多还是变少？JCT 呢？</p>
 <div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="c step"><span class="step-n"># 16.</span> 测试通过后输出 OK</span>
-(cd 2026/experiments/06 &amp;&amp; uv run --frozen python -m unittest tests.test_ring.RingCases 2&gt;&amp;1 | tail -1)
+uv run --frozen python -m unittest tests.test_ring.RingCases 2&gt;&amp;1 | tail -1
 
 <span class="c step"><span class="step-n"># 17.</span> 搭建实验床并测一条曲线（已经搭好的话，up 不会出错）</span>
-<span class="su">sudo</span> bash 2026/experiments/06/lab4_topo.sh up
-<span class="su">sudo</span> bash 2026/experiments/06/lab4_topo.sh check
-<span class="su">sudo</span> python3 2026/experiments/06/curve.py --label t5-curve
+<span class="su">sudo</span> bash lab4_topo.sh up
+<span class="su">sudo</span> bash lab4_topo.sh check
+<span class="su">sudo</span> python3 curve.py --label t5-curve
 
 <span class="c step"><span class="step-n"># 18.</span> 同样的 7 台 worker，按机架顺序排列，只换通信方式</span>
 RACK=h1b,h2a,h2b,h3a,h3b,h4a,h4b
-<span class="su">sudo</span> python3 2026/experiments/06/jobrun.py --label t5-ps --workers &quot;$RACK&quot;
-<span class="su">sudo</span> python3 2026/experiments/06/jobrun.py --algo ring --label t5-ring --workers &quot;$RACK&quot;
-python3 2026/experiments/06/compare.py t5-ps t5-ring
-python3 2026/experiments/06/compare.py --steps t5-ring
+<span class="su">sudo</span> python3 jobrun.py --label t5-ps --workers &quot;$RACK&quot;
+<span class="su">sudo</span> python3 jobrun.py --algo ring --label t5-ring --workers &quot;$RACK&quot;
+python3 compare.py t5-ps t5-ring
+python3 compare.py --steps t5-ring
 </code></pre></div>
 <p><strong>实测样例</strong>（TODO 由备课用的参考实现补全，省略了曲线与 JCT 行）：</p>
 <div class="code out short"><span class="code-tag">实测样例</span><pre><code>标签              算法    N 环序    跨机架     JCT s   计算ms   通信ms  发送/S最忙发送MB
@@ -866,17 +869,17 @@ t5-ring：N=7，每步传 142857 字节，跨机架边 4，共 12 步，平均�
 </code></pre></div>
 <p>完成 <a href="jobkit/alphabeta.py" class="xref"><code>jobkit/alphabeta.py</code></a> 的 <code>predict_ring_round()</code>，再改变 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>N</mi></mrow></math></span> 和 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>S</mi></mrow></math></span>，和实测对账。<strong>先写下预测，再运行。</strong></p>
 <div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="c step"><span class="step-n"># 19.</span> 测试通过后输出 OK</span>
-(cd 2026/experiments/06 &amp;&amp; uv run --frozen python -m unittest tests.test_ring.RingPredictCases 2&gt;&amp;1 | tail -1)
+uv run --frozen python -m unittest tests.test_ring.RingPredictCases 2&gt;&amp;1 | tail -1
 
 <span class="c step"><span class="step-n"># 20.</span> 另外 4 个配置，共约 15 秒；N=7、1 MB 用上面的 t5-ring</span>
 RACK=h1b,h2a,h2b,h3a,h3b,h4a,h4b
-<span class="su">sudo</span> python3 2026/experiments/06/jobrun.py --algo ring --label t5-n2 --workers h2a,h2b
-<span class="su">sudo</span> python3 2026/experiments/06/jobrun.py --algo ring --label t5-n4 --workers h2a,h2b,h3a,h3b
-<span class="su">sudo</span> python3 2026/experiments/06/jobrun.py --algo ring --label t5-s025 --workers &quot;$RACK&quot; --model-mb 0.25
-<span class="su">sudo</span> python3 2026/experiments/06/jobrun.py --algo ring --label t5-s4 --workers &quot;$RACK&quot; --model-mb 4 --rounds 5
+<span class="su">sudo</span> python3 jobrun.py --algo ring --label t5-n2 --workers h2a,h2b
+<span class="su">sudo</span> python3 jobrun.py --algo ring --label t5-n4 --workers h2a,h2b,h3a,h3b
+<span class="su">sudo</span> python3 jobrun.py --algo ring --label t5-s025 --workers &quot;$RACK&quot; --model-mb 0.25
+<span class="su">sudo</span> python3 jobrun.py --algo ring --label t5-s4 --workers &quot;$RACK&quot; --model-mb 4 --rounds 5
 
 <span class="c step"><span class="step-n"># 21.</span> 用 α、β 预测并和实测对账</span>
-python3 2026/experiments/06/fit.py /tmp/lab06-results/t5-curve.json --predict /tmp/lab06-results/t5-n2.json /tmp/lab06-results/t5-n4.json /tmp/lab06-results/t5-ring.json /tmp/lab06-results/t5-s025.json /tmp/lab06-results/t5-s4.json
+python3 fit.py /tmp/lab06-results/t5-curve.json --predict /tmp/lab06-results/t5-n2.json /tmp/lab06-results/t5-n4.json /tmp/lab06-results/t5-ring.json /tmp/lab06-results/t5-s025.json /tmp/lab06-results/t5-s4.json
 </code></pre></div>
 <p><strong>实测样例</strong>（节选）：</p>
 <div class="code out short"><span class="code-tag">实测样例</span><pre><code>作业                N    预测 JCT s    实测 JCT s      偏差
@@ -895,14 +898,14 @@ t5-s4             7       3.899       4.502  -13.4%
 <h4 id="m4-s8">任务 6：把节点放在哪里（进阶）</h4>
 <p><strong>预测</strong>：上联降到 50 Mbit/s。2 个节点放在同一机架和不同机架，通信时间差多少？4 个节点分在 2 个机架和 4 个机架，差多少？</p>
 <div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="c step"><span class="step-n"># 22.</span> 全部上联降到 50 Mbit/s，host 接入仍是 100 Mbit/s</span>
-<span class="su">sudo</span> bash 2026/experiments/06/lab4_topo.sh rate 50
+<span class="su">sudo</span> bash lab4_topo.sh rate 50
 
 <span class="c step"><span class="step-n"># 23.</span> 同样的节点数，只改放置，共约 16 秒</span>
-<span class="su">sudo</span> python3 2026/experiments/06/jobrun.py --algo ring --label t6-2same --workers h1a,h1b
-<span class="su">sudo</span> python3 2026/experiments/06/jobrun.py --algo ring --label t6-2cross --workers h1a,h2a
-<span class="su">sudo</span> python3 2026/experiments/06/jobrun.py --algo ring --label t6-4two --workers h1a,h1b,h2a,h2b
-<span class="su">sudo</span> python3 2026/experiments/06/jobrun.py --algo ring --label t6-4four --workers h1a,h2a,h3a,h4a
-python3 2026/experiments/06/compare.py t6-2same t6-2cross t6-4two t6-4four
+<span class="su">sudo</span> python3 jobrun.py --algo ring --label t6-2same --workers h1a,h1b
+<span class="su">sudo</span> python3 jobrun.py --algo ring --label t6-2cross --workers h1a,h2a
+<span class="su">sudo</span> python3 jobrun.py --algo ring --label t6-4two --workers h1a,h1b,h2a,h2b
+<span class="su">sudo</span> python3 jobrun.py --algo ring --label t6-4four --workers h1a,h2a,h3a,h4a
+python3 compare.py t6-2same t6-2cross t6-4two t6-4four
 </code></pre></div>
 <p><strong>实测样例</strong>：</p>
 <div class="code out short"><span class="code-tag">实测样例</span><pre><code>标签              算法    N 环序    跨机架     JCT s   计算ms   通信ms  发送/S最忙发送MB
@@ -920,20 +923,20 @@ t6-4four          ring    4 given       4     4.741    200.3    273.7   1.500   
 <p>完成 <code>topology_ring_order()</code>，让同一机架的节点在环上连续。</p>
 <p><strong>预测</strong>：8 个节点、上联 50 Mbit/s。拓扑感知的环序有 4 条跨机架边，随机环序大约 6–8 条。JCT 的差别和跨机架边数成比例吗？</p>
 <div class="code cmd"><span class="code-tag">bash</span><pre><code><span class="c step"><span class="step-n"># 24.</span> 测试通过后输出 OK</span>
-(cd 2026/experiments/06 &amp;&amp; uv run --frozen python -m unittest tests.test_ring.OrderCases 2&gt;&amp;1 | tail -1)
+uv run --frozen python -m unittest tests.test_ring.OrderCases 2&gt;&amp;1 | tail -1
 
 <span class="c step"><span class="step-n"># 25.</span> 拓扑感知跑 2 次，随机环序跑 3 个种子，共约 35 秒</span>
 for i in 1 2; do
-  <span class="su">sudo</span> python3 2026/experiments/06/jobrun.py --algo ring --label t7-topo-&quot;$i&quot; --workers all --order topo
+  <span class="su">sudo</span> python3 jobrun.py --algo ring --label t7-topo-&quot;$i&quot; --workers all --order topo
 done
 for s in 1 2 3; do
-  <span class="su">sudo</span> python3 2026/experiments/06/jobrun.py --algo ring --label t7-rand-&quot;$s&quot; --workers all --order random --order-seed &quot;$s&quot;
+  <span class="su">sudo</span> python3 jobrun.py --algo ring --label t7-rand-&quot;$s&quot; --workers all --order random --order-seed &quot;$s&quot;
 done
-python3 2026/experiments/06/compare.py t7-topo-1 t7-topo-2 t7-rand-1 t7-rand-2 t7-rand-3
+python3 compare.py t7-topo-1 t7-topo-2 t7-rand-1 t7-rand-2 t7-rand-3
 
 <span class="c step"><span class="step-n"># 26.</span> 恢复 100 Mbit/s，并核对基线</span>
-<span class="su">sudo</span> bash 2026/experiments/06/lab4_topo.sh rate 100
-<span class="su">sudo</span> bash 2026/experiments/06/lab4_topo.sh status
+<span class="su">sudo</span> bash lab4_topo.sh rate 100
+<span class="su">sudo</span> bash lab4_topo.sh status
 </code></pre></div>
 <p><strong>实测样例</strong>（节选）：</p>
 <div class="code out short"><span class="code-tag">实测样例</span><pre><code>标签              算法    N 环序    跨机架     JCT s   计算ms   通信ms  发送/S最忙发送MB
@@ -953,19 +956,19 @@ t7-rand-3         ring    8 random      8     7.758    200.2    573.5   1.750   
 <p><strong>预测</strong>：让 h3a 每轮多算 600 ms（固定慢节点），参数服务器和 Ring 的 JCT 各增加多少？第 07 讲的 <span class="math inline"><math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mn>1</mn><mo>&#x02212;</mo><mo stretchy="false">&#x00028;</mo><mn>1</mn><mo>&#x02212;</mo><mi>p</mi><msup><mo stretchy="false">&#x00029;</mo><mi>N</mi></msup></mrow></math></span> 能不能预测随机变慢造成的 JCT 增量？</p>
 <div class="code cmd"><span class="code-tag">bash</span><pre><code><span class="c step"><span class="step-n"># 27.</span> 固定慢节点：h3a 的计算时间乘 4，PS 与 Ring 各跑基线和慢节点，共约 45 秒</span>
 RACK=h1b,h2a,h2b,h3a,h3b,h4a,h4b
-<span class="su">sudo</span> python3 2026/experiments/06/jobrun.py --label t8-ps --workers &quot;$RACK&quot;
-<span class="su">sudo</span> python3 2026/experiments/06/jobrun.py --label t8-ps-slow --workers &quot;$RACK&quot; --straggler h3a:4
-<span class="su">sudo</span> python3 2026/experiments/06/jobrun.py --algo ring --label t8-ring --workers &quot;$RACK&quot;
-<span class="su">sudo</span> python3 2026/experiments/06/jobrun.py --algo ring --label t8-ring-slow --workers &quot;$RACK&quot; --straggler h3a:4
-python3 2026/experiments/06/compare.py t8-ps t8-ps-slow t8-ring t8-ring-slow
+<span class="su">sudo</span> python3 jobrun.py --label t8-ps --workers &quot;$RACK&quot;
+<span class="su">sudo</span> python3 jobrun.py --label t8-ps-slow --workers &quot;$RACK&quot; --straggler h3a:4
+<span class="su">sudo</span> python3 jobrun.py --algo ring --label t8-ring --workers &quot;$RACK&quot;
+<span class="su">sudo</span> python3 jobrun.py --algo ring --label t8-ring-slow --workers &quot;$RACK&quot; --straggler h3a:4
+python3 compare.py t8-ps t8-ps-slow t8-ring t8-ring-slow
 
 <span class="c step"><span class="step-n"># 28.</span> 随机变慢：每个 worker 每轮以 5% 的概率多等 300 ms；N=2、4、7，每组 40 轮，共约 90 秒</span>
 for n in 2 4 7; do
   w=$(echo &quot;$RACK&quot; | cut -d, -f1-&quot;$n&quot;)
-  <span class="su">sudo</span> python3 2026/experiments/06/jobrun.py --algo ring --label t8-r&quot;$n&quot; --workers &quot;$w&quot; --rounds 40
-  <span class="su">sudo</span> python3 2026/experiments/06/jobrun.py --algo ring --label t8-r&quot;$n&quot;-slow --workers &quot;$w&quot; --rounds 40 --slow-prob 0.05 --slow-ms 300 --seed 1
+  <span class="su">sudo</span> python3 jobrun.py --algo ring --label t8-r&quot;$n&quot; --workers &quot;$w&quot; --rounds 40
+  <span class="su">sudo</span> python3 jobrun.py --algo ring --label t8-r&quot;$n&quot;-slow --workers &quot;$w&quot; --rounds 40 --slow-prob 0.05 --slow-ms 300 --seed 1
 done
-python3 2026/experiments/06/compare.py --slow t8-r2 t8-r2-slow t8-r4 t8-r4-slow t8-r7 t8-r7-slow
+python3 compare.py --slow t8-r2 t8-r2-slow t8-r4 t8-r4-slow t8-r7 t8-r7-slow
 </code></pre></div>
 <p><strong>实测样例</strong>（节选）：</p>
 <div class="code out short"><span class="code-tag">实测样例</span><pre><code>标签              算法    N 环序    跨机架     JCT s   计算ms   通信ms  发送/S最忙发送MB
@@ -989,9 +992,9 @@ t8-r7-slow        ring  N=7  JCT   19.694 s   变慢的轮 14/40
 </ol>
 <p>全部做完后清理（重复执行应成功）：</p>
 <div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="c step"><span class="step-n"># 29.</span> 核对端口基线；留存结果；拆实验床</span>
-<span class="su">sudo</span> bash 2026/experiments/06/lab4_topo.sh status
+<span class="su">sudo</span> bash lab4_topo.sh status
 mkdir -p &quot;$HOME/lab06-results&quot; &amp;&amp; cp -r /tmp/lab06-results/. &quot;$HOME/lab06-results/&quot;
-<span class="su">sudo</span> bash 2026/experiments/06/lab4_topo.sh down
+<span class="su">sudo</span> bash lab4_topo.sh down
 </code></pre></div>
 </section>
 <section class="module" id="m5"><header class="module-head"><div class="module-eyebrow"><span class="module-no">05</span><span class="tag">LAB 6</span></div><h2>故障排查</h2></header>
@@ -1016,7 +1019,7 @@ mkdir -p &quot;$HOME/lab06-results&quot; &amp;&amp; cp -r /tmp/lab06-results/. &
 </tr>
 <tr>
 <td style="text-align:left"><code>--compute numpy</code> 报要先执行 <code>uv sync</code></td>
-<td style="text-align:left"><code>ls 2026/experiments/06/.venv</code></td>
+<td style="text-align:left"><code>ls .venv</code></td>
 <td style="text-align:left">没有执行 3.3 节的第 1 步</td>
 </tr>
 <tr>
@@ -1026,12 +1029,12 @@ mkdir -p &quot;$HOME/lab06-results&quot; &amp;&amp; cp -r /tmp/lab06-results/. &
 </tr>
 <tr>
 <td style="text-align:left">JCT 比样例长很多</td>
-<td style="text-align:left"><code>sudo bash 2026/experiments/06/lab4_topo.sh status</code>；<code>top</code></td>
+<td style="text-align:left"><code>sudo bash lab4_topo.sh status</code>；<code>top</code></td>
 <td style="text-align:left">端口偏离基线（上一个实验没有恢复）；机器上有其他负载</td>
 </tr>
 <tr>
 <td style="text-align:left">重复运行的 JCT 差别很大</td>
-<td style="text-align:left"><code>sudo bash 2026/experiments/06/lab4_topo.sh status</code>，看档位</td>
+<td style="text-align:left"><code>sudo bash lab4_topo.sh status</code>，看档位</td>
 <td style="text-align:left">上联是 50 Mbit/s 时 ECMP 分配每次不同（第 08 讲 4.2 节）；基线 100 Mbit/s 时备课的多次运行大多在 13.7 s 附近，个别到 14.06 s。Ring 的 worker 没有按机架排列时，100 Mbit/s 档也会波动（备课 3 次 4.0–5.06 s），任务 7 解释原因</td>
 </tr>
 <tr>
@@ -1051,7 +1054,7 @@ mkdir -p &quot;$HOME/lab06-results&quot; &amp;&amp; cp -r /tmp/lab06-results/. &
 </tr>
 <tr>
 <td style="text-align:left">实验中断后状态不明</td>
-<td style="text-align:left"><code>sudo bash 2026/experiments/06/lab4_topo.sh status</code></td>
+<td style="text-align:left"><code>sudo bash lab4_topo.sh status</code></td>
 <td style="text-align:left">执行 <code>lab4_topo.sh clear</code> 恢复；再不行就 <code>lab4_topo.sh down</code> 后重新 <code>up</code></td>
 </tr>
 </tbody>
@@ -1121,7 +1124,7 @@ mkdir -p &quot;$HOME/lab06-results&quot; &amp;&amp; cp -r /tmp/lab06-results/. &
 <p>报告建议 A 段 2–3 页，B 段 3–4 页。每项都要有预测、证据、解释：预测被推翻同样有价值，评分看证据是否充分、解释是否不超出数据。</p>
 <p>提交 <code>jobkit/</code> 目录、报告和结果文件，全部任务打一个包。不提交 <code>.venv/</code> 与 <code>__pycache__/</code>。</p>
 <div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="c step"><span class="step-n"># 30.</span> 打包代码与第 29 步留存的结果</span>
-tar --exclude=__pycache__ -czf &quot;$HOME/lab06-submission.tgz&quot; -C 2026/experiments/06 jobkit -C &quot;$HOME/lab06-results&quot; .
+tar --exclude=__pycache__ -czf &quot;$HOME/lab06-submission.tgz&quot; jobkit -C &quot;$HOME/lab06-results&quot; .
 tar -tzf &quot;$HOME/lab06-submission.tgz&quot; | head
 </code></pre></div>
 <h3 id="m7-s1">维护与验证</h3>
@@ -1151,6 +1154,10 @@ tar -tzf &quot;$HOME/lab06-submission.tgz&quot; | head
 <td style="text-align:left">2026-11-11 发现 24.04 自带的 iproute2 6.1 不支持 <code>tc -j class show</code>，实验床搭不起来，本目录的 <code>lab4_topo.sh</code> 已改为读不到 JSON 时按文本解析（详见 <a href="../04/README.html" class="xref">Lab 4 指导书</a>末尾的“维护与验证”）。修复后在 Ubuntu 24.04.5 用户态容器（iproute2 6.1.0、Python 3.12.3；宿主内核 Linux 7.3、4 vCPU）中按本文原样运行了不依赖 TODO 的命令：3.3 节离线测试（骨架结果与上文相同）、任务 1、任务 2 的慢节点与 numpy 作业、任务 3 的两条曲线、任务 4 的 5 个配置、任务 5 的曲线与参数服务器基线、任务 6 与任务 7 的档位切换和基线核对、任务 8 的参数服务器慢节点，以及两次清理与打包。读数与本文样例一致，例如 <code>t1-base</code> 13.710 s、<code>t2-strag</code> 14.701 s。依赖 TODO 的命令（拆账、拟合、预测、Ring 与环序）没有在 24.04 上运行</td>
 </tr>
 <tr>
+<td style="text-align:left">单独运行</td>
+<td style="text-align:left">2026-11-11 起本实验以压缩包分发，脚本改为按自身所在目录定位文件，命令在本目录执行。改动后把本目录复制到仓库外（<code>~/lab06</code>），按本文原样运行了不依赖 TODO 的命令，备课虚拟机与上述 24.04 容器各一遍，全部通过，读数与样例一致（如 <code>t1-base</code> 13.725 s、13.660 s）；<code>lab4_topo.sh up --own DIR</code> 用 Lab 2 参考实现的目录测过一次</td>
+</tr>
+<tr>
 <td style="text-align:left">未覆盖</td>
 <td style="text-align:left">Ubuntu 24.04 上依赖 TODO 的命令与 24.04 自带的内核；学生自己的实现；4 核以上的机器（CPU 争用和合并耗时都会不同）</td>
 </tr>
@@ -1159,7 +1166,7 @@ tar -tzf &quot;$HOME/lab06-submission.tgz&quot; | head
 <p>阅读版 <code>README.html</code> 由 <code>2026/tools/build_lab6_html.py</code> 从本文生成，用法见 <a href="../../tools/README.md" class="xref"><code>tools/README.md</code></a>。仓库中的 TODO 保持留白；参考实现只用于备课验证，没有放进仓库。学生实现须独立验收，样例中的单次读数不作为验收标准。</p>
 </section>
 
-<footer class="colophon"><span>上海交通大学 · 云网融合创新实践 · Lab 6</span><span>由 <a href="README.md">README.md</a> 生成 · sha256 d27ce70318d7 · 2026-11-11</span></footer>
+<footer class="colophon"><span>上海交通大学 · 云网融合创新实践 · Lab 6</span><span>由 <a href="README.md">README.md</a> 生成 · sha256 e7f574e3ff6b · 2026-11-11</span></footer>
 </main></div><script>
 (function () {
   // 打印按钮

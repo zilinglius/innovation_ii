@@ -7,7 +7,7 @@
     barrier              PS 收齐全部梯度并聚合完的时刻（每行相同）
     模型收齐             worker 收到模型最后一个字节的时刻
 
-用法：python3 2026/experiments/06/timeline.py /tmp/lab06-results/LABEL.json [--round 5]
+用法：python3 timeline.py /tmp/lab06-results/LABEL.json [--round 5]
 """
 
 import argparse

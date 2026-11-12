@@ -1,9 +1,9 @@
 """拟合 α-β 并预测参数服务器作业（给定，调用 TODO 3、4）。
 
 用法：
-  python3 2026/experiments/06/fit.py /tmp/lab06-results/curve.json
-  python3 2026/experiments/06/fit.py CURVE.json --max-bytes 1000000      # 只用不超过该大小的样本拟合
-  python3 2026/experiments/06/fit.py CURVE.json --predict JOB.json ...   # 用拟合结果预测作业，与实测对比（ps 用 TODO 4，ring 用 TODO 6）
+  python3 fit.py /tmp/lab06-results/curve.json
+  python3 fit.py CURVE.json --max-bytes 1000000      # 只用不超过该大小的样本拟合
+  python3 fit.py CURVE.json --predict JOB.json ...   # 用拟合结果预测作业，与实测对比（ps 用 TODO 4，ring 用 TODO 6）
 """
 
 import argparse

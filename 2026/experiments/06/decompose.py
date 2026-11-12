@@ -1,6 +1,6 @@
 """打印一次作业的时间拆账（给定，调用 TODO 1、2）。
 
-用法：python3 2026/experiments/06/decompose.py /tmp/lab06-results/LABEL.json [更多 JSON ...]
+用法：python3 decompose.py /tmp/lab06-results/LABEL.json [更多 JSON ...]
 """
 
 import json

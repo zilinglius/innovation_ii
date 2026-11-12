@@ -217,3 +217,18 @@ uv run --project 2026/tools --frozen python 2026/tools/build_lab6_html.py --date
 ```
 
 - 输出 `2026/experiments/06/README.html`，结构与 Lab 5 生成器相同，生成器要求配图数为 0。
+
+## 第 09 讲讲义阅读版
+
+先修改 `2026/docs/collective_communication.md`，再从仓库根目录执行：
+
+```bash
+# 1. 按本目录锁文件准备依赖（与其他生成器共用）
+uv sync --project 2026/tools --frozen
+
+# 2. 生成第 09 讲阅读版，日期填写本次内容更新日期
+uv run --project 2026/tools --frozen python 2026/tools/build_collective_communication_html.py --date 2026-11-11
+```
+
+- 结构与第 08 讲生成器相同；另外支持无语言标记的字符块（4.3 节的 RoCEv2 报文位图），标为“示意”。
+- 4 幅配图由 `collective_communication_figures.py` 绘制，拓扑骨架复用 `communication_cost_figures.py` 的 `_fabric`、`_panel`；Mermaid 源图的摘要在 `collective_communication_figure_sources.json`。改源图时先核对 SVG 的节点、方向、标签与简化条件，再更新摘要。图 3 的两种环序节点位置相同，琥珀色弧线是跨机架边。

@@ -1,9 +1,9 @@
 """把多次作业排成一张表（给定），只读文件，不需要 root，也不依赖 TODO。
 
 用法：
-  python3 2026/experiments/06/compare.py LABEL [LABEL ...]        # 结果在 /tmp/lab06-results 下
-  python3 2026/experiments/06/compare.py --steps LABEL [LABEL ...]  # ring 每一步的平均用时
-  python3 2026/experiments/06/compare.py --slow LABEL [LABEL ...]   # 注入随机变慢时，实际变慢的轮数
+  python3 compare.py LABEL [LABEL ...]        # 结果在 /tmp/lab06-results 下
+  python3 compare.py --steps LABEL [LABEL ...]  # ring 每一步的平均用时
+  python3 compare.py --slow LABEL [LABEL ...]   # 注入随机变慢时，实际变慢的轮数
 
 各列：
     算法、N、环序（ring）、跨机架边（ring）、JCT

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# Lab 6 用的副本，源自 2026/experiments/03/topo.sh，路径已改为本目录；本实验只用到 down。
-# 这里的 TODO 保持留白，Lab 3 请继续在 2026/experiments/03/topo.sh 里完成。
+# Lab 6 用的副本，源自课程仓库的 2026/experiments/03/topo.sh，只用于清理同名节点（down）；命令在本目录执行。
+# 这里的 TODO 保持留白，Lab 3 请在 Lab 3 的目录里完成；本副本的 up 只支持 --reference。
 
 # ==============================================================================
 # Lab 3 实验床：2 spine × 4 leaf × 8 host 的 leaf-spine 迷你数据中心
@@ -22,18 +22,18 @@ set -Eeuo pipefail
 #   限速         host 接入口双向 100 Mbit/s；leaf–spine 两端 100 / 50 Mbit/s 可切换
 #
 # 用法（均从仓库根目录执行）：
-#   sudo bash 2026/experiments/06/lab3_topo.sh up              # 搭建并启动 lsrd（幂等，先清理再搭）
-#   sudo bash 2026/experiments/06/lab3_topo.sh up --reference  # 同上，路由改用本目录 reference/ 参考实现
-#   sudo bash 2026/experiments/06/lab3_topo.sh check           # 连通性自检（up 之后）
-#   sudo bash 2026/experiments/06/lab3_topo.sh rate 50         # 切换全部上联档位（50 或 100 Mbit/s）
-#   sudo bash 2026/experiments/06/lab3_topo.sh show            # 打印路由器的地址与路由
-#   sudo bash 2026/experiments/06/lab3_topo.sh down            # 拆除（幂等）
+#   sudo bash lab3_topo.sh up              # 搭建并启动 lsrd（幂等，先清理再搭）
+#   sudo bash lab3_topo.sh up --reference  # 同上，路由改用本目录 reference/ 参考实现
+#   sudo bash lab3_topo.sh check           # 连通性自检（up 之后）
+#   sudo bash lab3_topo.sh rate 50         # 切换全部上联档位（50 或 100 Mbit/s）
+#   sudo bash lab3_topo.sh show            # 打印路由器的地址与路由
+#   sudo bash lab3_topo.sh down            # 拆除（幂等）
 # ==============================================================================
 
-L3_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)
+L3_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 L3_STATE=/run/lab03
 L3_RESULTS=/tmp/lab03-results
-L3_PY="$L3_ROOT/2026/experiments/06/.venv/bin/python"
+L3_PY="$L3_DIR/.venv/bin/python"
 L3_ROUTERS=(r1 r2 r3 r4 r5 r6)
 L3_HOSTS=(h1a h1b h2a h2b h3a h3b h4a h4b)
 
@@ -44,7 +44,7 @@ todo_missing() {
 
 down() {
   local ns pid
-  bash "$L3_ROOT/2026/experiments/06/overlay_down.sh"
+  bash "$L3_DIR/overlay_down.sh"
   [[ -f "$L3_STATE/namespaces" ]] || return 0
   while read -r ns; do
     for pid in $(ip netns pids "$ns" 2>/dev/null || true); do
@@ -119,10 +119,8 @@ PY
 }
 
 start_lsrd() {
-  local implementation=lsrd rid directory opts
-  [[ "${1:-}" == --reference ]] && implementation=reference/lsrd
-  directory="$L3_ROOT/2026/experiments/02"
-  [[ "$implementation" == reference/lsrd ]] && directory="$L3_ROOT/2026/experiments/06/reference"
+  local rid directory opts
+  directory="$L3_DIR/reference"
   for rid in 1 2 3 4 5 6; do
     opts=(--id "$rid" --ecmp \
       --pidfile "$L3_STATE/r$rid.pid" --sock "$L3_STATE/r$rid.sock" --log "$L3_RESULTS/r$rid.log")
@@ -185,7 +183,8 @@ build_fabric() {
 
 up() {
   local ns
-  [[ -x "$L3_PY" ]] || { echo '先执行 uv sync --project 2026/experiments/06 --frozen。' >&2; exit 1; }
+  [[ "${1:-}" == --reference ]] || { echo '本目录的副本只用于 down 清理同名节点；Lab 3 请在 Lab 3 的目录里做，或用 up --reference。' >&2; exit 2; }
+  [[ -x "$L3_PY" ]] || { echo '先在本目录执行 uv sync --frozen。' >&2; exit 1; }
   down
   for ns in "${L3_ROUTERS[@]}" "${L3_HOSTS[@]}"; do
     if [[ -e "/run/netns/$ns" ]]; then
@@ -206,7 +205,7 @@ up() {
     if ready >/dev/null 2>&1; then
       trap - ERR
       echo '[*] 6 台路由器全部 Full；r1 的跨机架路由有两个下一跳。实验床就绪。'
-      echo '[*] 下一步自检：sudo bash 2026/experiments/06/lab3_topo.sh check'
+      echo '[*] 下一步自检：sudo bash lab3_topo.sh check'
       return
     fi
     sleep 0.3
@@ -241,7 +240,7 @@ show() {
   done
 }
 
-[[ "$EUID" -eq 0 ]] || { echo '请从仓库根目录用 sudo bash 2026/experiments/06/lab3_topo.sh 执行。' >&2; exit 1; }
+[[ "$EUID" -eq 0 ]] || { echo '请在本目录用 sudo bash lab3_topo.sh 执行。' >&2; exit 1; }
 case "${1:-up}" in
   up) if [[ "$#" -gt 0 ]]; then shift; fi; up "$@" ;;
   down) down ;;

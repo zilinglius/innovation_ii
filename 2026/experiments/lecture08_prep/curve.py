@@ -4,7 +4,7 @@
 所以测到的是“对端确实收齐”的时间，而不是 sendall 返回的时间。两次发送之间空闲 --gap-ms，
 模拟作业两轮通信之间的计算阶段。结果写到 --out，格式 lab06.curve/v1，打印每个大小的中位数。
 
-用法：sudo python3 2026/experiments/lecture08_prep/curve.py --src h1a --dst h3a
+用法：sudo python3 curve.py --src h1a --dst h3a
 """
 
 import argparse
@@ -74,9 +74,9 @@ def sender(args):
 
 def orchestrate(args):
     if os.geteuid() != 0:
-        raise SystemExit("需要 root：sudo python3 2026/experiments/lecture08_prep/curve.py ...")
+        raise SystemExit("需要 root：sudo python3 curve.py ...")
     if not Path("/run/lab04/namespaces").exists():
-        raise SystemExit("实验床尚未搭建，请先执行 sudo bash 2026/experiments/lecture08_prep/lab4_topo.sh up。")
+        raise SystemExit("实验床尚未搭建，请先在本目录执行 sudo bash lab4_topo.sh up。")
     sizes = [int(item) for item in args.sizes.split(",")]
     base = [sys.executable, str(Path(__file__).resolve()), "--cc", args.cc, "--port", str(args.port)]
     count = len(sizes) * args.trials + 1

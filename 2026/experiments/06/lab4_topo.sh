@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# Lab 6 用的副本，源自 2026/experiments/04/topo.sh，路径已改为本目录；reference/ 是 2026/experiments/02/reference 的副本。
-# --own 仍使用学生在 2026/experiments/02 里的 lsrd。
+# Lab 6 用的副本，源自课程仓库的 2026/experiments/04/topo.sh；reference/ 是 Lab 2 参考实现的副本。
+# 依赖的文件都在本目录，命令在本目录执行；--own DIR 改用 DIR（你的 Lab 2 目录）里自己的 lsrd。
 
 # ==============================================================================
 # Lab 4–7 共用实验床：2 spine × 4 leaf × 8 host 的 leaf-spine 迷你数据中心（完整版）
@@ -24,25 +24,25 @@ set -Eeuo pipefail
 # 资源登记在 /run/lab04，与 Lab 3（/run/lab03）、课堂脚本（/run/course05）互不混用。
 #
 # 用法（均从仓库根目录执行）：
-#   sudo bash 2026/experiments/06/lab4_topo.sh up [--own]        # 搭建；默认用 Lab 2 参考路由，--own 用自己的 lsrd
-#   sudo bash 2026/experiments/06/lab4_topo.sh check             # 数据平面自检与 12 条 ECMP 路由核对
-#   sudo bash 2026/experiments/06/lab4_topo.sh show              # 路由器地址与路由
-#   sudo bash 2026/experiments/06/lab4_topo.sh rate 50|100       # 切换全部 leaf–spine 档位（会重建这些端口）
-#   sudo bash 2026/experiments/06/lab4_topo.sh limit NS DEV MBIT # 只改一个端口的限速
-#   sudo bash 2026/experiments/06/lab4_topo.sh impair NS DEV ... # 把一个端口的叶子换成 netem，参数照写，如 delay 4ms
-#   sudo bash 2026/experiments/06/lab4_topo.sh clear [NS DEV]    # 恢复一个端口；不带参数时恢复全部端口并取消钉路
-#   sudo bash 2026/experiments/06/lab4_topo.sh status            # 列出偏离基线的端口与策略路由
-#   sudo bash 2026/experiments/06/lab4_topo.sh scenario NAME     # 加载命名场景（先恢复基线）；NAME 见 scenario_list
-#   sudo bash 2026/experiments/06/lab4_topo.sh blind [--seed N]  # 随机注入 1–2 项隐藏条件；blind reveal 看答案
-#   sudo bash 2026/experiments/06/lab4_topo.sh pin [HOST r5|r6]  # 按源地址钉路；不带参数时 a 经 r5、b 经 r6
-#   sudo bash 2026/experiments/06/lab4_topo.sh unpin             # 取消全部钉路
-#   sudo bash 2026/experiments/06/lab4_topo.sh down              # 拆除（幂等）
+#   sudo bash lab4_topo.sh up [--own DIR]    # 搭建；默认用 Lab 2 参考路由，--own DIR 用 DIR 里自己的 lsrd
+#   sudo bash lab4_topo.sh check             # 数据平面自检与 12 条 ECMP 路由核对
+#   sudo bash lab4_topo.sh show              # 路由器地址与路由
+#   sudo bash lab4_topo.sh rate 50|100       # 切换全部 leaf–spine 档位（会重建这些端口）
+#   sudo bash lab4_topo.sh limit NS DEV MBIT # 只改一个端口的限速
+#   sudo bash lab4_topo.sh impair NS DEV ... # 把一个端口的叶子换成 netem，参数照写，如 delay 4ms
+#   sudo bash lab4_topo.sh clear [NS DEV]    # 恢复一个端口；不带参数时恢复全部端口并取消钉路
+#   sudo bash lab4_topo.sh status            # 列出偏离基线的端口与策略路由
+#   sudo bash lab4_topo.sh scenario NAME     # 加载命名场景（先恢复基线）；NAME 见 scenario_list
+#   sudo bash lab4_topo.sh blind [--seed N]  # 随机注入 1–2 项隐藏条件；blind reveal 看答案
+#   sudo bash lab4_topo.sh pin [HOST r5|r6]  # 按源地址钉路；不带参数时 a 经 r5、b 经 r6
+#   sudo bash lab4_topo.sh unpin             # 取消全部钉路
+#   sudo bash lab4_topo.sh down              # 拆除（幂等）
 # ==============================================================================
 
-L4_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)
+L4_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 L4_STATE=/run/lab04
 L4_RESULTS=/tmp/lab04-results
-L4_PY="$L4_ROOT/2026/experiments/06/.venv/bin/python"
+L4_PY="$L4_DIR/.venv/bin/python"
 L4_ROUTERS=(r1 r2 r3 r4 r5 r6)
 L4_HOSTS=(h1a h1b h2a h2b h3a h3b h4a h4b)
 
@@ -208,8 +208,8 @@ PY
 }
 
 start_lsrd() {
-  local directory="$L4_ROOT/2026/experiments/06/reference" rid opts
-  [[ "${1:-}" == --own ]] && directory="$L4_ROOT/2026/experiments/02"
+  local directory="$L4_DIR/reference" rid opts
+  [[ "${1:-}" == --own ]] && directory="$2"
   for rid in 1 2 3 4 5 6; do
     opts=(--id "$rid" --ecmp \
       --pidfile "$L4_STATE/r$rid.pid" --sock "$L4_STATE/r$rid.sock" --log "$L4_RESULTS/r$rid.log")
@@ -278,9 +278,14 @@ build_fabric() {
 
 up() {
   local ns implementation='Lab 2 参考实现（本目录 reference/）'
-  [[ "${1:-}" == "" || "${1:-}" == --own ]] || die "未知参数 $1；用法 lab4_topo.sh up [--own]。"
-  [[ "${1:-}" == --own ]] && implementation='自己的 lsrd（02/lsrd）'
-  [[ -x "$L4_PY" ]] || die '先执行 uv sync --project 2026/experiments/06 --frozen。'
+  if [[ "${1:-}" == --own ]]; then
+    [[ -d "${2:-}/lsrd" ]] || die '用法：lab4_topo.sh up --own DIR，DIR 是你的 Lab 2 目录，下面要有 lsrd/。'
+    set -- --own "$(cd "$2" && pwd)"
+    implementation="自己的 lsrd（$2/lsrd）"
+  elif [[ -n "${1:-}" ]]; then
+    die "未知参数 $1；用法 lab4_topo.sh up [--own DIR]。"
+  fi
+  [[ -x "$L4_PY" ]] || die '先在本目录执行 uv sync --frozen。'
   down
   for ns in "${L4_ROUTERS[@]}" "${L4_HOSTS[@]}"; do
     if [[ -e "/run/netns/$ns" ]]; then
@@ -301,7 +306,7 @@ up() {
     if ready >/dev/null 2>&1; then
       trap - ERR
       echo "[*] 路由：$implementation。6 台路由器全部 Full；r1 的跨机架路由有两个下一跳。"
-      echo '[*] 下一步自检：sudo bash 2026/experiments/06/lab4_topo.sh check'
+      echo '[*] 下一步自检：sudo bash lab4_topo.sh check'
       return
     fi
     sleep 0.3
@@ -590,7 +595,7 @@ blind() {
   echo "[*] 已注入隐藏条件（seed $seed）。只用端到端测量定位；完成后 lab4_topo.sh blind reveal，再 scenario clear。"
 }
 
-[[ "$EUID" -eq 0 ]] || { echo '请从仓库根目录用 sudo bash 2026/experiments/06/lab4_topo.sh 执行。' >&2; exit 1; }
+[[ "$EUID" -eq 0 ]] || { echo '请在本目录用 sudo bash lab4_topo.sh 执行。' >&2; exit 1; }
 case "${1:-up}" in
   up) if [[ "$#" -gt 0 ]]; then shift; fi; up "$@" ;;
   down) down ;;
@@ -645,7 +650,7 @@ case "${1:-up}" in
     pin "$@"
     ;;
   *)
-    echo '用法：lab4_topo.sh [up [--own]|check|show|rate 50|100|limit|impair|clear|status|scenario|blind|pin|unpin|down]' >&2
+    echo '用法：lab4_topo.sh [up [--own DIR]|check|show|rate 50|100|limit|impair|clear|status|scenario|blind|pin|unpin|down]' >&2
     exit 2
     ;;
 esac
