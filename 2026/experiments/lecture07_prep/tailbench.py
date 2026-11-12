@@ -1,6 +1,6 @@
 """长尾延迟测量：在一台 host 的 namespace 里运行，向后端扇出请求并统计延迟。
 
-  sudo ip netns exec h1a python3 2026/experiments/lecture07_prep/tailbench.py --fanout 10 --rounds 300 --slow-prob 0.01
+  sudo ip netns exec h1a python3 tailbench.py --fanout 10 --rounds 300 --slow-prob 0.01
 
 一轮同时向 N 个分片发请求，全部回来才算完成。输出轮次延迟、单请求延迟、备份请求比例和按主副本的延迟，
 并把完整样本写入 /tmp/lab05-results/<label>.json。只用 Python 标准库。

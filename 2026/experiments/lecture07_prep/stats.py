@@ -1,8 +1,8 @@
 """课堂统计助手：把 ping 输出或逐行数字变成样本统计量。
 
-  ping … | python3 2026/experiments/lecture07_prep/stats.py            # 分位数、均值、总体标准差
-  ping … | python3 2026/experiments/lecture07_prep/stats.py --jitter   # 另算相邻差（IPDV）与相对最小值（PDV）
-  printf '95.1\\n95.4\\n' | python3 2026/experiments/lecture07_prep/stats.py --ci   # 另算均值的 95% t 区间
+  ping … | python3 stats.py            # 分位数、均值、总体标准差
+  ping … | python3 stats.py --jitter   # 另算相邻差（IPDV）与相对最小值（PDV）
+  printf '95.1\\n95.4\\n' | python3 stats.py --ci   # 另算均值的 95% t 区间
 
 ping 输出按 icmp_seq 排序后取 time= 的值；否则每行取一个数。
 分位数用最近秩法：第 p 分位数取从小到大第 ceil(p·n) 个样本。换一种分位数算法，小样本的结果会不同，

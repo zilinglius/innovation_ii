@@ -79,7 +79,7 @@
 
 ### Lab 5　长尾延迟与对冲请求
 
-指导书：[`05/README.md`](05/README.md)（[阅读版](05/README.html)）　｜　代码：`05/tail.sh`（启停后端、队列与大象流、计数器）、`05/backend.py`、`05/tailbench.py`（测量入口）、`05/compare.py`（结果表）、`05/bulk.py`（定时大流，第 07 讲用）、`05/tailkit/`（给定协议、扇出与对冲的执行，学生写 6 个 TODO）、`05/tests/`（离线测试）
+指导书：[`05/README.md`](05/README.md)（[阅读版](05/README.html)）　｜　代码：`05/tail.sh`（启停后端、队列与大象流、计数器；2026-11-11 起用本目录自带的 `lab4_topo.sh` 与 `reference/`）、`05/backend.py`、`05/tailbench.py`（测量入口）、`05/compare.py`（结果表）、`05/bulk.py`（定时大流，第 07 讲用）、`05/tailkit/`（给定协议、扇出与对冲的执行，学生写 6 个 TODO）、`05/tests/`（离线测试）
 
 第 07 讲课上用固定延迟的对冲比较了三种慢；本实验把放大规律写成能对账的模型，并实现更好的对冲策略。
 
@@ -111,16 +111,17 @@
 
 ## 讲次副本目录
 
-从第 07 讲起，每讲课前准备与课上用到的脚本都复制到该讲自己的目录，学生只在一个目录里操作；Lab 6 也自带一套实验床副本。**第 08 讲起的讲次目录与 Lab 6 目录以压缩包分发，可以单独运行**：脚本按自己所在的目录找其他文件，不依赖仓库根目录，讲义与指导书的命令写成先 `cd` 进入该目录，再用短路径执行（如 `sudo bash lab4_topo.sh up`）。`lecture07_prep/` 仍按仓库根目录的路径写，第 07 讲已经上过，暂未改动。
+从第 07 讲起，每讲课前准备与课上用到的脚本都复制到该讲自己的目录，学生只在一个目录里操作；Lab 5、Lab 6 也各自带一套实验床副本。**第 07 讲起的讲次目录与 Lab 5 起的实验目录以压缩包分发，可以单独运行**：脚本按自己所在的目录找其他文件，不依赖仓库根目录，讲义与指导书的命令写成先 `cd` 进入该目录，再用短路径执行（如 `sudo bash lab4_topo.sh up`）。第 07 讲与 Lab 5 已经发出，2026-11-11 也按同一方式改写，需要通知学生使用新版。
 
 | 目录 | 内容 | 来源 |
 | --- | --- | --- |
-| `lecture07_prep/` | 第 07 讲：清理同名节点用的 `lab3_classroom.sh`、`lab3_topo.sh` 及其依赖的 `transfer.py`、`overlay_down.sh`，`lab4_topo.sh`、`reference/`，以及 `lab5_tail.sh`、`backend.py`、`tailbench.py`、`compare.py`、`bulk.py`、`stats.py`、`tailkit/`（TODO 留白）；命令从仓库根目录执行 | `03/`、`04/`、`02/reference/`、`05/` |
+| `lecture07_prep/` | 第 07 讲：清理同名节点用的 `lab3_classroom.sh`、`lab3_topo.sh` 及其依赖的 `transfer.py`、`overlay_down.sh`，`lab4_topo.sh`、`reference/`，以及 `lab5_tail.sh`、`backend.py`、`tailbench.py`、`compare.py`、`bulk.py`、`stats.py`、`tailkit/`（TODO 留白）；在本目录执行 | `03/`、`04/`、`02/reference/`、`05/` |
 | `lecture08_prep/` | 第 08 讲：同上的清理脚本、`lab4_topo.sh`、`reference/`，以及 `jobrun.py`、`job.py`、`timeline.py`、`curve.py`、`jobkit/`（TODO 留白）；在本目录执行 | `03/`、`04/`、`02/reference/`、`06/` |
 | `lecture09_prep/` | 第 09 讲：同 `lecture08_prep/`，另加 `compare.py`；`jobkit/ring.py` 换成 Ring 的流量替身；在本目录执行 | `03/`、`04/`、`02/reference/`、`06/` |
+| `05/` | Lab 5 自带：同上的清理脚本、`lab4_topo.sh`、`reference/`；`tail.sh` 用本目录的 `lab4_topo.sh`；在本目录执行 | `03/`、`04/`、`02/reference/` |
 | `06/` | Lab 6 自带：同上的清理脚本、`lab4_topo.sh`、`reference/`；在本目录执行 | `03/`、`04/`、`02/reference/` |
 
-可单独运行的三个目录（`lecture08_prep/`、`lecture09_prep/`、`06/`）与源文件的差异：
+可单独运行的五个目录（`lecture07_prep/`、`lecture08_prep/`、`lecture09_prep/`、`05/`、`06/`）与源文件的差异：
 
 - 路径与提示文字：脚本用 `XX_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)` 定位本目录，提示与用法都写短路径。
 - `lab4_topo.sh up --own DIR`：改用 DIR（学生自己的 Lab 2 目录，下面要有 `lsrd/`）里的 lsrd；源文件 `04/topo.sh` 的 `--own` 不带参数，固定用 `02/`。
@@ -128,7 +129,7 @@
 - `lecture08_prep/`、`lecture09_prep/` 的 `jobrun.py` 遇到 `--compute numpy` 直接报错，指向 Lab 6 目录（课前不必下载 numpy）。
 - `lecture09_prep/jobkit/ring.py` 是课堂用的 Ring 流量替身，步数、每步字节数与合并次数同真实 Ring，但结果不正确，也不提供 `--order topo`；相应地该目录的 `jobrun.py` 不核对 Ring 的结果，只打印 `[替身]` 提示。这样第 09 讲课上可以观察 Ring 的时间与流量，而 Lab 6 的 TODO 5、7 仍保持留白。
 
-修改 `04/topo.sh`、`03/` 的脚本、`03/transfer.py` 或 `02/reference/` 时，要同步上面所有副本（保留上述差异）；修改 `06/` 中 `jobrun.py`、`job.py`、`timeline.py`、`curve.py`、`compare.py` 或 `jobkit/` 的给定部分时，同步 `lecture08_prep/` 与 `lecture09_prep/`。三个可单独运行的目录之间，`lab3_classroom.sh`、`lab3_topo.sh`、`lab4_topo.sh`、`overlay_down.sh` 除文件头的讲次字样外逐字相同；`reference/`、`transfer.py` 与源文件逐字相同，`jobkit/` 除 `lecture09_prep/jobkit/ring.py` 外也逐字相同，可直接用 `diff -r` 核对。验证时把目录复制到仓库外，在目录里按讲义原样执行。
+修改 `04/topo.sh`、`03/` 的脚本、`03/transfer.py` 或 `02/reference/` 时，要同步上面所有副本（保留上述差异）；修改 `05/` 中 `tail.sh`、`backend.py`、`tailbench.py`、`compare.py`、`bulk.py` 或 `tailkit/` 的给定部分时，同步 `lecture07_prep/`（`tail.sh` 的副本叫 `lab5_tail.sh`）；修改 `06/` 中 `jobrun.py`、`job.py`、`timeline.py`、`curve.py`、`compare.py` 或 `jobkit/` 的给定部分时，同步 `lecture08_prep/` 与 `lecture09_prep/`。五个可单独运行的目录之间，`lab3_classroom.sh`、`lab3_topo.sh`、`lab4_topo.sh`、`overlay_down.sh` 除文件头的讲次字样（第 07 讲的 `lab4_topo.sh` 多一句 `stats.py` 来源）外逐字相同；`reference/`、`transfer.py` 与源文件逐字相同，`jobkit/` 除 `lecture09_prep/jobkit/ring.py` 外也逐字相同，可直接用 `diff -r` 核对。验证时把目录复制到仓库外，在目录里按讲义原样执行。
 
 ## 已知风险
 

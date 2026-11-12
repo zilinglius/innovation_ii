@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# 第 07 讲用的副本，源自 2026/experiments/03/classroom.sh，路径已改为本目录（transfer.py 同样是副本）。
-# 不带 --reference 时仍使用学生在 2026/experiments/02 里的 lsrd。
+# 第 07 讲用的副本，源自课程仓库的 2026/experiments/03/classroom.sh，只用于清理同名节点（down）；命令在本目录执行。
+# transfer.py 同样是副本；本副本的 up 只支持 --reference（本目录 reference/）。
 
 # 第五讲课堂观察：一张 2 spine × 4 leaf × 8 host 拓扑，复用 Lab 2 的 lsrd。
 # leaf r1–r4：brN / 10.0.N.1，host hNa/hNb：.11/.12，接口 eth0。
 # leaf–spine 第 k 条链路：10.1.k.0/30，leaf .1、spine .2，k = 2*(N-1)+(S-5)。
 # 只清理 /run/course05 登记的资源；与 Lab 1/2 重名时拒绝搭建。
-C5_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)
+C5_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 C5_STATE=/run/course05
 C5_RESULTS=/tmp/course05-results
-C5_PY="$C5_ROOT/2026/experiments/lecture07_prep/.venv/bin/python"
-C5_TRANSFER_PY="$C5_ROOT/2026/experiments/lecture07_prep/.venv/bin/python"
-C5_TRANSFER="$C5_ROOT/2026/experiments/lecture07_prep/transfer.py"
+C5_PY="$C5_DIR/.venv/bin/python"
+C5_TRANSFER_PY="$C5_DIR/.venv/bin/python"
+C5_TRANSFER="$C5_DIR/transfer.py"
 C5_BG=()
 C5_PINNED=0
 C5_RESTORE_A=0
@@ -119,11 +119,11 @@ PY
 
 up() {
   local implementation=lsrd rack spine ns iface host octet k rid
-  [[ "${1:-}" == --reference ]] && implementation=reference/lsrd
-  local directory="$C5_ROOT/2026/experiments/02"
-  [[ "$implementation" == reference/lsrd ]] && directory="$C5_ROOT/2026/experiments/lecture07_prep/reference"
-  [[ -x "$C5_PY" ]] || { echo '先执行 uv sync --project 2026/experiments/lecture07_prep --frozen。' >&2; exit 1; }
-  [[ -x "$C5_TRANSFER_PY" ]] || { echo '先执行 uv sync --project 2026/experiments/lecture07_prep --frozen。' >&2; exit 1; }
+  [[ "${1:-}" == --reference ]] || { echo '本目录的副本只用于 down 清理同名节点；第 05 讲课堂网络请用 up --reference。' >&2; exit 2; }
+  implementation=reference/lsrd
+  local directory="$C5_DIR/reference"
+  [[ -x "$C5_PY" ]] || { echo '先在本目录执行 uv sync --frozen。' >&2; exit 1; }
+  [[ -x "$C5_TRANSFER_PY" ]] || { echo '先在本目录执行 uv sync --frozen。' >&2; exit 1; }
   down
   for ns in r1 r2 r3 r4 r5 r6 h1a h1b h2a h2b h3a h3b h4a h4b; do
     if [[ -e "/run/netns/$ns" ]]; then
@@ -451,7 +451,7 @@ mtu() {
   echo '[观察] 1422+8+20=1450 可发送；再加 1 B 被源租户接口的 MTU 拒绝，这不是远端丢包。'
 }
 
-[[ "$EUID" -eq 0 ]] || { echo '请从仓库根目录用 sudo bash 2026/experiments/lecture07_prep/lab3_classroom.sh 执行。' >&2; exit 1; }
+[[ "$EUID" -eq 0 ]] || { echo '请在本目录用 sudo bash lab3_classroom.sh 执行。' >&2; exit 1; }
 case "${1:-up}" in
   up) up "${2:-}" ;;
   down) down ;;

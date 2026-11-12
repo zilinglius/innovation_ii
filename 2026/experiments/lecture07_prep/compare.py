@@ -1,8 +1,8 @@
 """把 tailbench.py 保存的结果排成一张表（给定）。只读 /tmp/lab05-results/ 下的文件，不发送任何报文。
 
-  python3 2026/experiments/lecture07_prep/compare.py a-off a-on b-off b-on
-  python3 2026/experiments/lecture07_prep/compare.py --predict --fast 8 --slow 108 amp-n1 amp-n10 amp-n100
-  python3 2026/experiments/lecture07_prep/compare.py --tail 12 loss1
+  python3 compare.py a-off a-on b-off b-on
+  python3 compare.py --predict --fast 8 --slow 108 amp-n1 amp-n10 amp-n100
+  python3 compare.py --tail 12 loss1
 
 “慢轮”是轮次延迟超过 --slow-threshold 毫秒的轮。--predict 用 TODO 1、3 算出每一行的理论慢轮比例和
 分位数预测；TODO 没写时只显示实测。--tail 另外列出最慢的若干轮，用来看延迟分布有没有断层。

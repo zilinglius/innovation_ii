@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# 第 07 讲用的副本，源自 2026/experiments/05/tail.sh，路径已改为本目录。
-# backend.py、tailbench.py、compare.py、bulk.py、tailkit/ 也是 2026/experiments/05 的副本，tailkit 的 TODO 保持留白。
+# 第 07 讲用的副本，源自课程仓库的 2026/experiments/05/tail.sh；依赖的文件都在本目录，命令在本目录执行。
+# backend.py、tailbench.py、compare.py、bulk.py、tailkit/ 也是 Lab 5 的副本，tailkit 的 TODO 保持留白。
 
 # ==============================================================================
 # Lab 5 辅助脚本：在完整实验床（lab4_topo.sh）上启停后端、制造共享队列与大象流
@@ -11,20 +11,19 @@ set -Eeuo pipefail
 # 后端：除运行前端的 h1a 外，其余 7 台 host 各运行一个 backend.py，监听 7000 端口。
 # 算法：后端与大象流都显式指定 cubic，不依赖系统默认值。
 #
-# 用法（从仓库根目录执行）：
-#   sudo bash 2026/experiments/lecture07_prep/lab5_tail.sh up [CC]                  # 启动 7 个后端（幂等），算法默认 cubic
-#   sudo bash 2026/experiments/lecture07_prep/lab5_tail.sh check                    # 往返验证每个后端
-#   sudo bash 2026/experiments/lecture07_prep/lab5_tail.sh queue NS DEV MBIT LIMIT  # 把端口改成指定速率 + pfifo 单队列
-#   sudo bash 2026/experiments/lecture07_prep/lab5_tail.sh elephant SRC DST SECONDS # 启动一条 SRC→DST 的 iperf3 大象流
-#   sudo bash 2026/experiments/lecture07_prep/lab5_tail.sh backlog NS DEV           # 查看端口队列的积压与丢包计数
-#   sudo bash 2026/experiments/lecture07_prep/lab5_tail.sh tcpstat                  # 8 台 host 的重传、超时、尾部丢失探测累计值
-#   sudo bash 2026/experiments/lecture07_prep/lab5_tail.sh clear                    # 停大象流，全部端口恢复基线
-#   sudo bash 2026/experiments/lecture07_prep/lab5_tail.sh down                     # 停后端与大象流（幂等），不拆实验床
+# 用法（在本目录执行）：
+#   sudo bash lab5_tail.sh up [CC]                  # 启动 7 个后端（幂等），算法默认 cubic
+#   sudo bash lab5_tail.sh check                    # 往返验证每个后端
+#   sudo bash lab5_tail.sh queue NS DEV MBIT LIMIT  # 把端口改成指定速率 + pfifo 单队列
+#   sudo bash lab5_tail.sh elephant SRC DST SECONDS # 启动一条 SRC→DST 的 iperf3 大象流
+#   sudo bash lab5_tail.sh backlog NS DEV           # 查看端口队列的积压与丢包计数
+#   sudo bash lab5_tail.sh tcpstat                  # 8 台 host 的重传、超时、尾部丢失探测累计值
+#   sudo bash lab5_tail.sh clear                    # 停大象流，全部端口恢复基线
+#   sudo bash lab5_tail.sh down                     # 停后端与大象流（幂等），不拆实验床
 # ==============================================================================
 
-L5_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)
-L5_DIR="$L5_ROOT/2026/experiments/lecture07_prep"
-L5_TOPO="$L5_ROOT/2026/experiments/lecture07_prep/lab4_topo.sh"
+L5_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+L5_TOPO="$L5_DIR/lab4_topo.sh"
 L5_STATE=/run/lab05
 L5_RESULTS=/tmp/lab05-results
 L5_BACKENDS=(h1b h2a h2b h3a h3b h4a h4b)
@@ -37,7 +36,7 @@ die() {
 }
 
 require_topo() {
-  [[ -f /run/lab04/namespaces ]] || die '实验床尚未搭建，请先执行 sudo bash 2026/experiments/lecture07_prep/lab4_topo.sh up。'
+  [[ -f /run/lab04/namespaces ]] || die '实验床尚未搭建，请先在本目录执行 sudo bash lab4_topo.sh up。'
 }
 
 host_ip() {

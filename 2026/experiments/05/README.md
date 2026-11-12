@@ -40,6 +40,8 @@
 
 ## 三、目录与资源
 
+本实验以一个目录（压缩包）分发，下表的文件都在这个目录里。脚本按自己所在的目录找其他文件，**本指导书的所有命令都在 Lab 5 目录里执行**，新开终端时先 `cd` 进去。2026-11-11 起本目录自带完整实验床（`lab4_topo.sh` 与 `reference/`），不再需要 Lab 2、Lab 4 的目录；如果你已经在旧版目录里改了 `tailkit/`，把它复制到新目录即可，已有的结果文件仍在 `/tmp/lab05-results`。
+
 ### 3.1 文件
 
 | 文件 | 说明 |
@@ -54,10 +56,12 @@
 | `tailkit/policy.py` | **TODO 4、5**：自适应延迟、对冲预算 |
 | `tailkit/windowed.py` | **TODO 6**：限制在途请求数 |
 | `tests/` | 离线测试，不需要 root，也不需要实验床 |
+| `lab4_topo.sh`、`reference/` | 完整实验床与 Lab 2 参考路由（给定），是 Lab 4 `topo.sh` 与 Lab 2 参考实现的副本；`up --own DIR` 可改用 DIR（你的 Lab 2 目录）里自己的 lsrd |
+| `lab3_classroom.sh`、`lab3_topo.sh`、`overlay_down.sh`、`transfer.py` | 第 05 讲课堂脚本与 Lab 3 脚本的副本（给定），本实验只用它们的 `down` 清理同名节点，`up` 只支持 `--reference` |
 
 ### 3.2 实验床与测量口径
 
-实验床是 [`04/topo.sh`](../04/topo.sh)，与第 06、07 讲相同：2 spine（`r5`、`r6`）× 4 leaf（`r1`–`r4`）× 8 host（`h1a`–`h4b`），host 接入口与 leaf–spine 链路都是 100 Mbit/s。前端固定在 h1a，后端在另外 7 台 host 上。
+实验床是本目录的 [`lab4_topo.sh`](lab4_topo.sh)（Lab 4 实验床脚本的副本），与第 06、07 讲相同：2 spine（`r5`、`r6`）× 4 leaf（`r1`–`r4`）× 8 host（`h1a`–`h4b`），host 接入口与 leaf–spine 链路都是 100 Mbit/s。前端固定在 h1a，后端在另外 7 台 host 上。
 
 | 量 | 定义 |
 | :--- | :--- |
@@ -73,12 +77,12 @@
 ### 3.3 骨架与测试
 
 ```bash
-# 1. 准备 Python 环境（路由器复用 Lab 2 的环境）
-uv sync --project 2026/experiments/02 --frozen
-uv sync --project 2026/experiments/05 --frozen
+# 1. 进入 Lab 5 目录（压缩包解压后的目录，路径换成你自己的），准备 Python 环境（实验床的路由器与本实验的工具共用）
+cd ~/lab05
+uv sync --frozen
 
 # 2. 离线测试：骨架原样应为 25 个测试中 4 个通过、21 个报错
-(cd 2026/experiments/05 && uv run --frozen python -m unittest 2>&1 | tail -1)
+uv run --frozen python -m unittest 2>&1 | tail -1
 ```
 
 通过的 4 个是给定部分的环回测试。TODO 对应的测试分别在 `tests.test_predict`（TODO 1–3）、`tests.test_policy`（TODO 4、5）与 `tests.test_runner.WindowedCases`（TODO 6）。可以只跑一组，例如 `uv run --frozen python -m unittest tests.test_predict`（在实验目录下）。
@@ -95,20 +99,20 @@ uv sync --project 2026/experiments/05 --frozen
 
 ```bash
 # 3. 清理其他实验的网络（节点重名），搭完整实验床并自检
-sudo bash 2026/experiments/03/classroom.sh down
-sudo bash 2026/experiments/03/topo.sh down
-sudo bash 2026/experiments/04/topo.sh up
-sudo bash 2026/experiments/04/topo.sh check
+sudo bash lab3_classroom.sh down
+sudo bash lab3_topo.sh down
+sudo bash lab4_topo.sh up
+sudo bash lab4_topo.sh check
 
 # 4. 在 7 台 host 上启动后端，做一次往返验证
-sudo bash 2026/experiments/05/tail.sh up
-sudo bash 2026/experiments/05/tail.sh check
+sudo bash tail.sh up
+sudo bash tail.sh check
 
 # 5. 噪声底：p=0，7 个扇出，每个 300 轮（约 1 分钟）
 for n in 1 2 5 10 20 50 100; do
-  sudo ip netns exec h1a python3 2026/experiments/05/tailbench.py --fanout "$n" --rounds 300 --label base-n"$n" > /dev/null
+  sudo ip netns exec h1a python3 tailbench.py --fanout "$n" --rounds 300 --label base-n"$n" > /dev/null
 done
-python3 2026/experiments/05/compare.py base-n1 base-n2 base-n5 base-n10 base-n20 base-n50 base-n100
+python3 compare.py base-n1 base-n2 base-n5 base-n10 base-n20 base-n50 base-n100
 ```
 
 `topo.sh check` 与 `tail.sh check` 应分别打印 `[OK]`。
@@ -143,15 +147,15 @@ base-n100      100     15.6     19.3     24.8    0.0%       0.0%        0
 
 ```bash
 # 6. 跳变点（TODO 2）
-(cd 2026/experiments/05 && python3 -c "from tailkit.predict import knee; print({q: knee(0.01, q) for q in (0.5, 0.9, 0.99)})")
+python3 -c "from tailkit.predict import knee; print({q: knee(0.01, q) for q in (0.5, 0.9, 0.99)})"
 
 # 7. 每个 N 跑 1000 轮，约 3 分钟
 for n in 1 2 5 10 20 50 100; do
-  sudo ip netns exec h1a python3 2026/experiments/05/tailbench.py --fanout "$n" --rounds 1000 --slow-prob 0.01 --label amp-n"$n" > /dev/null
+  sudo ip netns exec h1a python3 tailbench.py --fanout "$n" --rounds 1000 --slow-prob 0.01 --label amp-n"$n" > /dev/null
 done
 
 # 8. 对账：--fast、--slow 填你在任务 1 测到的典型值（样例用 8 与 108）
-python3 2026/experiments/05/compare.py --predict --fast 8 --slow 108 amp-n1 amp-n2 amp-n5 amp-n10 amp-n20 amp-n50 amp-n100
+python3 compare.py --predict --fast 8 --slow 108 amp-n1 amp-n2 amp-n5 amp-n10 amp-n20 amp-n50 amp-n100
 ```
 
 **实测样例**（使用了补全 TODO 的版本）：
@@ -187,19 +191,19 @@ amp-n100       100    111.0    118.2    124.4   64.6%       0.0%        0
 
 ```bash
 # 9. 注入丢包；每次运行前后读计数器
-sudo bash 2026/experiments/04/topo.sh impair r1 r1-h1a loss 2%
-sudo bash 2026/experiments/05/tail.sh tcpstat
-sudo ip netns exec h1a python3 2026/experiments/05/tailbench.py --fanout 1 --primaries h3a --rounds 1000 --label loss-small | sed -n 1,2p
-sudo bash 2026/experiments/05/tail.sh tcpstat
-sudo ip netns exec h1a python3 2026/experiments/05/tailbench.py --fanout 1 --primaries h3a --rounds 300 --resp-bytes 64000 --label loss-large | sed -n 1,2p
-sudo bash 2026/experiments/05/tail.sh tcpstat
+sudo bash lab4_topo.sh impair r1 r1-h1a loss 2%
+sudo bash tail.sh tcpstat
+sudo ip netns exec h1a python3 tailbench.py --fanout 1 --primaries h3a --rounds 1000 --label loss-small | sed -n 1,2p
+sudo bash tail.sh tcpstat
+sudo ip netns exec h1a python3 tailbench.py --fanout 1 --primaries h3a --rounds 300 --resp-bytes 64000 --label loss-large | sed -n 1,2p
+sudo bash tail.sh tcpstat
 
 # 10. 恢复端口，再测无丢包的 64 KB 作为对照
-sudo bash 2026/experiments/04/topo.sh clear r1 r1-h1a
-sudo ip netns exec h1a python3 2026/experiments/05/tailbench.py --fanout 1 --primaries h3a --rounds 300 --resp-bytes 64000 --label noloss-large | sed -n 1,2p
+sudo bash lab4_topo.sh clear r1 r1-h1a
+sudo ip netns exec h1a python3 tailbench.py --fanout 1 --primaries h3a --rounds 300 --resp-bytes 64000 --label noloss-large | sed -n 1,2p
 
 # 11. 排成表，并列出最慢的 12 轮
-python3 2026/experiments/05/compare.py --tail 12 loss-small loss-large noloss-large
+python3 compare.py --tail 12 loss-small loss-large noloss-large
 ```
 
 **实测样例**（省略了脚本的 `[*]` 提示行；计数器是累计值）：
@@ -229,19 +233,19 @@ noloss-large     1     11.0     11.3     12.1    0.0%       0.0%        0
 
 ```bash
 # 12. fq：只限速，不换队列
-sudo bash 2026/experiments/04/topo.sh limit r1 r1-h1a 50
-sudo bash 2026/experiments/05/tail.sh elephant h2a h1a 30
+sudo bash lab4_topo.sh limit r1 r1-h1a 50
+sudo bash tail.sh elephant h2a h1a 30
 sleep 3
-sudo ip netns exec h1a python3 2026/experiments/05/tailbench.py --fanout 10 --rounds 300 --primaries h3a,h3b --label q-fq > /dev/null
-sudo bash 2026/experiments/05/tail.sh clear
+sudo ip netns exec h1a python3 tailbench.py --fanout 10 --rounds 300 --primaries h3a,h3b --label q-fq > /dev/null
+sudo bash tail.sh clear
 
 # 13. pfifo：同样的速率和大象流
-sudo bash 2026/experiments/05/tail.sh queue r1 r1-h1a 50 300
-sudo bash 2026/experiments/05/tail.sh elephant h2a h1a 30
+sudo bash tail.sh queue r1 r1-h1a 50 300
+sudo bash tail.sh elephant h2a h1a 30
 sleep 3
-sudo ip netns exec h1a python3 2026/experiments/05/tailbench.py --fanout 10 --rounds 300 --primaries h3a,h3b --label q-pfifo > /dev/null
-sudo bash 2026/experiments/05/tail.sh clear
-python3 2026/experiments/05/compare.py q-fq q-pfifo
+sudo ip netns exec h1a python3 tailbench.py --fanout 10 --rounds 300 --primaries h3a,h3b --label q-pfifo > /dev/null
+sudo bash tail.sh clear
+python3 compare.py q-fq q-pfifo
 ```
 
 **实测样例**：
@@ -264,7 +268,7 @@ q-pfifo         10     67.0     75.5     79.2  100.0%       0.0%        0
 
 ```bash
 # 14. 固定条件：N=10，主副本 h3a、h3b，备份副本 h4a、h4b
-run() { sudo ip netns exec h1a python3 2026/experiments/05/tailbench.py --fanout 10 --rounds 300 --primaries h3a,h3b --backups h4a,h4b "$@"; }
+run() { sudo ip netns exec h1a python3 tailbench.py --fanout 10 --rounds 300 --primaries h3a,h3b --backups h4a,h4b "$@"; }
 ```
 
 #### 任务 4：对冲延迟的取舍
@@ -276,7 +280,7 @@ run() { sudo ip netns exec h1a python3 2026/experiments/05/tailbench.py --fanout
 for d in 3 5 6 8 12 20 50; do
   run --slow-prob 0.01 --hedge-ms "$d" --label a-d"$d" > /dev/null
 done
-python3 2026/experiments/05/compare.py a-d3 a-d5 a-d6 a-d8 a-d12 a-d20 a-d50
+python3 compare.py a-d3 a-d5 a-d6 a-d8 a-d12 a-d20 a-d50
 ```
 
 **实测样例**：
@@ -315,27 +319,27 @@ a-d50           10      8.0     56.9     59.4   10.3%       1.1%       32
 run --slow-prob 0.01 --hedge-ms 12 --label a-fix > /dev/null
 run --slow-prob 0.01 --adaptive 0.95 --label a-ad > /dev/null
 run --slow-prob 0.01 --hedge-ms 12 --budget 0.05 --label a-bud > /dev/null
-python3 2026/experiments/05/compare.py a-fix a-ad a-bud
+python3 compare.py a-fix a-ad a-bud
 
 # 17. 场景 B：一台后端的路径堵塞
-sudo bash 2026/experiments/05/tail.sh queue r3 r3-h3a 50 300
-sudo bash 2026/experiments/05/tail.sh elephant h2a h3a 70
+sudo bash tail.sh queue r3 r3-h3a 50 300
+sudo bash tail.sh elephant h2a h3a 70
 sleep 3
 run --hedge-ms 12 --label b-fix > /dev/null
 run --adaptive 0.95 --label b-ad > /dev/null
 run --hedge-ms 12 --budget 0.05 --label b-bud > /dev/null
-sudo bash 2026/experiments/05/tail.sh clear
-python3 2026/experiments/05/compare.py b-fix b-ad b-bud
+sudo bash tail.sh clear
+python3 compare.py b-fix b-ad b-bud
 
 # 18. 场景 C：前端自己的入口堵塞
-sudo bash 2026/experiments/05/tail.sh queue r1 r1-h1a 50 300
-sudo bash 2026/experiments/05/tail.sh elephant h2a h1a 80
+sudo bash tail.sh queue r1 r1-h1a 50 300
+sudo bash tail.sh elephant h2a h1a 80
 sleep 3
 run --hedge-ms 12 --label c-fix > /dev/null
 run --adaptive 0.95 --label c-ad > /dev/null
 run --hedge-ms 12 --budget 0.05 --label c-bud > /dev/null
-sudo bash 2026/experiments/05/tail.sh clear
-python3 2026/experiments/05/compare.py c-fix c-ad c-bud
+sudo bash tail.sh clear
+python3 compare.py c-fix c-ad c-bud
 ```
 
 **实测样例**（使用了补全 TODO 的版本）：
@@ -371,19 +375,19 @@ c-bud           10     71.1     76.9     79.1  100.0%       5.0%        0
 
 ```bash
 # 19. 浅队列，5 个窗口；每次运行前读计数器，相邻两次相减即增量
-sudo bash 2026/experiments/05/tail.sh queue r1 r1-h1a 100 30
+sudo bash tail.sh queue r1 r1-h1a 100 30
 for k in 20 10 5 2 1; do
-  sudo bash 2026/experiments/05/tail.sh tcpstat
-  sudo ip netns exec h1a python3 2026/experiments/05/tailbench.py --fanout 20 --base-ms 1 --resp-bytes 64000 --rounds 100 --max-inflight "$k" --label win-"$k" > /dev/null
+  sudo bash tail.sh tcpstat
+  sudo ip netns exec h1a python3 tailbench.py --fanout 20 --base-ms 1 --resp-bytes 64000 --rounds 100 --max-inflight "$k" --label win-"$k" > /dev/null
 done
-sudo bash 2026/experiments/05/tail.sh tcpstat
-sudo bash 2026/experiments/05/tail.sh clear
+sudo bash tail.sh tcpstat
+sudo bash tail.sh clear
 
 # 20. 对照：深队列，不限制窗口
-sudo bash 2026/experiments/05/tail.sh queue r1 r1-h1a 100 1000
-sudo ip netns exec h1a python3 2026/experiments/05/tailbench.py --fanout 20 --base-ms 1 --resp-bytes 64000 --rounds 100 --label win-deep > /dev/null
-sudo bash 2026/experiments/05/tail.sh clear
-python3 2026/experiments/05/compare.py win-deep win-20 win-10 win-5 win-2 win-1
+sudo bash tail.sh queue r1 r1-h1a 100 1000
+sudo ip netns exec h1a python3 tailbench.py --fanout 20 --base-ms 1 --resp-bytes 64000 --rounds 100 --label win-deep > /dev/null
+sudo bash tail.sh clear
+python3 compare.py win-deep win-20 win-10 win-5 win-2 win-1
 ```
 
 **实测样例**（使用了补全 TODO 的版本）：
@@ -419,23 +423,23 @@ win-1           20    140.5    142.7    146.8  100.0%       0.0%        0
 ```bash
 # 21. 后端换成 DCTCP（要先停），队列换成带 ECN 标记的 RED
 sudo modprobe tcp_dctcp
-sudo bash 2026/experiments/05/tail.sh down
-sudo bash 2026/experiments/05/tail.sh up dctcp
-sudo bash 2026/experiments/04/topo.sh limit r1 r1-h1a 100
+sudo bash tail.sh down
+sudo bash tail.sh up dctcp
+sudo bash lab4_topo.sh limit r1 r1-h1a 100
 sudo ip netns exec r1 tc qdisc del dev r1-h1a parent 1:10
 sudo ip netns exec r1 tc qdisc add dev r1-h1a parent 1:10 handle 10: red limit 45000 min 15000 max 16000 avpkt 1514 burst 11 bandwidth 100mbit probability 1 ecn
 
 # 22. 运行并读计数器；前端也要用 dctcp
-sudo bash 2026/experiments/05/tail.sh tcpstat
-sudo ip netns exec h1a python3 2026/experiments/05/tailbench.py --fanout 20 --base-ms 1 --resp-bytes 64000 --rounds 100 --cc dctcp --label inc-dctcp > /dev/null
-sudo bash 2026/experiments/05/tail.sh tcpstat
-sudo bash 2026/experiments/05/tail.sh backlog r1 r1-h1a
+sudo bash tail.sh tcpstat
+sudo ip netns exec h1a python3 tailbench.py --fanout 20 --base-ms 1 --resp-bytes 64000 --rounds 100 --cc dctcp --label inc-dctcp > /dev/null
+sudo bash tail.sh tcpstat
+sudo bash tail.sh backlog r1 r1-h1a
 
 # 23. 恢复：后端换回默认的 cubic
-sudo bash 2026/experiments/05/tail.sh clear
-sudo bash 2026/experiments/05/tail.sh down
-sudo bash 2026/experiments/05/tail.sh up
-python3 2026/experiments/05/compare.py win-20 inc-dctcp
+sudo bash tail.sh clear
+sudo bash tail.sh down
+sudo bash tail.sh up
+python3 compare.py win-20 inc-dctcp
 ```
 
 **实测样例**：
@@ -460,8 +464,8 @@ inc-dctcp       20    239.4    290.0    304.0  100.0%       0.0%        0
 
 | 现象 | 先看什么 | 常见原因 |
 | :--- | :--- | :--- |
-| `tail.sh up` 报实验床尚未搭建 | `ls /run/lab04` | 没有执行 `04/topo.sh up`，或搭的是 Lab 3 或课堂网络 |
-| `tailbench.py` 报 `ConnectionRefusedError` | `sudo bash 2026/experiments/05/tail.sh check` | 后端没启动；`topo.sh down` 之后要重新 `tail.sh up` |
+| `tail.sh up` 报实验床尚未搭建 | `ls /run/lab04` | 没有在本目录执行 `lab4_topo.sh up`，或搭的是 Lab 3 或课堂网络 |
+| `tailbench.py` 报 `ConnectionRefusedError` | `sudo bash tail.sh check` | 后端没启动；`topo.sh down` 之后要重新 `tail.sh up` |
 | 报错的最后一行是 `NotImplementedError: TODO n` | 对应的 TODO | 选项 `--adaptive`、`--budget`、`--max-inflight` 需要先完成 TODO |
 | `setsockopt` 报 `No such file or directory` | `sudo modprobe tcp_dctcp` | 算法模块没有加载或没有安装 |
 | `setsockopt` 报 `Operation not permitted` | 是否用了 `sudo` | 非 root 只能选 `tcp_allowed_congestion_control` 里的算法 |
@@ -469,7 +473,7 @@ inc-dctcp       20    239.4    290.0    304.0  100.0%       0.0%        0
 | 场景 B、C 的延迟和基线差不多 | `tail.sh backlog`；`/tmp/lab05-results/elephant.log` | 大象流没跑起来或已结束；`sleep 3` 不够 |
 | 噪声底比样例高很多 | `top`；是否有其他测量 | 其他进程占 CPU；虚拟机核数太少。后面的结论看相对差别 |
 | `compare.py` 找不到标签 | `ls /tmp/lab05-results` | 拼写错误；重启后 `/tmp` 被清空 |
-| 实验中断后状态不明 | `sudo bash 2026/experiments/04/topo.sh status` | 执行 `tail.sh clear` 恢复；再不行就 `tail.sh down` 后 `topo.sh down` 重来 |
+| 实验中断后状态不明 | `sudo bash lab4_topo.sh status` | 执行 `tail.sh clear` 恢复；再不行就 `tail.sh down` 后 `topo.sh down` 重来 |
 
 ---
 
@@ -501,7 +505,7 @@ inc-dctcp       20    239.4    290.0    304.0  100.0%       0.0%        0
 
 ```bash
 # 24. 打包代码与结果
-tar -czf "$HOME/lab05-submission.tgz" -C 2026/experiments/05 tailkit -C /tmp/lab05-results .
+tar -czf "$HOME/lab05-submission.tgz" tailkit -C /tmp/lab05-results .
 tar -tzf "$HOME/lab05-submission.tgz" | head
 ```
 
@@ -509,8 +513,8 @@ tar -tzf "$HOME/lab05-submission.tgz" | head
 
 ```bash
 # 25. 停后端与大象流，拆实验床
-sudo bash 2026/experiments/05/tail.sh down
-sudo bash 2026/experiments/04/topo.sh down
+sudo bash tail.sh down
+sudo bash lab4_topo.sh down
 ```
 
 ### 维护与验证
@@ -523,6 +527,7 @@ sudo bash 2026/experiments/04/topo.sh down
 | 离线测试 | 骨架原样 25 个测试：4 个通过、21 个报错。补全 TODO 的参考实现 25 个全部通过。在 Python 3.10、3.12、3.14 下结果相同 |
 | 实验床 | 任务 1–7 的命令按本文原样运行，其中 `tailbench.py` 与 `compare.py` 指向补全了 TODO 的临时副本，实测样例均来自这些运行。清理后没有残留进程和 namespace。在 Python 3.10 下只做了一次短测 |
 | Ubuntu 24.04 | 2026-11-11 发现 24.04 上 `04/topo.sh` 搭不起来（iproute2 6.1 的 `tc -j class show` 不输出 JSON，见 [Lab 4 指导书](../04/README.md)末尾的“维护与验证”），`tail.sh queue` 里的限速也受影响；修复后在 Ubuntu 24.04.5 用户态容器（iproute2 6.1.0、iperf3 3.16、Python 3.12.3；宿主内核 Linux 7.3、4 vCPU）中按本文原样运行了不依赖 TODO 的命令：3.3 节离线测试（骨架结果与上文相同）、任务 1、任务 3、任务 4、任务 5 的固定延迟对冲、任务 6 的深队列对照，以及 `tail.sh` 的全部子命令与清理。读数与本文样例一致，例如丢包时 `loss-small` 的 p99 为 210.1 ms，`win-deep` 的 p50 为 109.5 ms。依赖 TODO 的命令（`--predict`、`--adaptive`、`--budget`、`--max-inflight`）与任务 7 没有在 24.04 上运行，这个容器只能用 reno 与 cubic |
+| 单独运行 | 2026-11-11 起本实验以压缩包分发，目录里自带完整实验床（`lab4_topo.sh`、`reference/`），脚本按自身所在目录定位文件，命令在本目录执行。改动后把本目录复制到仓库外（`~/lab05`），在同一个 shell 里按本文原样运行了不依赖 TODO 的命令：备课虚拟机上全部运行（含任务 7 的 DCTCP），24.04 容器上除任务 7 外全部运行，均通过，读数与样例一致（如 `loss-small` 的 p99 为 210.1 ms、209.2 ms） |
 | 未覆盖 | Ubuntu 24.04 上依赖 TODO 的命令、任务 7 与 24.04 自带的内核；学生自己的实现；4 核以上的机器（CPU 噪声底会不同）；`bulk.py` 与任务 7 在其他内核上的 DCTCP 行为 |
 
 阅读版 `README.html` 由 `2026/tools/build_lab5_html.py` 从本文生成，用法见 [`tools/README.md`](../../tools/README.md)。仓库中的 TODO 保持留白；参考实现只用于备课验证，没有放进仓库。学生实现须独立验收，样例中的单次读数不作为验收标准。

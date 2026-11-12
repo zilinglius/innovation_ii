@@ -4,8 +4,8 @@
 连接建立后才切换到 dctcp，内核会退回 dctcp-reno（ss 显示 dctcp:fallback_mode）。
 用套接字选项设置算法，不要求算法出现在 tcp_allowed_congestion_control 里，但需要 root。
 
-  sudo ip netns exec h3a python3 2026/experiments/lecture07_prep/bulk.py server --port 5301 --cc dctcp
-  sudo ip netns exec h1b python3 2026/experiments/lecture07_prep/bulk.py client --destination 10.0.3.11 --port 5301 --cc dctcp --seconds 15
+  sudo ip netns exec h3a python3 bulk.py server --port 5301 --cc dctcp
+  sudo ip netns exec h1b python3 bulk.py client --destination 10.0.3.11 --port 5301 --cc dctcp --seconds 15
 
 只用 Python 标准库。
 """

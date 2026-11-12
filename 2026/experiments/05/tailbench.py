@@ -1,6 +1,6 @@
 """长尾延迟测量：在一台 host 的 namespace 里运行，向后端扇出请求并统计延迟。
 
-  sudo ip netns exec h1a python3 2026/experiments/05/tailbench.py --fanout 10 --rounds 300 --slow-prob 0.01
+  sudo ip netns exec h1a python3 tailbench.py --fanout 10 --rounds 300 --slow-prob 0.01
 
 一轮同时向 N 个分片发请求，全部回来才算完成。输出轮次延迟、单请求延迟、备份请求比例和按主副本的延迟，
 并把完整样本写入 /tmp/lab05-results/<label>.json。只用 Python 标准库。
@@ -17,7 +17,7 @@ from tailkit import policy as policies  # noqa: E402
 from tailkit import report, runner  # noqa: E402
 from tailkit.rpc import Service  # noqa: E402
 
-# 与 04/topo.sh 的地址约定一致：机架 i 用 10.0.i.0/24，host a、b 分别为 .11、.12。
+# 与 lab4_topo.sh 的地址约定一致：机架 i 用 10.0.i.0/24，host a、b 分别为 .11、.12。
 ADDRESSES = {f"h{rack}{side}": f"10.0.{rack}.{ip}" for rack in range(1, 5) for side, ip in (("a", 11), ("b", 12))}
 OTHERS = ["h1b", "h2a", "h2b", "h3a", "h3b", "h4a", "h4b"]
 

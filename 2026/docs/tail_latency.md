@@ -21,29 +21,32 @@
 | 59–87 分钟 | 模块五：综合动手——对冲救得了哪一种慢 | 预测表、三场景对照、诊断表 |
 | 87–90 分钟 | 模块六：离堂检查与课后衔接 | 提交三道短题 |
 
-**课前准备（不计入上述 90 分钟）**：学生自行准备 Ubuntu Linux，工具与第 06 讲相同（`iproute2`、`iputils-ping`、`iperf3`、Python 3 与 `uv`）。不同小组各用独立主机或虚拟机，同一台机器由一人操作。本讲复用[完整实验床脚本](../experiments/lecture07_prep/lab4_topo.sh)，Lab 3 没有做完也不影响；Lab 4 改为选做，本讲不依赖它。本讲标为“实测样例”的输出来自 2026-11-07 的备课虚拟机（Ubuntu 26.04.1、Linux `7.0.0-43-generic`、x86_64、2 核 2.8 GB），单次读数以自己的测量为准。
+**课前准备（不计入上述 90 分钟）**：学生自行准备 Ubuntu Linux，工具与第 06 讲相同（`iproute2`、`iputils-ping`、`iperf3`、Python 3 与 `uv`）。不同小组各用独立主机或虚拟机，同一台机器由一人操作。本讲的脚本以压缩包分发，解压后得到 `lecture07_prep` 目录，完整实验床就是其中的 `lab4_topo.sh`，Lab 3 没有做完也不影响；Lab 4 改为选做，本讲不依赖它。本讲标为“实测样例”的输出来自 2026-11-07 的备课虚拟机（Ubuntu 26.04.1、Linux `7.0.0-43-generic`、x86_64、2 核 2.8 GB），单次读数以自己的测量为准。
 
 ```bash
-# 1. 清理第 05 讲课堂网络与 Lab 3 网络（节点重名，不能同时存在）
-sudo bash 2026/experiments/lecture07_prep/lab3_classroom.sh down
-sudo bash 2026/experiments/lecture07_prep/lab3_topo.sh down
+# 1. 进入本讲目录（lecture07_prep 压缩包解压后的目录，路径换成你自己的）；本讲所有命令都在这里执行
+cd ~/lecture07_prep
 
-# 2. 准备路由守护进程的 Python 环境
-uv sync --project 2026/experiments/lecture07_prep --frozen
+# 2. 清理第 05 讲课堂网络与 Lab 3 网络（节点重名，不能同时存在）
+sudo bash lab3_classroom.sh down
+sudo bash lab3_topo.sh down
 
-# 3. 搭建完整实验床（默认加载 Lab 2 参考路由），并自检
-sudo bash 2026/experiments/lecture07_prep/lab4_topo.sh up
-sudo bash 2026/experiments/lecture07_prep/lab4_topo.sh check
+# 3. 准备路由守护进程的 Python 环境
+uv sync --frozen
 
-# 4. 在 7 台 host 上启动后端，做一次往返验证
-sudo bash 2026/experiments/lecture07_prep/lab5_tail.sh up
-sudo bash 2026/experiments/lecture07_prep/lab5_tail.sh check
+# 4. 搭建完整实验床（默认加载 Lab 2 参考路由），并自检
+sudo bash lab4_topo.sh up
+sudo bash lab4_topo.sh check
 
-# 5. 载入模块一要用的算法与队列模块（只需一次，不报错即可）
+# 5. 在 7 台 host 上启动后端，做一次往返验证
+sudo bash lab5_tail.sh up
+sudo bash lab5_tail.sh check
+
+# 6. 载入模块一要用的算法与队列模块（只需一次，不报错即可）
 sudo modprobe -a tcp_bbr tcp_dctcp sch_red
 ```
 
-准备完成应出现 `[OK] 8 条上联往返、8 台 host 网关可达、跨机架往返。` 与 `[OK] 7 个后端都完成了 20 轮往返。`。本讲用到的脚本、Lab 2 参考路由和 Python 环境配置都放在 `2026/experiments/lecture07_prep/` 目录，它们是 `02`–`05` 实验目录里相应文件的副本。Lab 5 仍在 `2026/experiments/05/` 里完成，这里的 `tailkit/` 不用改。[`lab5_tail.sh`](../experiments/lecture07_prep/lab5_tail.sh) 负责启停后端、设置队列和大象流；[`tailbench.py`](../experiments/lecture07_prep/tailbench.py)、[`compare.py`](../experiments/lecture07_prep/compare.py)、[`bulk.py`](../experiments/lecture07_prep/bulk.py) 都只用 Python 标准库，直接用系统 `python3` 运行。第 5 步报找不到模块时，课前安装 `linux-modules-extra-$(uname -r)` 后重试；实在装不上也不影响后面的内容，1.3 节跳过 DCTCP 那一组即可。**中途不要拆拓扑；提前结束或中断时，执行 5.7 节的清理命令。**
+准备完成应出现 `[OK] 8 条上联往返、8 台 host 网关可达、跨机架往返。` 与 `[OK] 7 个后端都完成了 20 轮往返。`。本讲用到的脚本、Lab 2 参考路由和 Python 环境配置都在 `lecture07_prep` 目录里，它们是 Lab 2–5 中相应文件的副本，脚本按自己所在的目录找其他文件，**以下所有命令都在这个目录里执行**（新开终端时先 `cd` 进去）。Lab 5 在它自己的目录里完成，这里的 `tailkit/` 不用改。`lab5_tail.sh` 负责启停后端、设置队列和大象流；`tailbench.py`、`compare.py`、`bulk.py` 都只用 Python 标准库，直接用系统 `python3` 运行。第 6 步报找不到模块时，课前安装 `linux-modules-extra-$(uname -r)` 后重试；实在装不上也不影响后面的内容，1.3 节跳过 DCTCP 那一组即可。**中途不要拆拓扑；提前结束或中断时，执行 5.7 节的清理命令。**
 
 ---
 
@@ -86,25 +89,25 @@ flowchart LR
 
 **问题与预测**：h1b 向 h3a 发一条 15 秒的大流，瓶颈是 r3→h3a 的 50 Mbit/s。同时 h1a 持续 `ping` h3a，它和大流只在这个瓶颈共用队列。**运行前先写下你的预测**：三种算法的吞吐和 `ping` 的往返时间分别是多少？哪一种会把队列填满？
 
-**工具与观察点**：[`bulk.py`](../experiments/lecture07_prep/bulk.py) 发定时大流，两端都用套接字选项指定算法；`ss -tin` 在 h1b 读发送端状态；`tc -s qdisc` 在 r3 读队列。下面把一次运行写成函数 `run_cc`，算法由参数决定，后面只换参数，不用手工改命令。
+**工具与观察点**：`bulk.py` 发定时大流，两端都用套接字选项指定算法；`ss -tin` 在 h1b 读发送端状态；`tc -s qdisc` 在 r3 读队列。下面把一次运行写成函数 `run_cc`，算法由参数决定，后面只换参数，不用手工改命令。
 
 ```bash
 # 1. 瓶颈设为 50 Mbit/s + 单队列 pfifo，上限 1000 个报文
-sudo bash 2026/experiments/lecture07_prep/lab5_tail.sh queue r3 r3-h3a 50 1000
+sudo bash lab5_tail.sh queue r3 r3-h3a 50 1000
 
 # 2. 定义一次运行：先起接收端和 ping（每 0.1 秒一个，共 17 秒），1 秒后 h1b 发 15 秒大流；
 #    第 12 秒读发送端状态与队列；结束后只统计负载稳定后的 ping（seq 40–150，窗口在运行前定好）
 run_cc() {
   local cc=$1
-  sudo ip netns exec h3a python3 2026/experiments/lecture07_prep/bulk.py server --port 5301 --cc "$cc" &
+  sudo ip netns exec h3a python3 bulk.py server --port 5301 --cc "$cc" &
   sudo ip netns exec h1a ping -c 170 -i 0.1 10.0.3.11 > "/tmp/ping-$cc.txt" &
   sleep 1
-  sudo ip netns exec h1b python3 2026/experiments/lecture07_prep/bulk.py client --destination 10.0.3.11 --port 5301 --cc "$cc" --seconds 15 &
+  sudo ip netns exec h1b python3 bulk.py client --destination 10.0.3.11 --port 5301 --cc "$cc" --seconds 15 &
   sleep 12
   sudo ip netns exec h1b ss -tin dst 10.0.3.11
-  sudo bash 2026/experiments/lecture07_prep/lab5_tail.sh backlog r3 r3-h3a
+  sudo bash lab5_tail.sh backlog r3 r3-h3a
   wait
-  grep -E 'icmp_seq=([4-9][0-9]|1[0-4][0-9]|150) ' "/tmp/ping-$cc.txt" | python3 2026/experiments/lecture07_prep/stats.py
+  grep -E 'icmp_seq=([4-9][0-9]|1[0-4][0-9]|150) ' "/tmp/ping-$cc.txt" | python3 stats.py
 }
 
 # 3. CUBIC 和 BBR 用同一个队列，各约 18 秒
@@ -117,7 +120,7 @@ sudo ip netns exec r3 tc qdisc add dev r3-h3a parent 1:10 handle 10: red limit 1
 run_cc dctcp
 
 # 5. 恢复基线
-sudo bash 2026/experiments/lecture07_prep/lab5_tail.sh clear
+sudo bash lab5_tail.sh clear
 ```
 
 **实测样例**（`ss` 省略了窗口缩放、字节计数等字段，`tc` 省略了首行；`Sent` 是队列创建以来的累计值，BBR 那一行包含 CUBIC 留下的 50 个丢包；为便于对照，每组输出前加了算法标题）：
@@ -186,20 +189,20 @@ marked 7430 early 33 pdrop 0 other 0
 
 ```bash
 # 1. 深队列：100 Mbit/s + pfifo 1000；运行前后各读一次累计计数器，相减即增量
-sudo bash 2026/experiments/lecture07_prep/lab5_tail.sh queue r1 r1-h1a 100 1000
-sudo bash 2026/experiments/lecture07_prep/lab5_tail.sh tcpstat
-sudo ip netns exec h1a python3 2026/experiments/lecture07_prep/tailbench.py --fanout 20 --base-ms 1 --resp-bytes 64000 --rounds 100 --label incast-deep | sed -n 1,2p
-sudo bash 2026/experiments/lecture07_prep/lab5_tail.sh tcpstat
+sudo bash lab5_tail.sh queue r1 r1-h1a 100 1000
+sudo bash lab5_tail.sh tcpstat
+sudo ip netns exec h1a python3 tailbench.py --fanout 20 --base-ms 1 --resp-bytes 64000 --rounds 100 --label incast-deep | sed -n 1,2p
+sudo bash lab5_tail.sh tcpstat
 
 # 2. 只改队列上限：30 个报文
-sudo bash 2026/experiments/lecture07_prep/lab5_tail.sh queue r1 r1-h1a 100 30
-sudo bash 2026/experiments/lecture07_prep/lab5_tail.sh tcpstat
-sudo ip netns exec h1a python3 2026/experiments/lecture07_prep/tailbench.py --fanout 20 --base-ms 1 --resp-bytes 64000 --rounds 100 --label incast-shallow | sed -n 1,2p
-sudo bash 2026/experiments/lecture07_prep/lab5_tail.sh tcpstat
-sudo bash 2026/experiments/lecture07_prep/lab5_tail.sh backlog r1 r1-h1a
+sudo bash lab5_tail.sh queue r1 r1-h1a 100 30
+sudo bash lab5_tail.sh tcpstat
+sudo ip netns exec h1a python3 tailbench.py --fanout 20 --base-ms 1 --resp-bytes 64000 --rounds 100 --label incast-shallow | sed -n 1,2p
+sudo bash lab5_tail.sh tcpstat
+sudo bash lab5_tail.sh backlog r1 r1-h1a
 
 # 3. 恢复基线
-sudo bash 2026/experiments/lecture07_prep/lab5_tail.sh clear
+sudo bash lab5_tail.sh clear
 ```
 
 `tcpstat` 汇总 8 台 host 的 `nstat` 累计值：`TcpRetransSegs`（重传段）、`TcpExtTCPTimeouts`（超时）、`TcpExtTCPLossProbes`（尾部丢失探测，3.6 节解释）。
@@ -338,14 +341,14 @@ $$(1-0.01)^{11}\approx0.895\ \Rightarrow\ 10.5\%\ \text{（超过了）}$$
 
 ### 3.3 测量工具做了什么
 
-[`tailbench.py`](../experiments/lecture07_prep/tailbench.py) 在 h1a 里运行，是一个真实的 TCP 客户端：
+`tailbench.py` 在 h1a 里运行，是一个真实的 TCP 客户端：
 
 - 每个分片一条长连接，分片轮流落在 `--primaries` 指定的主机上，默认是另外 7 台 host；
 - 一轮同时向 N 个分片发请求，全部回来才算结束；下一轮紧接着开始；
-- 后端 [`backend.py`](../experiments/lecture07_prep/backend.py) 先等 `--base-ms`（默认 5 ms），再以 `--slow-prob` 的概率多等 `--slow-ms`（默认 100 ms），每次独立抽样；
+- 后端 `backend.py` 先等 `--base-ms`（默认 5 ms），再以 `--slow-prob` 的概率多等 `--slow-ms`（默认 100 ms），每次独立抽样；
 - 前 5 轮是预热，不计入统计；
 - 分位数用最近秩法，与第 06 讲相同；连接显式使用 `--cc`，默认 `cubic`；
-- 完整样本写入 `/tmp/lab05-results/<label>.json`，[`compare.py`](../experiments/lecture07_prep/compare.py) 只读这些文件排成表。同名标签会被覆盖，要留存的结果先复制。
+- 完整样本写入 `/tmp/lab05-results/<label>.json`，`compare.py` 只读这些文件排成表。同名标签会被覆盖，要留存的结果先复制。
 
 这里的慢响应是**注入的**，用来模拟垃圾回收、磁盘抖动一类的服务端偶发变慢。网络造成的慢，下面用 `tc` 真实制造。
 
@@ -356,12 +359,12 @@ $$(1-0.01)^{11}\approx0.895\ \Rightarrow\ 10.5\%\ \text{（超过了）}$$
 ```bash
 # 1. 每个 N 跑两组：p=0 是噪声底，p=1% 是实验组；每组 300 轮，共约 1 分钟
 for n in 1 10 20 100; do
-  sudo ip netns exec h1a python3 2026/experiments/lecture07_prep/tailbench.py --fanout "$n" --rounds 300 --slow-prob 0 --label base-n"$n" > /dev/null
-  sudo ip netns exec h1a python3 2026/experiments/lecture07_prep/tailbench.py --fanout "$n" --rounds 300 --slow-prob 0.01 --label amp-n"$n" > /dev/null
+  sudo ip netns exec h1a python3 tailbench.py --fanout "$n" --rounds 300 --slow-prob 0 --label base-n"$n" > /dev/null
+  sudo ip netns exec h1a python3 tailbench.py --fanout "$n" --rounds 300 --slow-prob 0.01 --label amp-n"$n" > /dev/null
 done
 
 # 2. 排成一张表；慢轮 = 轮次延迟超过 50 ms 的比例
-python3 2026/experiments/lecture07_prep/compare.py base-n1 base-n10 base-n20 base-n100 amp-n1 amp-n10 amp-n20 amp-n100
+python3 compare.py base-n1 base-n10 base-n20 base-n100 amp-n1 amp-n10 amp-n20 amp-n100
 ```
 
 **实测样例**（后两列在模块五才用到）：
@@ -411,16 +414,16 @@ amp-n100       100    111.0    118.2    122.9   63.3%       0.0%        0
 
 ```bash
 # 1. 注入丢包；运行前后读计数器
-sudo bash 2026/experiments/lecture07_prep/lab4_topo.sh impair r1 r1-h1a loss 2%
-sudo bash 2026/experiments/lecture07_prep/lab5_tail.sh tcpstat
-sudo ip netns exec h1a python3 2026/experiments/lecture07_prep/tailbench.py --fanout 1 --primaries h3a --rounds 1000 --label loss1 | sed -n 1,2p
-sudo bash 2026/experiments/lecture07_prep/lab5_tail.sh tcpstat
+sudo bash lab4_topo.sh impair r1 r1-h1a loss 2%
+sudo bash lab5_tail.sh tcpstat
+sudo ip netns exec h1a python3 tailbench.py --fanout 1 --primaries h3a --rounds 1000 --label loss1 | sed -n 1,2p
+sudo bash lab5_tail.sh tcpstat
 
 # 2. 列出最慢的 34 轮，看分布有没有断层
-python3 2026/experiments/lecture07_prep/compare.py --tail 34 loss1
+python3 compare.py --tail 34 loss1
 
 # 3. 恢复这个端口，并查看定时器下限（较老的内核没有这个 sysctl）
-sudo bash 2026/experiments/lecture07_prep/lab4_topo.sh clear r1 r1-h1a
+sudo bash lab4_topo.sh clear r1 r1-h1a
 sysctl net.ipv4.tcp_rto_min_us
 ```
 
@@ -546,7 +549,7 @@ flowchart TB
 
 ```bash
 # 1. 定义一个简写，固定条件都在这里
-run() { sudo ip netns exec h1a python3 2026/experiments/lecture07_prep/tailbench.py --fanout 10 --rounds 300 --primaries h3a,h3b --backups h4a,h4b "$@"; }
+run() { sudo ip netns exec h1a python3 tailbench.py --fanout 10 --rounds 300 --primaries h3a,h3b --backups h4a,h4b "$@"; }
 
 # 2. 基线；再跑场景 A 的不对冲、对冲
 run --label s0-off
@@ -588,17 +591,17 @@ run --slow-prob 0.01 --hedge-ms 12 --label a-on
 
 ```bash
 # 1. 制造条件：r3→h3a 50 Mbit/s + pfifo 300；大象流 h2a→h3a，等 3 秒让队列长起来
-sudo bash 2026/experiments/lecture07_prep/lab5_tail.sh queue r3 r3-h3a 50 300
-sudo bash 2026/experiments/lecture07_prep/lab5_tail.sh elephant h2a h3a 60
+sudo bash lab5_tail.sh queue r3 r3-h3a 50 300
+sudo bash lab5_tail.sh elephant h2a h3a 60
 sleep 3
 
 # 2. 不对冲、对冲；再读这个端口的队列
 run --label b-off
 run --hedge-ms 12 --label b-on
-sudo bash 2026/experiments/lecture07_prep/lab5_tail.sh backlog r3 r3-h3a
+sudo bash lab5_tail.sh backlog r3 r3-h3a
 
 # 3. 停大象流，恢复基线
-sudo bash 2026/experiments/lecture07_prep/lab5_tail.sh clear
+sudo bash lab5_tail.sh clear
 ```
 
 **实测样例**：
@@ -632,22 +635,22 @@ qdisc pfifo 10: parent 1:10 limit 300p
 
 ```bash
 # 1. 制造条件：r1→h1a 50 Mbit/s + pfifo 300；大象流 h2a→h1a
-sudo bash 2026/experiments/lecture07_prep/lab5_tail.sh queue r1 r1-h1a 50 300
-sudo bash 2026/experiments/lecture07_prep/lab5_tail.sh elephant h2a h1a 60
+sudo bash lab5_tail.sh queue r1 r1-h1a 50 300
+sudo bash lab5_tail.sh elephant h2a h1a 60
 sleep 3
 
 # 2. 不对冲、对冲；再读队列
 run --label c-off
 run --hedge-ms 12 --label c-on
-sudo bash 2026/experiments/lecture07_prep/lab5_tail.sh backlog r1 r1-h1a
-sudo bash 2026/experiments/lecture07_prep/lab5_tail.sh clear
+sudo bash lab5_tail.sh backlog r1 r1-h1a
+sudo bash lab5_tail.sh clear
 
 # 3. 换一个措施：同样的 50 Mbit/s 和大象流，队列保持基线的 fq，不开对冲
-sudo bash 2026/experiments/lecture07_prep/lab4_topo.sh limit r1 r1-h1a 50
-sudo bash 2026/experiments/lecture07_prep/lab5_tail.sh elephant h2a h1a 20
+sudo bash lab4_topo.sh limit r1 r1-h1a 50
+sudo bash lab5_tail.sh elephant h2a h1a 20
 sleep 3
 run --label c-fq
-sudo bash 2026/experiments/lecture07_prep/lab5_tail.sh clear
+sudo bash lab5_tail.sh clear
 ```
 
 **实测样例**：
@@ -687,7 +690,7 @@ qdisc pfifo 10: parent 1:10 limit 300p
 
 ```bash
 # 把全部结果排成一张表
-python3 2026/experiments/lecture07_prep/compare.py s0-off a-off a-on b-off b-on c-off c-on c-fq
+python3 compare.py s0-off a-off a-on b-off b-on c-off c-on c-fq
 ```
 
 **实测样例**：
@@ -720,14 +723,14 @@ c-fq            10      8.6     10.3     17.6    0.0%       0.0%        0
 
 ```bash
 # 1. 核对全部端口已恢复基线
-sudo bash 2026/experiments/lecture07_prep/lab4_topo.sh status
+sudo bash lab4_topo.sh status
 
 # 2. 需要保留结果就先复制；同名标签再次运行会被覆盖
 cp -r /tmp/lab05-results "$HOME/lab05-lecture-results"
 
 # 3. 停后端与大象流（幂等）；不做 Lab 5 的话，再拆实验床
-sudo bash 2026/experiments/lecture07_prep/lab5_tail.sh down
-sudo bash 2026/experiments/lecture07_prep/lab4_topo.sh down
+sudo bash lab5_tail.sh down
+sudo bash lab4_topo.sh down
 ```
 
 如果中途异常退出，直接执行第 3 步即可。`lab4_topo.sh down` 会结束所有 namespace 里的进程。
@@ -785,7 +788,7 @@ sudo bash 2026/experiments/lecture07_prep/lab4_topo.sh down
 
 ### 6.4 后续衔接实验
 
-- 上游：[第 06 讲](network_measurement.md)的分位数、负载下延迟与 4.5 节的队列对照；[完整实验床](../experiments/lecture07_prep/lab4_topo.sh)。
+- 上游：[第 06 讲](network_measurement.md)的分位数、负载下延迟与 4.5 节的队列对照；本讲目录的 `lab4_topo.sh`。
 - 本讲：[Lab 5 指导书](../experiments/05/README.md)。
 - 下一讲：第 08 讲把“等最慢的一个”放进分布式计算：barrier 就是一轮扇出，straggler 就是那个慢分片；再用 α-β 模型计算通信代价。
 - 后半程：Lab 7 的调度器用网络画像选择放置。
