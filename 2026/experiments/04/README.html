@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="generator" content="2026/tools/build_lab4_html.py；源文 sha256 db80996a10a2c63ea08cc0821190d86849c633717a72f9db90926c060e22054b；更新 2026-11-08">
+<meta name="generator" content="2026/tools/build_lab4_html.py；源文 sha256 10e7a7bfaeefbec6e83375f183c6e351d0d38f6b8cb5833804548c19957ecd35；更新 2026-11-11">
 <title>Lab 4 · 给网络做体检</title><style>
 /* ==========================================================================
    云网融合创新实践 · 讲义样式
@@ -1307,15 +1307,19 @@ tar -tzf &quot;$HOME/lab04-submission.tgz&quot; | head
 <td style="text-align:left">任务 1–8 的全部命令按本文原样运行（<code>ck</code> 指向补全了 TODO 的临时副本），实测样例均来自这些运行；全量体检实际 9.9 分钟（计划估计 10.7 分钟）；<code>blind</code> 用 seed 4 与 seed 12 各做一次全量体检，四类条件均在画像中可见；任务 6 的曲线命令连续运行两次</td>
 </tr>
 <tr>
+<td style="text-align:left">Ubuntu 24.04</td>
+<td style="text-align:left">2026-11-11 发现 Ubuntu 24.04 自带的 iproute2 6.1 不支持 <code>tc -j class show</code>（加了 <code>-j</code> 仍输出文本），<code>topo.sh</code> 的 <code>up</code> 与 <code>status</code> 因此失败；已改为读不到 JSON 时按文本解析，换算成相同单位。修复后在 Ubuntu 24.04.5 用户态容器（iproute2 6.1.0、iperf3 3.16、Python 3.12.3；宿主内核 Linux 7.3）中运行了 <code>up</code>、<code>check</code>、<code>status</code>、<code>rate 50</code>／<code>rate 100</code>、<code>limit</code>、<code>impair</code>、手工改 burst 后的 <code>status</code>、<code>clear</code> 与两次 <code>down</code>：限速、netem 叶子、burst 三类偏离都能报出，清理后没有残留 namespace。任务 1–8 的其余命令没有在 24.04 上运行</td>
+</tr>
+<tr>
 <td style="text-align:left">未覆盖</td>
-<td style="text-align:left">Ubuntu 24.04；学生自己的实现与 <code>up --own</code>；<code>--hosts</code> 指定的其他拓扑；六类盲测条件中的“主机接入单方向延迟”与“机架入方向限速”只在第 06 讲场景中出现过，没有作为盲测条件单独验证</td>
+<td style="text-align:left">Ubuntu 24.04 上的任务 1–8 与 24.04 自带的内核；学生自己的实现与 <code>up --own</code>；<code>--hosts</code> 指定的其他拓扑；六类盲测条件中的“主机接入单方向延迟”与“机架入方向限速”只在第 06 讲场景中出现过，没有作为盲测条件单独验证</td>
 </tr>
 </tbody>
 </table></div>
 <p>阅读版 <code>README.html</code> 由 <code>2026/tools/build_lab4_html.py</code> 从本文生成，用法见 <a href="../../tools/README.md" class="xref"><code>tools/README.md</code></a>。仓库中的 TODO 保持留白；参考实现只用于备课验证，没有放进仓库。学生实现须独立验收，样例中的端口、用时与单次读数不作为验收标准。<code>tests/fixtures/</code> 中的 <code>ping</code> 输出与 <code>iperf3</code> JSON 采自上述环境：丢包与重复回复由 <code>topo.sh impair</code> 注入 netem 产生，连接被拒的 JSON 来自不存在服务端的端口。</p>
 </section>
 
-<footer class="colophon"><span>上海交通大学 · 云网融合创新实践 · Lab 4</span><span>由 <a href="README.md">README.md</a> 生成 · sha256 db80996a10a2 · 2026-11-08</span></footer>
+<footer class="colophon"><span>上海交通大学 · 云网融合创新实践 · Lab 4</span><span>由 <a href="README.md">README.md</a> 生成 · sha256 10e7a7bfaeef · 2026-11-11</span></footer>
 </main></div><script>
 (function () {
   // 打印按钮

@@ -522,6 +522,7 @@ sudo bash 2026/experiments/04/topo.sh down
 | 环境 | 2026-11-07，备课虚拟机：Ubuntu 26.04.1、Linux `7.0.0-43-generic`、x86_64、2 核 2.8 GB；iproute2 6.19.0、iperf3 3.20、Python 3.14；实验床使用 Lab 2 参考路由。这台机器的系统默认拥塞控制是 `bbr`，工具都显式指定算法 |
 | 离线测试 | 骨架原样 25 个测试：4 个通过、21 个报错。补全 TODO 的参考实现 25 个全部通过。在 Python 3.10、3.12、3.14 下结果相同 |
 | 实验床 | 任务 1–7 的命令按本文原样运行，其中 `tailbench.py` 与 `compare.py` 指向补全了 TODO 的临时副本，实测样例均来自这些运行。清理后没有残留进程和 namespace。在 Python 3.10 下只做了一次短测 |
-| 未覆盖 | Ubuntu 24.04；学生自己的实现；4 核以上的机器（CPU 噪声底会不同）；`bulk.py` 与任务 7 在其他内核上的 DCTCP 行为 |
+| Ubuntu 24.04 | 2026-11-11 发现 24.04 上 `04/topo.sh` 搭不起来（iproute2 6.1 的 `tc -j class show` 不输出 JSON，见 [Lab 4 指导书](../04/README.md)末尾的“维护与验证”），`tail.sh queue` 里的限速也受影响；修复后在 Ubuntu 24.04.5 用户态容器（iproute2 6.1.0、iperf3 3.16、Python 3.12.3；宿主内核 Linux 7.3、4 vCPU）中按本文原样运行了不依赖 TODO 的命令：3.3 节离线测试（骨架结果与上文相同）、任务 1、任务 3、任务 4、任务 5 的固定延迟对冲、任务 6 的深队列对照，以及 `tail.sh` 的全部子命令与清理。读数与本文样例一致，例如丢包时 `loss-small` 的 p99 为 210.1 ms，`win-deep` 的 p50 为 109.5 ms。依赖 TODO 的命令（`--predict`、`--adaptive`、`--budget`、`--max-inflight`）与任务 7 没有在 24.04 上运行，这个容器只能用 reno 与 cubic |
+| 未覆盖 | Ubuntu 24.04 上依赖 TODO 的命令、任务 7 与 24.04 自带的内核；学生自己的实现；4 核以上的机器（CPU 噪声底会不同）；`bulk.py` 与任务 7 在其他内核上的 DCTCP 行为 |
 
 阅读版 `README.html` 由 `2026/tools/build_lab5_html.py` 从本文生成，用法见 [`tools/README.md`](../../tools/README.md)。仓库中的 TODO 保持留白；参考实现只用于备课验证，没有放进仓库。学生实现须独立验收，样例中的单次读数不作为验收标准。

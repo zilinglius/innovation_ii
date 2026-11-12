@@ -95,8 +95,15 @@ limit_port() {
   ip netns exec "$1" tc class add dev "$2" parent 1: classid 1:10 htb rate "${3}mbit"
   ip netns exec "$1" tc qdisc add dev "$2" parent 1:10 handle 10: fq
   if [[ ! -f "$L4_STATE/burst-$3" ]]; then
-    ip netns exec "$1" tc -j class show dev "$2" |
-      python3 -c 'import json, sys; print(json.load(sys.stdin)[0]["burst"])' >"$L4_STATE/burst-$3"
+    # iproute2 6.1（Ubuntu 24.04）的 tc class show 不支持 -j，仍输出文本；读不到 JSON 时按文本解析。
+    ip netns exec "$1" tc -j class show dev "$2" | python3 -c '
+import json, re, sys
+out = sys.stdin.read()
+try:
+    print(json.loads(out)[0]["burst"])
+except ValueError:
+    size = re.search(r"\bburst (\d+)(b|Kb|Mb)\b", out)
+    print(int(size[1]) * {"b": 1, "Kb": 1024, "Mb": 1048576}[size[2]])' >"$L4_STATE/burst-$3"
   fi
 }
 
@@ -357,12 +364,39 @@ status() {
   scenario=$(cat "$L4_STATE/scenario" 2>/dev/null || echo '无')
   echo "[档位] leaf–spine $(fabric_rate) Mbit/s；host 接入 100 Mbit/s。场景：$scenario。"
   python3 - "$scenario" "$L4_STATE" "$(all_ports)" <<'PY'
-import json, pathlib, subprocess, sys
+import json, pathlib, re, subprocess, sys
+
+RATE = {"": 1, "K": 10**3, "M": 10**6, "G": 10**9, "T": 10**12}
+SIZE = {"b": 1, "Kb": 1024, "Mb": 1024**2}
+
+def text_classes(out):
+    # iproute2 6.1（Ubuntu 24.04）的 tc class show 不支持 -j，按文本解析成与 JSON 相同的单位（字节/秒、字节）。
+    classes = []
+    for line in out.splitlines():
+        head = re.match(r"class (\S+) (\S+)", line)
+        if not head:
+            continue
+        c = {"class": head[1], "handle": head[2]}
+        for key in ("rate", "ceil"):
+            value = re.search(rf"\b{key} (\d+)([KMGT]?)bit\b", line)
+            if value:
+                c[key] = int(value[1]) * RATE[value[2]] // 8
+        for key in ("burst", "cburst"):
+            value = re.search(rf"\b{key} (\d+)(b|Kb|Mb)\b", line)
+            if value:
+                c[key] = int(value[1]) * SIZE[value[2]]
+        classes.append(c)
+    return classes
 
 def tc(ns, *args):
     out = subprocess.run(["ip", "netns", "exec", ns, "tc", "-j", *args],
                          check=True, capture_output=True, text=True).stdout
-    return json.loads(out or "[]")
+    try:
+        return json.loads(out or "[]")
+    except ValueError:
+        if args[0] != "class":
+            raise
+        return text_classes(out)
 
 hidden = sys.argv[1] == "blind"
 state = pathlib.Path(sys.argv[2])
