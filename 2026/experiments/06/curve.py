@@ -76,7 +76,7 @@ def orchestrate(args):
     if os.geteuid() != 0:
         raise SystemExit("需要 root：sudo python3 2026/experiments/06/curve.py ...")
     if not Path("/run/lab04/namespaces").exists():
-        raise SystemExit("实验床尚未搭建，请先执行 sudo bash 2026/experiments/04/topo.sh up。")
+        raise SystemExit("实验床尚未搭建，请先执行 sudo bash 2026/experiments/06/lab4_topo.sh up。")
     sizes = [int(item) for item in args.sizes.split(",")]
     base = [sys.executable, str(Path(__file__).resolve()), "--cc", args.cc, "--port", str(args.port)]
     count = len(sizes) * args.trials + 1

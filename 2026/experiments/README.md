@@ -98,7 +98,7 @@
 - **B 段进阶**：把 worker 分到不同机架，观察跨机架瓶颈；比较随机环序和拓扑感知环序（TODO 7）。
 - **B 段挑战**：注入固定与随机的 straggler，观察 barrier 如何放大它，并与 Lab 5 的结论对照。
 - **产出**：第一个“只改通信方式、计算不变、作业变快”的实证；工作负载和 JCT 基线供 Lab 7 复用。
-- **验证**：2026-11-08 在 Ubuntu 26.04 / Linux 7.0 的备课虚拟机中，用补全 TODO 的临时副本按指导书原样运行任务 1–8。骨架离线测试 24 个中 1 个通过、4 个失败、19 个报错，参考实现全部通过。学生实现须独立验收，Ubuntu 24.04 尚未复核。详见指导书末尾的“维护与验证”。
+- **验证**：2026-11-08 在 Ubuntu 26.04 / Linux 7.0 的备课虚拟机中，用补全 TODO 的临时副本按指导书原样运行任务 1–8。骨架离线测试 24 个中 1 个通过、4 个失败、19 个报错，参考实现全部通过。学生实现须独立验收。2026-11-11 起 Lab 6 自带实验床副本（`06/lab4_topo.sh` 等，见“讲次副本目录”），并在 Ubuntu 24.04 用户态容器中按原样运行了不依赖 TODO 的命令；依赖 TODO 的命令尚未在 24.04 上复核。详见指导书末尾的“维护与验证”。
 
 ### Lab 7　算网协同调度
 
@@ -108,6 +108,18 @@
   1. 用网络画像决定 worker 放置，真实运行，对比随机、同机架优先、代价模型评分三种策略的 JCT。开始前发布完整的 `netprof`，未做 Lab 4 的同学也能生成画像。
   2. 用 cgroup 限制 CPU，造出算力不同的节点，分布在不同网络距离上；实现请求分发器，对比“就近”“最空闲”“算力 + 网络联合代价”三种策略。
 - **产出**：算网融合的完整闭环：感知网络、感知算力、联合决策。
+
+## 讲次副本目录
+
+从第 07 讲起，每讲课前准备与课上用到的脚本都复制到该讲自己的目录，学生只在一个目录里操作；Lab 6 也自带一套实验床副本。
+
+| 目录 | 内容 | 来源 |
+| --- | --- | --- |
+| `lecture07_prep/` | 第 07 讲：清理同名节点用的 `lab3_classroom.sh`、`lab3_topo.sh` 及其依赖的 `transfer.py`、`overlay_down.sh`，`lab4_topo.sh`、`reference/`，以及 `lab5_tail.sh`、`backend.py`、`tailbench.py`、`compare.py`、`bulk.py`、`stats.py`、`tailkit/`（TODO 留白） | `03/`、`04/`、`02/reference/`、`05/` |
+| `lecture08_prep/` | 第 08 讲：同上的清理脚本、`lab4_topo.sh`、`reference/`，以及 `jobrun.py`、`job.py`、`timeline.py`、`curve.py`、`jobkit/`（TODO 留白） | `03/`、`04/`、`02/reference/`、`06/` |
+| `06/` | Lab 6 自带：同上的清理脚本、`lab4_topo.sh`、`reference/` | `03/`、`04/`、`02/reference/` |
+
+副本除路径与提示文字外与源文件一致；唯一的行为差异是 `lecture08_prep/jobrun.py` 遇到 `--compute numpy` 直接报错，并指向 `06/`（课前不必下载 numpy）。修改 `04/topo.sh`、`03/` 的脚本、`03/transfer.py` 或 `02/reference/` 时，要同步上面所有副本；修改 `06/` 中 `jobrun.py`、`job.py`、`timeline.py`、`curve.py` 或 `jobkit/` 的给定部分时，同步 `lecture08_prep/`。`reference/`、`jobkit/`、`transfer.py` 与源文件逐字相同，可直接用 `diff -r` 核对。
 
 ## 已知风险
 

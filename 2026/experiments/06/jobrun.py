@@ -3,7 +3,7 @@
 --algo ps 是参数服务器；--algo ring 是 Ring AllReduce（需要先完成 TODO 5），没有 PS，
 --order 决定环序：given 按 --workers 的顺序，random 用 --order-seed 打乱，topo 用 TODO 7。
 
-需要 root 和已搭好的实验床（04/topo.sh up）。PS 默认在 h1a；--n N 取默认 worker 列表的前 N 台，
+需要 root 和已搭好的实验床（lab4_topo.sh up）。PS 默认在 h1a；--n N 取默认 worker 列表的前 N 台，
 --workers 可以直接列出主机。每轮本地计算时间可以用 --compute-ms 指定（每个 worker 相同），也可以用 --compute-total-ms
 指定总计算量（每个 worker 分到 总量/N，用来做“加 worker 划不划算”的对照）。
 
@@ -156,7 +156,7 @@ def run_job(args):
     if args.algo == "ps" and args.ps in workers:
         raise SystemExit(f"PS 所在主机 {args.ps} 不能同时当 worker；环上才能用全部 8 台")
     if not Path("/run/lab04/namespaces").exists():
-        raise SystemExit("实验床尚未搭建，请先执行 sudo bash 2026/experiments/04/topo.sh up。")
+        raise SystemExit("实验床尚未搭建，请先执行 sudo bash 2026/experiments/06/lab4_topo.sh up。")
     per_worker = args.compute_total_ms / len(workers) if args.compute_total_ms is not None else args.compute_ms
     stragglers = parse_straggler(args.straggler)
     model_bytes = int(args.model_mb * 1_000_000)

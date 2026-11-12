@@ -21,22 +21,22 @@
 | 63–88 分钟 | 模块五：综合动手——几个 worker 最划算 | 预测表、两组实测、一段结论 |
 | 88–90 分钟 | 模块六：课后思考与拓展 | 三道短题；Lab 6 说明 |
 
-**课前准备（不计入上述 90 分钟）**：学生自行准备 Ubuntu Linux，工具与第 07 讲相同。不同小组各用独立主机或虚拟机，同一台机器由一人操作。本讲复用[完整实验床脚本](../experiments/04/topo.sh)，Lab 3 没有做完也不影响。本讲标为“实测样例”的输出来自 2026-11-08 的备课虚拟机（Ubuntu 26.04.1、Linux `7.0.0-43-generic`、x86_64、2 核 2.8 GB），单次读数以自己的测量为准。
+**课前准备（不计入上述 90 分钟）**：学生自行准备 Ubuntu Linux，工具与第 07 讲相同。不同小组各用独立主机或虚拟机，同一台机器由一人操作。本讲复用[完整实验床脚本](../experiments/lecture08_prep/lab4_topo.sh)，Lab 3 没有做完也不影响。本讲标为“实测样例”的输出来自 2026-11-08 的备课虚拟机（Ubuntu 26.04.1、Linux `7.0.0-43-generic`、x86_64、2 核 2.8 GB），单次读数以自己的测量为准。
 
 ```bash
 # 1. 清理第 05 讲课堂网络与 Lab 3 网络（节点重名，不能同时存在）
-sudo bash 2026/experiments/03/classroom.sh down
-sudo bash 2026/experiments/03/topo.sh down
+sudo bash 2026/experiments/lecture08_prep/lab3_classroom.sh down
+sudo bash 2026/experiments/lecture08_prep/lab3_topo.sh down
 
-# 2. 路由守护进程复用 Lab 2 的环境
-uv sync --project 2026/experiments/02 --frozen
+# 2. 准备路由守护进程的 Python 环境
+uv sync --project 2026/experiments/lecture08_prep --frozen
 
 # 3. 搭建完整实验床（默认加载 Lab 2 参考路由），并自检
-sudo bash 2026/experiments/04/topo.sh up
-sudo bash 2026/experiments/04/topo.sh check
+sudo bash 2026/experiments/lecture08_prep/lab4_topo.sh up
+sudo bash 2026/experiments/lecture08_prep/lab4_topo.sh check
 ```
 
-准备完成应出现 `[OK] 8 条上联往返、8 台 host 网关可达、跨机架往返。`。本讲用到的工具都在 [`experiments/06/`](../experiments/06/README.md)，默认模式只用 Python 标准库，直接用系统 `python3` 运行。**中途不要拆拓扑；提前结束或中断时，执行 5.6 节的清理命令。**
+准备完成应出现 `[OK] 8 条上联往返、8 台 host 网关可达、跨机架往返。`。本讲用到的脚本、Lab 2 参考路由和 Python 环境配置都放在 `2026/experiments/lecture08_prep/` 目录，它们是 `02`–`04`、`06` 实验目录里相应文件的副本。Lab 6 仍在 `2026/experiments/06/` 里完成，这里的 `jobkit/` 不用改。本讲的作业与测量工具默认只用 Python 标准库，直接用系统 `python3` 运行。**中途不要拆拓扑；提前结束或中断时，执行 5.6 节的清理命令。**
 
 ---
 
@@ -136,9 +136,9 @@ flowchart TB
 
 工具分工：
 
-- [`jobrun.py`](../experiments/06/jobrun.py) 在各个 namespace 里启动 PS 和 worker，运行结束后把全部时间戳合并成一个 JSON，写到 `/tmp/lab06-results/<label>.json`（同名标签会被覆盖），并打印实测 JCT。
-- 作业本身在 [`job.py`](../experiments/06/job.py)：一个 worker 一条长连接，显式用 CUBIC；`--compute-ms` 指定每轮计算时间。**默认用 `time.sleep` 占位**，因为这些 namespace 共用同一台机器的 CPU，真实计算会互相抢 CPU，JCT 的差别就不只来自通信了。
-- [`timeline.py`](../experiments/06/timeline.py) 只读这个 JSON，打印某一轮每个 worker 的原始时间戳。
+- [`jobrun.py`](../experiments/lecture08_prep/jobrun.py) 在各个 namespace 里启动 PS 和 worker，运行结束后把全部时间戳合并成一个 JSON，写到 `/tmp/lab06-results/<label>.json`（同名标签会被覆盖），并打印实测 JCT。
+- 作业本身在 [`job.py`](../experiments/lecture08_prep/job.py)：一个 worker 一条长连接，显式用 CUBIC；`--compute-ms` 指定每轮计算时间。**默认用 `time.sleep` 占位**，因为这些 namespace 共用同一台机器的 CPU，真实计算会互相抢 CPU，JCT 的差别就不只来自通信了。
+- [`timeline.py`](../experiments/lecture08_prep/timeline.py) 只读这个 JSON，打印某一轮每个 worker 的原始时间戳。
 
 ### 2.2 短观察：手算一轮的四段
 
@@ -148,16 +148,16 @@ flowchart TB
 
 ```bash
 # 1. 基线作业：7 个 worker，模型 1 MB，每轮计算 200 ms，10 轮，约 14 秒
-sudo python3 2026/experiments/06/jobrun.py --label base
+sudo python3 2026/experiments/lecture08_prep/jobrun.py --label base
 
 # 2. 看第 5 轮的原始时间戳（只读文件，不需要 root）
-python3 2026/experiments/06/timeline.py /tmp/lab06-results/base.json --round 5
+python3 2026/experiments/lecture08_prep/timeline.py /tmp/lab06-results/base.json --round 5
 ```
 
 **实测样例**（单位 ms，以这一轮最早的计算开始为 0）：
 
 ```output
-[base] N=7 模型 1 MB 10 轮 cubic：JCT = 13.705 s，结果 /tmp/lab06-results/base.json
+[base] ps N=7 模型 1 MB 10 轮 cubic：JCT = 13.705 s，结果 /tmp/lab06-results/base.json
 作业 base：N=7，模型 1 MB，第 5 轮（从 0 数），单位 ms
 worker           计算开始         计算结束    sendall返回         PS收齐      barrier         模型收齐
 h1b              13.6        215.1        361.3        787.9        800.0       1358.7
@@ -190,7 +190,7 @@ h4b               0.0        200.2        387.8        781.7        800.0       
 
 第 4 点值得多想一下。这张表里 7 个 worker 几乎同时收齐，等待段接近 0，看起来没人在等谁。但其实每条流都只分到了 $1/7$ 的带宽：TCP 的公平分享让大家**一起变慢、一起结束**，等待被藏进了上传段。
 
-**边界**：这里只看了一轮，并且所有 worker 算得一样快。只凭“等待小”不能断定没有瓶颈，要结合上传段的绝对长度和理论值一起判断。如果你的数字差很多，先执行 `sudo bash 2026/experiments/04/topo.sh status`，看端口是否偏离基线，以及机器上有没有别的负载。
+**边界**：这里只看了一轮，并且所有 worker 算得一样快。只凭“等待小”不能断定没有瓶颈，要结合上传段的绝对长度和理论值一起判断。如果你的数字差很多，先执行 `sudo bash 2026/experiments/lecture08_prep/lab4_topo.sh status`，看端口是否偏离基线，以及机器上有没有别的负载。
 
 ---
 
@@ -213,11 +213,11 @@ $$T(m)=\alpha+\beta m$$
 
 **问题与预测**：h1a→h3a，100 Mbit/s。传 16 MB 大约要多久？1 KB 呢？两者的比值接近 16000 倍吗？
 
-**工具与观察点**：[`curve.py`](../experiments/06/curve.py) 在一条长连接上按打乱的顺序发送不同大小的消息，**接收端收齐后回一个字节，发送端收到回执才停表**，这样测到的是“对端确实收齐”的时间。每个大小 9 次，取中位数；两次发送之间空闲 300 ms，模拟作业的计算阶段。
+**工具与观察点**：[`curve.py`](../experiments/lecture08_prep/curve.py) 在一条长连接上按打乱的顺序发送不同大小的消息，**接收端收齐后回一个字节，发送端收到回执才停表**，这样测到的是“对端确实收齐”的时间。每个大小 9 次，取中位数；两次发送之间空闲 300 ms，模拟作业的计算阶段。
 
 ```bash
 # 1. 测 h1a→h3a 的传输曲线，约 35 秒
-sudo python3 2026/experiments/06/curve.py --label curve
+sudo python3 2026/experiments/lecture08_prep/curve.py --label curve
 ```
 
 **实测样例**：
@@ -255,19 +255,19 @@ $$\beta=\frac{1339.25-84.19\ \text{ms}}{16\,000\,000-1\,000\,000\ \text{字节}}
 
 ```bash
 # 1. 只在 h1a 的出方向加 5 ms 延迟，保持 100 Mbit/s
-sudo bash 2026/experiments/04/topo.sh impair h1a eth0 delay 5ms
+sudo bash 2026/experiments/lecture08_prep/lab4_topo.sh impair h1a eth0 delay 5ms
 
 # 2. 再测一条曲线，并测一组空闲 3 秒的 100 KB 传输，共约 25 秒
-sudo python3 2026/experiments/06/curve.py --label d5 --sizes 1000,100000,1000000,4000000 --trials 5
-sudo python3 2026/experiments/06/curve.py --label d5-idle --sizes 100000 --trials 5 --gap-ms 3000
+sudo python3 2026/experiments/lecture08_prep/curve.py --label d5 --sizes 1000,100000,1000000,4000000 --trials 5
+sudo python3 2026/experiments/lecture08_prep/curve.py --label d5-idle --sizes 100000 --trials 5 --gap-ms 3000
 
 # 3. 一个 worker 的小作业，看上传和下载各自付了多少；计算时间设为 0
-sudo python3 2026/experiments/06/jobrun.py --label oneway --n 1 --model-mb 0.1 --compute-ms 0
-python3 2026/experiments/06/timeline.py /tmp/lab06-results/oneway.json --round 5
+sudo python3 2026/experiments/lecture08_prep/jobrun.py --label oneway --n 1 --model-mb 0.1 --compute-ms 0
+python3 2026/experiments/lecture08_prep/timeline.py /tmp/lab06-results/oneway.json --round 5
 
 # 4. 恢复基线并核对
-sudo bash 2026/experiments/04/topo.sh clear h1a eth0
-sudo bash 2026/experiments/04/topo.sh status
+sudo bash 2026/experiments/lecture08_prep/lab4_topo.sh clear h1a eth0
+sudo bash 2026/experiments/lecture08_prep/lab4_topo.sh status
 ```
 
 **实测样例**（节选，省略了 `impair`、`clear` 的提示与 `status` 的基线行）：
@@ -310,16 +310,16 @@ $$T_{\text{round}}=0.2+2\times(0.00041+83.67\times10^{-9}\times7\times10^{6})=1.
 ```bash
 # 1. N=1、2、4 各跑一次，约 18 秒；N=7 用前面的 base
 for n in 1 2 4; do
-  sudo python3 2026/experiments/06/jobrun.py --label n"$n" --n "$n"
+  sudo python3 2026/experiments/lecture08_prep/jobrun.py --label n"$n" --n "$n"
 done
 ```
 
 **实测样例**：
 
 ```output
-[n1] N=1 模型 1 MB 10 轮 cubic：JCT = 3.701 s，结果 /tmp/lab06-results/n1.json
-[n2] N=2 模型 1 MB 10 轮 cubic：JCT = 5.346 s，结果 /tmp/lab06-results/n2.json
-[n4] N=4 模型 1 MB 10 轮 cubic：JCT = 8.662 s，结果 /tmp/lab06-results/n4.json
+[n1] ps N=1 模型 1 MB 10 轮 cubic：JCT = 3.701 s，结果 /tmp/lab06-results/n1.json
+[n2] ps N=2 模型 1 MB 10 轮 cubic：JCT = 5.346 s，结果 /tmp/lab06-results/n2.json
+[n4] ps N=4 模型 1 MB 10 轮 cubic：JCT = 8.662 s，结果 /tmp/lab06-results/n4.json
 ```
 
 | $N$ | 预测 JCT（s） | 实测 JCT（s） | 偏差 |
@@ -374,7 +374,7 @@ flowchart LR
 
 ```bash
 # 1. 全部上联降到 50 Mbit/s，host 接入仍是 100 Mbit/s
-sudo bash 2026/experiments/04/topo.sh rate 50
+sudo bash 2026/experiments/lecture08_prep/lab4_topo.sh rate 50
 
 # 2. 定义一个读端口累计发送字节的函数
 sent() { sudo ip netns exec "$1" tc -s class show dev "$2" classid 1:10 | awk '/Sent/{print $2; exit}'; }
@@ -382,13 +382,13 @@ sent() { sudo ip netns exec "$1" tc -s class show dev "$2" classid 1:10 | awk '/
 # 3. 跑 5 次，记录 r1 出方向（下载）与两台 spine 到 r1 方向（上传）的字节
 for i in 1 2 3 4 5; do
   a0=$(sent r1 r1-r5); b0=$(sent r1 r1-r6); c0=$(sent r5 r5-r1); d0=$(sent r6 r6-r1)
-  sudo python3 2026/experiments/06/jobrun.py --label r50-"$i"
+  sudo python3 2026/experiments/lecture08_prep/jobrun.py --label r50-"$i"
   a1=$(sent r1 r1-r5); b1=$(sent r1 r1-r6); c1=$(sent r5 r5-r1); d1=$(sent r6 r6-r1)
   echo "第 $i 次（MB）：下载 r1→r5 $(( (a1-a0)/1000000 ))，r1→r6 $(( (b1-b0)/1000000 ))；上传 r5→r1 $(( (c1-c0)/1000000 ))，r6→r1 $(( (d1-d0)/1000000 ))"
 done
 
 # 4. 恢复 100 Mbit/s
-sudo bash 2026/experiments/04/topo.sh rate 100
+sudo bash 2026/experiments/lecture08_prep/lab4_topo.sh rate 100
 ```
 
 **实测样例**（整理成表）。每条跨机架流 10 轮约传 10.5 MB（含报文头），所以 53、10 MB 对应 5 条流和 1 条流：
@@ -415,18 +415,18 @@ sudo bash 2026/experiments/04/topo.sh rate 100
 
 ```bash
 # 1. 模型 1 MB，h3a 的计算时间乘 4；基线用前面的 base
-sudo python3 2026/experiments/06/jobrun.py --label strag --straggler h3a:4
-python3 2026/experiments/06/timeline.py /tmp/lab06-results/strag.json --round 5
+sudo python3 2026/experiments/lecture08_prep/jobrun.py --label strag --straggler h3a:4
+python3 2026/experiments/lecture08_prep/timeline.py /tmp/lab06-results/strag.json --round 5
 
 # 2. 模型 0.1 MB：基线与慢节点各跑一次
-sudo python3 2026/experiments/06/jobrun.py --label light --model-mb 0.1
-sudo python3 2026/experiments/06/jobrun.py --label light-strag --model-mb 0.1 --straggler h3a:4
+sudo python3 2026/experiments/lecture08_prep/jobrun.py --label light --model-mb 0.1
+sudo python3 2026/experiments/lecture08_prep/jobrun.py --label light-strag --model-mb 0.1 --straggler h3a:4
 ```
 
 **实测样例**：
 
 ```output
-[strag] N=7 模型 1 MB 10 轮 cubic：JCT = 14.690 s，结果 /tmp/lab06-results/strag.json
+[strag] ps N=7 模型 1 MB 10 轮 cubic：JCT = 14.690 s，结果 /tmp/lab06-results/strag.json
 作业 strag：N=7，模型 1 MB，第 5 轮（从 0 数），单位 ms
 worker           计算开始         计算结束    sendall返回         PS收齐      barrier         模型收齐
 h1b               4.4        204.5        360.2        709.7        893.8       1479.3
@@ -436,8 +436,8 @@ h3a               7.9        808.1        835.7        893.8        893.8       
 h3b               0.0        200.1        385.4        719.6        893.8       1477.3
 h4a              13.4        213.6        404.8        724.9        893.8       1473.4
 h4b               9.3        209.4        381.2        723.1        893.8       1468.1
-[light] N=7 模型 0.1 MB 10 轮 cubic：JCT = 3.144 s，结果 /tmp/lab06-results/light.json
-[light-strag] N=7 模型 0.1 MB 10 轮 cubic：JCT = 8.678 s，结果 /tmp/lab06-results/light-strag.json
+[light] ps N=7 模型 0.1 MB 10 轮 cubic：JCT = 3.144 s，结果 /tmp/lab06-results/light.json
+[light-strag] ps N=7 模型 0.1 MB 10 轮 cubic：JCT = 8.678 s，结果 /tmp/lab06-results/light-strag.json
 ```
 
 | 模型大小 | 基线 JCT（s） | 有慢节点（s） | 增加（s） | 多算的总时间（s） |
@@ -533,22 +533,22 @@ N* = 2.9
 ```bash
 # 1. 约 60 秒，每行打印一次 JCT
 for n in 1 2 3 4 7; do
-  sudo python3 2026/experiments/06/jobrun.py --label u"$n" --n "$n" --compute-total-ms 1400
+  sudo python3 2026/experiments/lecture08_prep/jobrun.py --label u"$n" --n "$n" --compute-total-ms 1400
 done
 
 # 2. 对比 N=3 和 N=7 的一轮
-python3 2026/experiments/06/timeline.py /tmp/lab06-results/u3.json --round 5
-python3 2026/experiments/06/timeline.py /tmp/lab06-results/u7.json --round 5
+python3 2026/experiments/lecture08_prep/timeline.py /tmp/lab06-results/u3.json --round 5
+python3 2026/experiments/lecture08_prep/timeline.py /tmp/lab06-results/u7.json --round 5
 ```
 
 **实测样例**：
 
 ```output
-[u1] N=1 模型 1 MB 10 轮 cubic：JCT = 15.722 s，结果 /tmp/lab06-results/u1.json
-[u2] N=2 模型 1 MB 10 轮 cubic：JCT = 10.411 s，结果 /tmp/lab06-results/u2.json
-[u3] N=3 模型 1 MB 10 轮 cubic：JCT = 9.716 s，结果 /tmp/lab06-results/u3.json
-[u4] N=4 模型 1 MB 10 轮 cubic：JCT = 10.188 s，结果 /tmp/lab06-results/u4.json
-[u7] N=7 模型 1 MB 10 轮 cubic：JCT = 13.720 s，结果 /tmp/lab06-results/u7.json
+[u1] ps N=1 模型 1 MB 10 轮 cubic：JCT = 15.722 s，结果 /tmp/lab06-results/u1.json
+[u2] ps N=2 模型 1 MB 10 轮 cubic：JCT = 10.411 s，结果 /tmp/lab06-results/u2.json
+[u3] ps N=3 模型 1 MB 10 轮 cubic：JCT = 9.716 s，结果 /tmp/lab06-results/u3.json
+[u4] ps N=4 模型 1 MB 10 轮 cubic：JCT = 10.188 s，结果 /tmp/lab06-results/u4.json
+[u7] ps N=7 模型 1 MB 10 轮 cubic：JCT = 13.720 s，结果 /tmp/lab06-results/u7.json
 作业 u3：N=3，模型 1 MB，第 5 轮（从 0 数），单位 ms
 worker           计算开始         计算结束    sendall返回         PS收齐      barrier         模型收齐
 h2a               7.9        474.6        605.1        725.8        726.0        980.0
@@ -595,7 +595,7 @@ print('N* =', round((W / (2 * beta * S)) ** 0.5, 1))"
 
 # 2. 实测组 B，约 35 秒
 for n in 1 3 5 6 7; do
-  sudo python3 2026/experiments/06/jobrun.py --label v"$n" --n "$n" --compute-total-ms 1400 --model-mb 0.25
+  sudo python3 2026/experiments/lecture08_prep/jobrun.py --label v"$n" --n "$n" --compute-total-ms 1400 --model-mb 0.25
 done
 ```
 
@@ -608,11 +608,11 @@ done
 6 4.85
 7 4.94
 N* = 5.8
-[v1] N=1 模型 0.25 MB 10 轮 cubic：JCT = 14.426 s，结果 /tmp/lab06-results/v1.json
-[v3] N=3 模型 0.25 MB 10 轮 cubic：JCT = 5.924 s，结果 /tmp/lab06-results/v3.json
-[v5] N=5 模型 0.25 MB 10 轮 cubic：JCT = 4.870 s，结果 /tmp/lab06-results/v5.json
-[v6] N=6 模型 0.25 MB 10 轮 cubic：JCT = 4.825 s，结果 /tmp/lab06-results/v6.json
-[v7] N=7 模型 0.25 MB 10 轮 cubic：JCT = 4.892 s，结果 /tmp/lab06-results/v7.json
+[v1] ps N=1 模型 0.25 MB 10 轮 cubic：JCT = 14.426 s，结果 /tmp/lab06-results/v1.json
+[v3] ps N=3 模型 0.25 MB 10 轮 cubic：JCT = 5.924 s，结果 /tmp/lab06-results/v3.json
+[v5] ps N=5 模型 0.25 MB 10 轮 cubic：JCT = 4.870 s，结果 /tmp/lab06-results/v5.json
+[v6] ps N=6 模型 0.25 MB 10 轮 cubic：JCT = 4.825 s，结果 /tmp/lab06-results/v6.json
+[v7] ps N=7 模型 0.25 MB 10 轮 cubic：JCT = 4.892 s，结果 /tmp/lab06-results/v7.json
 ```
 
 模型变小为四分之一，$N^*$ 变成 2 倍（从 2.9 到 5.8），实测最低点从 N=3 移到了 N=6。
@@ -627,16 +627,16 @@ N* = 5.8
 
 ```bash
 # 1. 核对全部端口已恢复基线
-sudo bash 2026/experiments/04/topo.sh status
+sudo bash 2026/experiments/lecture08_prep/lab4_topo.sh status
 
 # 2. 需要保留结果就先复制；同名标签再次运行会被覆盖
 cp -r /tmp/lab06-results "$HOME/lab06-lecture-results"
 
 # 3. 不做 Lab 6 的话，拆实验床（幂等）
-sudo bash 2026/experiments/04/topo.sh down
+sudo bash 2026/experiments/lecture08_prep/lab4_topo.sh down
 ```
 
-作业进程运行完就退出，不留后台进程。如果中途异常退出，执行第 3 步即可，`topo.sh down` 会结束所有 namespace 里的进程。
+作业进程运行完就退出，不留后台进程。如果中途异常退出，执行第 3 步即可，`lab4_topo.sh down` 会结束所有 namespace 里的进程。
 
 ### 5.7 从课堂走向 Lab 6
 
@@ -692,6 +692,6 @@ sudo bash 2026/experiments/04/topo.sh down
 
 ### 6.4 后续衔接实验
 
-- 上游：[第 05 讲](datacenter_network.md)的收敛比与 ECMP；[第 07 讲](tail_latency.md)的扇出放大；[完整实验床](../experiments/04/topo.sh)。
+- 上游：[第 05 讲](datacenter_network.md)的收敛比与 ECMP；[第 07 讲](tail_latency.md)的扇出放大；[完整实验床](../experiments/lecture08_prep/lab4_topo.sh)。
 - 本讲：[Lab 6 指导书](../experiments/06/README.md)的 A 段，用本讲的工具把手算写成程序。
 - 下一讲：第 09 讲把“都找 PS”换成 worker 之间直接合并，看公式里的 $N$ 还是不是 $N$，也就是 Lab 6 的 B 段。

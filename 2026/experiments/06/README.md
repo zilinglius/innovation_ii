@@ -49,10 +49,12 @@
 | `jobkit/alphabeta.py` | **TODO 3、4、6**：最小二乘拟合，预测参数服务器与 Ring 的一轮 |
 | `jobkit/ring.py` | **TODO 5、7**：Ring AllReduce，拓扑感知环序 |
 | `tests/` | 离线测试，不需要 root，也不需要实验床 |
+| `lab4_topo.sh`、`reference/` | 完整实验床与 Lab 2 参考路由（给定），是 `04/topo.sh` 与 `02/reference/` 的副本，路径已改为本目录 |
+| `lab3_classroom.sh`、`lab3_topo.sh`、`overlay_down.sh`、`transfer.py` | 第 05 讲课堂脚本与 Lab 3 脚本的副本（给定），本实验只用它们的 `down` 清理同名节点 |
 
 ### 3.2 实验床与测量口径
 
-实验床是 [`04/topo.sh`](../04/topo.sh)，与第 06、07、08 讲相同：2 spine（`r5`、`r6`）× 4 leaf（`r1`–`r4`）× 8 host（`h1a`–`h4b`），host 接入口与 leaf–spine 链路都是 100 Mbit/s。PS 固定在 h1a，`--n N` 取 h3a、h2a、h4a、h1b、h2b、h3b、h4b 的前 N 台作为 worker。Ring 没有 PS，`--workers all` 表示全部 8 台。
+实验床是本目录的 [`lab4_topo.sh`](lab4_topo.sh)（`04/topo.sh` 的副本），与第 06–08 讲是同一张实验床：2 spine（`r5`、`r6`）× 4 leaf（`r1`–`r4`）× 8 host（`h1a`–`h4b`），host 接入口与 leaf–spine 链路都是 100 Mbit/s。PS 固定在 h1a，`--n N` 取 h3a、h2a、h4a、h1b、h2b、h3b、h4b 的前 N 台作为 worker。Ring 没有 PS，`--workers all` 表示全部 8 台。
 
 | 量 | 定义 |
 | :--- | :--- |
@@ -76,8 +78,7 @@
 ### 3.3 骨架与测试
 
 ```bash
-# 1. 准备 Python 环境（路由器复用 Lab 2 的环境；本实验的环境含 numpy）
-uv sync --project 2026/experiments/02 --frozen
+# 1. 准备 Python 环境（实验床的路由器与本实验的工具共用，含 numpy）
 uv sync --project 2026/experiments/06 --frozen
 
 # 2. 离线测试：骨架原样应为 24 个测试中 1 个通过、4 个失败、19 个报错
@@ -102,10 +103,10 @@ FAILED (failures=4, errors=19)
 
 ```bash
 # 3. 清理其他实验的网络（节点重名），搭完整实验床并自检
-sudo bash 2026/experiments/03/classroom.sh down
-sudo bash 2026/experiments/03/topo.sh down
-sudo bash 2026/experiments/04/topo.sh up
-sudo bash 2026/experiments/04/topo.sh check
+sudo bash 2026/experiments/06/lab3_classroom.sh down
+sudo bash 2026/experiments/06/lab3_topo.sh down
+sudo bash 2026/experiments/06/lab4_topo.sh up
+sudo bash 2026/experiments/06/lab4_topo.sh check
 
 # 4. 基线作业与第 5 轮的原始时间戳
 sudo python3 2026/experiments/06/jobrun.py --label t1-base
@@ -115,7 +116,7 @@ python3 2026/experiments/06/timeline.py /tmp/lab06-results/t1-base.json --round 
 **实测样例**：
 
 ```output
-[t1-base] N=7 模型 1 MB 10 轮 cubic：JCT = 13.695 s，结果 /tmp/lab06-results/t1-base.json
+[t1-base] ps N=7 模型 1 MB 10 轮 cubic：JCT = 13.695 s，结果 /tmp/lab06-results/t1-base.json
 作业 t1-base：N=7，模型 1 MB，第 5 轮（从 0 数），单位 ms
 worker           计算开始         计算结束    sendall返回         PS收齐      barrier         模型收齐
 h1b              12.4        212.5        391.0        794.6        800.0       1380.4
@@ -287,9 +288,9 @@ A 段做完可以先清理（重复执行应成功），B 段开始时重新搭�
 
 ```bash
 # 15. 核对端口基线；需要留存结果就先复制；然后拆实验床
-sudo bash 2026/experiments/04/topo.sh status
+sudo bash 2026/experiments/06/lab4_topo.sh status
 mkdir -p "$HOME/lab06-results" && cp -r /tmp/lab06-results/. "$HOME/lab06-results/"
-sudo bash 2026/experiments/04/topo.sh down
+sudo bash 2026/experiments/06/lab4_topo.sh down
 ```
 
 ### B 段：第 09 讲后
@@ -321,8 +322,8 @@ sudo bash 2026/experiments/04/topo.sh down
 (cd 2026/experiments/06 && uv run --frozen python -m unittest tests.test_ring.RingCases 2>&1 | tail -1)
 
 # 17. 搭建实验床并测一条曲线（已经搭好的话，up 不会出错）
-sudo bash 2026/experiments/04/topo.sh up
-sudo bash 2026/experiments/04/topo.sh check
+sudo bash 2026/experiments/06/lab4_topo.sh up
+sudo bash 2026/experiments/06/lab4_topo.sh check
 sudo python3 2026/experiments/06/curve.py --label t5-curve
 
 # 18. 同样的 7 台 worker，按机架顺序排列，只换通信方式
@@ -383,7 +384,7 @@ t5-s4             7       3.899       4.502  -13.4%
 
 ```bash
 # 22. 全部上联降到 50 Mbit/s，host 接入仍是 100 Mbit/s
-sudo bash 2026/experiments/04/topo.sh rate 50
+sudo bash 2026/experiments/06/lab4_topo.sh rate 50
 
 # 23. 同样的节点数，只改放置，共约 16 秒
 sudo python3 2026/experiments/06/jobrun.py --algo ring --label t6-2same --workers h1a,h1b
@@ -428,8 +429,8 @@ done
 python3 2026/experiments/06/compare.py t7-topo-1 t7-topo-2 t7-rand-1 t7-rand-2 t7-rand-3
 
 # 26. 恢复 100 Mbit/s，并核对基线
-sudo bash 2026/experiments/04/topo.sh rate 100
-sudo bash 2026/experiments/04/topo.sh status
+sudo bash 2026/experiments/06/lab4_topo.sh rate 100
+sudo bash 2026/experiments/06/lab4_topo.sh status
 ```
 
 **实测样例**（节选）：
@@ -498,9 +499,9 @@ t8-r7-slow        ring  N=7  JCT   19.694 s   变慢的轮 14/40
 
 ```bash
 # 29. 核对端口基线；留存结果；拆实验床
-sudo bash 2026/experiments/04/topo.sh status
+sudo bash 2026/experiments/06/lab4_topo.sh status
 mkdir -p "$HOME/lab06-results" && cp -r /tmp/lab06-results/. "$HOME/lab06-results/"
-sudo bash 2026/experiments/04/topo.sh down
+sudo bash 2026/experiments/06/lab4_topo.sh down
 ```
 
 ---
@@ -509,16 +510,16 @@ sudo bash 2026/experiments/04/topo.sh down
 
 | 现象 | 先看什么 | 常见原因 |
 | :--- | :--- | :--- |
-| `jobrun.py` 报实验床尚未搭建 | `ls /run/lab04` | 没有执行 `04/topo.sh up`，或搭的是 Lab 3 或课堂网络 |
+| `jobrun.py` 报实验床尚未搭建 | `ls /run/lab04` | 没有执行 `lab4_topo.sh up`，或搭的是 Lab 3 或课堂网络 |
 | 报错的最后一行是 `NotImplementedError: TODO n` | 对应的 TODO | `decompose.py`、`fit.py` 要先完成 TODO；`jobrun.py`、`timeline.py`、`curve.py` 不需要 |
 | `--compute numpy` 报要先执行 `uv sync` | `ls 2026/experiments/06/.venv` | 没有执行 3.3 节的第 1 步 |
 | `setsockopt` 报 `No such file or directory` | `sudo modprobe tcp_cubic`；`sysctl net.ipv4.tcp_available_congestion_control` | 算法模块没有加载或没有安装 |
-| JCT 比样例长很多 | `sudo bash 2026/experiments/04/topo.sh status`；`top` | 端口偏离基线（上一个实验没有恢复）；机器上有其他负载 |
-| 重复运行的 JCT 差别很大 | `sudo bash 2026/experiments/04/topo.sh status`，看档位 | 上联是 50 Mbit/s 时 ECMP 分配每次不同（第 08 讲 4.2 节）；基线 100 Mbit/s 时备课的多次运行大多在 13.7 s 附近，个别到 14.06 s。Ring 的 worker 没有按机架排列时，100 Mbit/s 档也会波动（备课 3 次 4.0–5.06 s），任务 7 解释原因 |
+| JCT 比样例长很多 | `sudo bash 2026/experiments/06/lab4_topo.sh status`；`top` | 端口偏离基线（上一个实验没有恢复）；机器上有其他负载 |
+| 重复运行的 JCT 差别很大 | `sudo bash 2026/experiments/06/lab4_topo.sh status`，看档位 | 上联是 50 Mbit/s 时 ECMP 分配每次不同（第 08 讲 4.2 节）；基线 100 Mbit/s 时备课的多次运行大多在 13.7 s 附近，个别到 14.06 s。Ring 的 worker 没有按机架排列时，100 Mbit/s 档也会波动（备课 3 次 4.0–5.06 s），任务 7 解释原因 |
 | `AllReduce 结果不正确` | `tests.test_ring.RingCases` | TODO 5 发错了块，或者覆盖、合并用反了 |
 | Ring 卡住不动，最后超时 | 是否每一步恰好调用一次 `exchange` | 收发次数不匹配；`exchange` 是阻塞的，必须所有节点步调一致 |
 | “合计”与 JCT 差很多 | 拆账的代码 | 上传段用错了时间戳；四段没有首尾相接 |
-| 实验中断后状态不明 | `sudo bash 2026/experiments/04/topo.sh status` | 执行 `topo.sh clear` 恢复；再不行就 `topo.sh down` 后重新 `up` |
+| 实验中断后状态不明 | `sudo bash 2026/experiments/06/lab4_topo.sh status` | 执行 `lab4_topo.sh clear` 恢复；再不行就 `lab4_topo.sh down` 后重新 `up` |
 
 ---
 
@@ -565,6 +566,7 @@ tar -tzf "$HOME/lab06-submission.tgz" | head
 | 环境 | 2026-11-08，备课虚拟机：Ubuntu 26.04.1、Linux `7.0.0-43-generic`、x86_64、2 核 2.8 GB；iproute2 6.19.0、Python 3.14；实验床使用 Lab 2 参考路由。这台机器的系统默认拥塞控制是 `bbr`，工具都显式指定算法 |
 | 离线测试 | 骨架原样 24 个测试：1 个通过、4 个失败、19 个报错；补全 TODO 的参考实现 24 个全部通过 |
 | 实验床 | 全部命令按本文原样运行，其中工具指向补全了 TODO 的临时副本，实测样例均来自这些运行。Ring 的命令在 2 核虚拟机上 CPU 占用约 55%–60%，瓶颈仍在网络，但合并计算会占用每步几毫秒。清理后没有残留进程和 namespace |
-| 未覆盖 | Ubuntu 24.04；学生自己的实现；4 核以上的机器（CPU 争用和合并耗时都会不同） |
+| Ubuntu 24.04 | 2026-11-11 发现 24.04 自带的 iproute2 6.1 不支持 `tc -j class show`，实验床搭不起来，本目录的 `lab4_topo.sh` 已改为读不到 JSON 时按文本解析（详见 [Lab 4 指导书](../04/README.md)末尾的“维护与验证”）。修复后在 Ubuntu 24.04.5 用户态容器（iproute2 6.1.0、Python 3.12.3；宿主内核 Linux 7.3、4 vCPU）中按本文原样运行了不依赖 TODO 的命令：3.3 节离线测试（骨架结果与上文相同）、任务 1、任务 2 的慢节点与 numpy 作业、任务 3 的两条曲线、任务 4 的 5 个配置、任务 5 的曲线与参数服务器基线、任务 6 与任务 7 的档位切换和基线核对、任务 8 的参数服务器慢节点，以及两次清理与打包。读数与本文样例一致，例如 `t1-base` 13.710 s、`t2-strag` 14.701 s。依赖 TODO 的命令（拆账、拟合、预测、Ring 与环序）没有在 24.04 上运行 |
+| 未覆盖 | Ubuntu 24.04 上依赖 TODO 的命令与 24.04 自带的内核；学生自己的实现；4 核以上的机器（CPU 争用和合并耗时都会不同） |
 
 阅读版 `README.html` 由 `2026/tools/build_lab6_html.py` 从本文生成，用法见 [`tools/README.md`](../../tools/README.md)。仓库中的 TODO 保持留白；参考实现只用于备课验证，没有放进仓库。学生实现须独立验收，样例中的单次读数不作为验收标准。
