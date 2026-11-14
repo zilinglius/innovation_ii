@@ -1,6 +1,6 @@
 """从 Lab 5 指导书 Markdown 重建单文件阅读版，并核对代码、链接与外部依赖。
 
-版式复用 link_state_router.html 的公共 CSS、字体、目录与打印行为；页面结构与 Lab 3 阅读版一致
+版式复用 legacy_reading_template.html（改版前 link_state_router.html 的冻结副本）的公共 CSS、字体、目录与打印行为；页面结构与 Lab 3 阅读版一致
 （实验导读、按“一、二、……”分节、目录列出各级小节）。正文以 Markdown 为唯一来源。
 """
 
@@ -20,7 +20,7 @@ from reading_common import Page, check_leftovers, check_links, highlight, html_t
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "2026/experiments/05/README.md"
-TEMPLATE = ROOT / "2026/docs/link_state_router.html"
+TEMPLATE = ROOT / "2026/tools/legacy_reading_template.html"
 NUMERALS = "一二三四五六七八九十"
 EXTRA_CSS = """
 /* Lab 5：长命令块打印时允许分页；导读中的引用块只作为实验信息行显示。 */

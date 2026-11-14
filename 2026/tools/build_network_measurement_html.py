@@ -1,7 +1,7 @@
 """从第 06 讲 Markdown 重建单文件阅读版，并核对代码、配图、链接与外部依赖。
 
-版式复用 link_state_router.html 的公共 CSS、字体、目录与打印行为；页面结构对照 datacenter_network.html
-（导读、学习目标、本讲路线、时间安排、各模块）。正文以 Markdown 为唯一来源。
+正文以 Markdown 为唯一来源。本脚本先按“旧版结构”（导读、学习目标、本讲路线、时间安排、各模块）拼出整页，
+最后交给 reading_theme.restyle() 套上共用主题（2026/tools/reading_theme/），换成新版页面；版式规范见 html_guidelines.md。
 """
 
 import argparse
@@ -18,10 +18,10 @@ from markdown_it import MarkdownIt
 from mdit_py_plugins.dollarmath import dollarmath_plugin
 from network_measurement_figures import FIGURE_CSS, figure
 from reading_common import Page, check_leftovers, check_links, highlight, html_token
+from reading_theme import restyle
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "2026/docs/network_measurement.md"
-TEMPLATE = ROOT / "2026/docs/link_state_router.html"
 NUMERALS = "一二三四五六七八九"
 # 每个模块的语义色（data-layer）与标签：延迟丢包看三层，吞吐看四层，tc 跨层。
 MODULE_TAGS = {
@@ -33,13 +33,6 @@ MODULE_TAGS = {
     6: ("l3", "l3", "动手 · 体检", "动手"),
     7: ("", "", "课后", "课后"),
 }
-EXTRA_CSS = """
-/* 第 06 讲：长命令块打印时允许分页；导读内不再套引用样式。 */
-@media print { .code { break-inside:auto; } .code.short { break-inside:avoid; } }
-.module > blockquote { margin: 20px 0; padding-left: 16px; border-left: 2px solid var(--rule-2); color: var(--ink-2); }
-/* 英文副标题在窄屏不做两端对齐，避免单词间出现大空隙。 */
-.masthead .mast-sub { text-align: left; }
-"""
 
 
 def markdown():
@@ -129,7 +122,7 @@ def check(source, output):
     assert not page.resources, f"存在外部资源依赖：{page.resources}"
     assert hashlib.sha256(source.encode()).hexdigest() in output, "源文摘要不匹配"
     check_leftovers(page, output)
-    assert not re.search(r"第 ?04 ?讲|链路状态路由器|LECTURE 04|lecture-04", output), "有第 04 讲模板残留"
+    assert not re.search(r"masthead|module-head|toc-mods|pathstrip", output), "有旧版结构残留"
     check_links(page, SOURCE.parent)
     math = output.count("<math")
     print(f"PASS：{len(blocks)} 个命令／输出块逐字一致；{page.figures} 幅配图；{math} 个 MathML；"
@@ -138,14 +131,8 @@ def check(source, output):
 
 def build(updated):
     source = SOURCE.read_text()
-    template = TEMPLATE.read_text()
     md = markdown()
-    css = re.search(r"<style>(.*?)</style>", template, re.S)[1]
-    css = css.replace("云网融合创新实践 · 第 04 讲", "云网融合创新实践 · 第 06 讲")
-    css = css.replace('"动手实现一个链路状态路由器"', '"给网络做体检：性能测量与流量控制"')
-    css = css.replace("代码讲义的附加样式（第 04 讲起", "代码讲义的附加样式（模板自带")
-    css += EXTRA_CSS + FIGURE_CSS
-    script = re.search(r"<script>(.*?)</script>", template, re.S)[1]
+    css, script = FIGURE_CSS, ""          # 共用样式与脚本由 restyle() 嵌入；这里只带本讲配图的专属样式
 
     title = source.splitlines()[0].removeprefix("# ")
     lecture, topic = re.match(r"^第 (\d+) 讲 (.+)$", title).groups()
@@ -217,6 +204,7 @@ def build(updated):
 <footer class="colophon"><span>上海交通大学 ·《云网融合创新实践》第 {lecture} 讲</span><span>由 <a href="{SOURCE.name}">2026/docs/{SOURCE.name}</a> 生成 · sha256 {sha[:10]} · {updated}</span></footer>
 </main></div><script>{script}</script></body></html>
 '''
+    output = restyle(output, SOURCE.stem, page_css=FIGURE_CSS, base=SOURCE.parent)
     check(source, output)
     target = SOURCE.with_suffix(".html")
     target.write_text(output)

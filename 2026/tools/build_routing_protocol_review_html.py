@@ -18,7 +18,7 @@ from routing_protocol_review_figures import FIGURE_CSS, figure
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "2026/docs/routing_protocol_review.md"
 ANSWERS = ROOT / "2026/docs/routing_protocol_review_answers.md"
-TEMPLATE = ROOT / "2026/docs/link_state_router.html"
+TEMPLATE = ROOT / "2026/tools/legacy_reading_template.html"
 
 
 def markdown():

@@ -14,7 +14,7 @@ from lab3_figures import FIGURE_CSS, figure
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / '2026/experiments/03/README.md'
-TEMPLATE = ROOT / '2026/docs/link_state_router.html'
+TEMPLATE = ROOT / '2026/tools/legacy_reading_template.html'
 
 
 def math_render(content, display_mode=False):

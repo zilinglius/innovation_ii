@@ -18,7 +18,7 @@ from network_measurement_review_figures import FIGURE_CSS, figure
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "2026/docs/network_measurement_review.md"
 ANSWERS = ROOT / "2026/docs/network_measurement_review_answers.md"
-TEMPLATE = ROOT / "2026/docs/link_state_router.html"
+TEMPLATE = ROOT / "2026/tools/legacy_reading_template.html"
 QUESTIONS = 32
 FIGURES = {False: 4, True: 5}
 FENCES = {"bash": ("cmd", "BASH"), "text": ("out", "OUTPUT"), "": ("out", "OUTPUT")}
