@@ -1,4 +1,7 @@
-"""从第三讲回顾或参考答案 Markdown 重建阅读版，检查代码、题号、图形与链接。"""
+"""从第三讲回顾或参考答案 Markdown 重建阅读版，检查代码、题号、图形与链接。
+
+先按“旧版结构”拼出整页，最后交给 reading_theme.restyle() 套上共用主题（2026/tools/reading_theme/）；版式规范见 html_guidelines.md。
+"""
 
 import argparse
 from collections import Counter
@@ -13,12 +16,12 @@ from urllib.parse import unquote, urlsplit
 from latex2mathml.converter import convert
 from markdown_it import MarkdownIt
 from mdit_py_plugins.dollarmath import dollarmath_plugin
+from reading_theme import restyle
 from routing_protocol_review_figures import FIGURE_CSS, figure
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "2026/docs/routing_protocol_review.md"
 ANSWERS = ROOT / "2026/docs/routing_protocol_review_answers.md"
-TEMPLATE = ROOT / "2026/tools/legacy_reading_template.html"
 
 
 def markdown():
@@ -55,7 +58,7 @@ class Page(HTMLParser):
             self.ids.append(attrs["id"])
         if tag == "a":
             self.links.append(attrs.get("href", ""))
-        if tag == "svg":
+        if tag == "figure":              # 页面外壳里还有图标 SVG，配图按 figure 计数
             self.svg_count += 1
         if tag in ("script", "img", "iframe", "link"):
             ref = attrs.get("src", attrs.get("href", ""))
@@ -87,7 +90,7 @@ def check(source, output, source_path, answers):
     assert page.svg_count == (11 if answers else 9), "配图数量不符"
     captions = [int(n) for n in re.findall(r"^\s*\*图 (\d+)：", source, re.M)]
     assert captions == list(range(1, page.svg_count + 1)), "图号不连续"
-    assert not re.search(r"第 0[1245] 讲回顾|REVIEW 02|Layer-2 Switching", output), "有旧模板残留"
+    assert not re.search(r"masthead|module-head|toc-mods|pathstrip", output), "有旧版结构残留或未转换的源码"
     assert not [key for key, count in Counter(page.ids).items() if count > 1], "ID 重复"
     assert not page.resources, f"存在外部资源依赖：{page.resources}"
     assert hashlib.sha256(source.encode()).hexdigest() in output, "摘要不匹配"
@@ -134,33 +137,9 @@ def prepare_tokens(tokens, md):
 def build(updated, answers=False):
     source_path = ANSWERS if answers else SOURCE
     source = source_path.read_text()
-    template = TEMPLATE.read_text()
     md = markdown()
     title = source.splitlines()[0].removeprefix("# ")
-    css = re.search(r"<style>(.*?)</style>", template, re.S)[1]
-    css = css.replace("第 04 讲", "第 03 讲回顾").replace("动手实现一个链路状态路由器", "动态路由协议")
-    if answers:
-        css = css.replace("动态路由协议\";", "动态路由协议 · 参考答案\";")
-    css += """
-/* 回顾题单：沿用正文版式，增加题间留白及小屏打印入口。 */
-.module > ol > li { margin-bottom: 1em; }
-.module > ol { padding-left: 2.6em; }
-.masthead h1 { text-wrap:balance; }
-blockquote { margin: 20px 0; padding-left: 16px; border-left: 2px solid var(--rule-2); color: var(--ink-2); }
-.lead blockquote { margin: 0; border: 0; padding: 0; color: inherit; }
-.pathstrip { margin-top: 20px; }
-.mobile-print { display: block; margin: 20px 0; }
-@media screen and (min-width:1120px) { .mobile-print { display:none; } }
-@media print {
-  /* 保留模块分页，允许短节或跨页末题之后接续，避免只有一题的空白页。 */
-  .review #s1, .review #s2, .review #s10 { break-before:auto; margin-top:20pt; }
-  .answers #s1, .answers #s2, .answers #s3, .answers #s5, .answers #s9 { break-before:auto; margin-top:20pt; }
-  .answers .module > ol > li > p { break-inside:avoid; }
-  .module > ol > li { margin-bottom: .65em; }
-}
-"""
-    css += FIGURE_CSS
-    script = re.search(r"<script>(.*?)</script>", template, re.S)[1]
+    css, script = FIGURE_CSS, ""          # 共用样式与脚本由 restyle() 嵌入；这里只带本页配图的专属样式
     chunks = re.split(r"^## (.+)\n", source, flags=re.M)
     intro = chunks[0].split("\n", 1)[1].replace("\n---\n", "\n")
     sections = []
@@ -203,6 +182,7 @@ blockquote { margin: 20px 0; padding-left: 16px; border-left: 2px solid var(--ru
 {"".join(sections)}
 <footer class="colophon"><span>上海交通大学 · 云网融合创新实践 · 第 03 讲回顾</span><span>由 <a href="{source_path.name}">{source_path.name}</a> 生成 · sha256 {sha[:12]} · {updated}</span></footer>
 </main></div><script>{script}</script></body></html>'''
+    output = restyle(output, source_path.stem, kind="answers" if answers else "review", page_css=css, base=source_path.parent)
     check(source, output, source_path, answers)
     source_path.with_suffix(".html").write_text(output)
     print(f"已生成 {source_path.with_suffix('.html').relative_to(ROOT)}；显示检查须另行完成。")

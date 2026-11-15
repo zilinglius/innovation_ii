@@ -1,7 +1,7 @@
 """从 Lab 5 指导书 Markdown 重建单文件阅读版，并核对代码、链接与外部依赖。
 
-版式复用 legacy_reading_template.html（改版前 link_state_router.html 的冻结副本）的公共 CSS、字体、目录与打印行为；页面结构与 Lab 3 阅读版一致
-（实验导读、按“一、二、……”分节、目录列出各级小节）。正文以 Markdown 为唯一来源。
+正文以 Markdown 为唯一来源。本脚本先按“旧版结构”（实验导读、按“一、二、……”分节、目录列出各级小节）拼出整页，
+最后交给 reading_theme.restyle() 套上共用主题（2026/tools/reading_theme/），换成新版页面；版式规范见 html_guidelines.md。
 """
 
 import argparse
@@ -16,23 +16,12 @@ from urllib.parse import unquote, urlsplit
 from latex2mathml.converter import convert
 from markdown_it import MarkdownIt
 from mdit_py_plugins.dollarmath import dollarmath_plugin
+from reading_theme import restyle
 from reading_common import Page, check_leftovers, check_links, highlight, html_token
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "2026/experiments/05/README.md"
-TEMPLATE = ROOT / "2026/tools/legacy_reading_template.html"
 NUMERALS = "一二三四五六七八九十"
-EXTRA_CSS = """
-/* Lab 5：长命令块打印时允许分页；导读中的引用块只作为实验信息行显示。 */
-@media print { .code { break-inside:auto; } .code.short { break-inside:avoid; } }
-.lead blockquote { margin:0 0 14px; padding:0; border:0; color:var(--ink-2); font-size:.94em; }
-.lead blockquote p { margin:0; text-align:left; }
-.masthead .mast-sub { text-align: left; }
-.masthead > .legend { margin: 0 0 36px; }
-/* 目录中任务（h4）缩进在“基础／进阶／挑战”之下。 */
-.toc-sub li.toc-h4 a { padding-left: 3.35em; font-size: 12px; }
-"""
-
 
 def markdown():
     md = MarkdownIt("commonmark", {"html": False}).enable("table")
@@ -106,7 +95,7 @@ def check(source, output, figures):
     assert not page.resources, f"存在外部资源依赖：{page.resources}"
     assert hashlib.sha256(source.encode()).hexdigest() in output, "源文摘要不匹配"
     check_leftovers(page, output)
-    assert not re.search(r"第 ?04 ?讲|链路状态路由器|LECTURE 04", output), "有第 04 讲模板残留"
+    assert not re.search(r"masthead|module-head|toc-mods|pathstrip", output), "有旧版结构残留"
     check_links(page, SOURCE.parent)
     print(f"PASS：{len(blocks)} 个命令／输出块逐字一致；{output.count('<math')} 个 MathML；"
           f"{len(page.links)} 个链接、ID、摘要与外部依赖检查通过。")
@@ -114,14 +103,8 @@ def check(source, output, figures):
 
 def build(updated):
     source = SOURCE.read_text()
-    template = TEMPLATE.read_text()
     md = markdown()
-    css = re.search(r"<style>(.*?)</style>", template, re.S)[1]
-    css = css.replace("云网融合创新实践 · 第 04 讲", "云网融合创新实践 · Lab 5")
-    css = css.replace('"动手实现一个链路状态路由器"', '"长尾延迟与对冲请求"')
-    css = css.replace("代码讲义的附加样式（第 04 讲起", "代码讲义的附加样式（模板自带")
-    css += EXTRA_CSS
-    script = re.search(r"<script>(.*?)</script>", template, re.S)[1]
+    css, script = "", ""          # 共用样式与脚本由 restyle() 嵌入；这里只带本页配图的专属样式
 
     title = source.splitlines()[0].removeprefix("# ")
     lab, topic = re.match(r"^Lab (\d+)\s+(.+)$", title).groups()
@@ -156,6 +139,7 @@ def build(updated):
 <footer class="colophon"><span>上海交通大学 · 云网融合创新实践 · Lab {lab}</span><span>由 <a href="README.md">README.md</a> 生成 · sha256 {sha[:12]} · {updated}</span></footer>
 </main></div><script>{script}</script></body></html>
 '''
+    output = restyle(output, "lab05", kind="lab", page_css=css, base=SOURCE.parent)
     check(source, output, figures)
     target = SOURCE.with_suffix(".html")
     target.write_text(output)

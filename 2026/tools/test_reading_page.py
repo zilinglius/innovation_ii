@@ -1,4 +1,4 @@
-"""新版阅读版的显示与交互测试：在无头 Chrome 里打开页面，核对对齐与溢出、“先想后看”、选中复制、
+"""阅读版（讲义、回顾、参考答案、实验指导书）的显示与交互测试：在无头 Chrome 里打开页面，核对对齐与溢出、“先想后看”、选中复制、
 复制按钮、打勾、预测保存、目录跟随、图放大、投影模式、手机抽屉、深色、打印展开与无脚本回退。
 
     uv run --with playwright python 2026/tools/test_reading_page.py 2026/docs/network.html [更多页面 …]
@@ -15,7 +15,8 @@ if len(sys.argv) > 2:                      # 多个页面：逐个另起进程�
 page_path = os.path.abspath(sys.argv[1])
 md_path = page_path[:-len(".html")] + ".md"
 md = re.sub(r"^> ?", "", open(md_path, encoding="utf-8").read(), flags=re.M)
-fences = [m.group(2) for m in re.finditer(r"^```(\w*)\n(.*?)^```\s*$", md, re.S | re.M)]
+# 列表项里的代码块带缩进：按围栏的缩进量去掉每行开头的空白
+fences = [re.sub(r"^" + m.group(1), "", m.group(3), flags=re.M) for m in re.finditer(r"^([ \t]*)```(\w*)\n(.*?)^\1```\s*$", md, re.S | re.M)]
 url = "file://" + page_path
 fails, passed = [], 0
 
@@ -32,7 +33,7 @@ ALIGN = r"""() => {
   const doc = document.querySelector('.doc').getBoundingClientRect(), bad = [];
   for (const e of document.querySelectorAll('.hero > *, .goals, .route, .plain, .module > *, .next, .colophon')) {
     const r = e.getBoundingClientRect(); if (!r.width) continue;
-    if (Math.abs(r.left - doc.left) > 1.5 || r.right > doc.right + 1.5 || (r.width < doc.width - 1.5 && !/^(P|UL|OL|H3|H4|BLOCKQUOTE)$/.test(e.tagName) && getComputedStyle(e).display !== 'inline-block' && !e.matches('.crumbs, h1, .hero-en, .tnote')))
+    if (Math.abs(r.left - doc.left) > 1.5 || r.right > doc.right + 1.5 || (r.width < doc.width - 1.5 && !/^(P|UL|OL|H3|H4|BLOCKQUOTE)$/.test(e.tagName) && getComputedStyle(e).display !== 'inline-block' && !e.matches('.crumbs, h1, .hero-en, .tnote, .facts, .legend')))
       bad.push(e.tagName + '.' + e.className + ' ' + Math.round(r.left - doc.left) + '/' + Math.round(r.width) + ' vs ' + Math.round(doc.width));
   }
   const inner = [];
@@ -73,15 +74,16 @@ with sync_playwright() as p:
     ctx, pg = new()
     info = pg.evaluate("""() => ({pme: document.querySelectorAll('.pme').length, reveal: document.querySelectorAll('.reveal').length,
       hidden: [...document.querySelectorAll('.reveal-body')].filter(e => e.hasAttribute('hidden')).length,
-      ticks: document.querySelectorAll('.tick').length, grp: document.querySelectorAll('.code.cmd .grp').length, cp: document.querySelectorAll('.cp').length,
+      ticks: document.querySelectorAll('button.tick').length, grp: document.querySelectorAll('.code.cmd .grp').length, cp: document.querySelectorAll('.cp').length,
       figs: document.querySelectorAll('.fig').length, zoom: document.querySelectorAll('.zoom-btn').length, bench: !!document.querySelector('.bench'),
       navprog: getComputedStyle(document.querySelector('.nav-prog')).display, mine: document.querySelectorAll('.mine textarea').length,
       stops: document.querySelectorAll('.stops > li').length, mods: document.querySelectorAll('.module').length, pre: document.querySelectorAll('pre').length})""")
-    check("先想后看：收起区默认收起", info["hidden"] == info["reveal"] and info["reveal"] > 0, str(info))
+    check("先想后看：收起区默认收起", info["hidden"] == info["reveal"], str(info))
+    check("没有收起区的页不显示“先想后看”开关", pg.evaluate("document.querySelector('.nav .js-think').hidden") == (info["reveal"] == 0), str(info))
     check("每张预测卡片有“我的预测”输入框", info["mine"] == info["pme"], str(info))
     check("每幅图有放大按钮", info["zoom"] == info["figs"], str(info))
     check("目录站点 = 模块数 + 1", info["stops"] == info["mods"] + 1, str(info))
-    check("命令组都有复制按钮", info["cp"] > 0 and info["cp"] <= info["grp"], str(info))
+    check("命令组都有复制按钮", (info["cp"] > 0) == (info["grp"] > 0) and info["cp"] <= info["grp"], str(info))
     check("进度条显示位置", (info["navprog"] == "none") == (info["bench"] or info["ticks"] == 0), str(info))
 
     # ---- 选中复制的文本与 Markdown 逐字相同（先全部展开，避免收起区无法选中）
@@ -100,11 +102,11 @@ with sync_playwright() as p:
     pg.evaluate("document.querySelector('.nav .js-think').click()")
 
     # ---- 展开一处收起区
-    opened = pg.evaluate("""() => { const b = document.querySelector('.reveal-btn'); b.click(); const r = b.closest('.reveal'); return r.classList.contains('is-open') && !r.querySelector('.reveal-body').hasAttribute('hidden'); }""")
+    opened = info["reveal"] == 0 or pg.evaluate("""() => { const b = document.querySelector('.reveal-btn'); b.click(); const r = b.closest('.reveal'); return r.classList.contains('is-open') && !r.querySelector('.reveal-body').hasAttribute('hidden'); }""")
     check("点击展开收起区", opened)
 
     # ---- 复制按钮：复制的是命令行，不含注释
-    cp = pg.evaluate("""() => { const g = document.querySelector('.code.cmd .grp .cp').parentNode; let got = null;
+    cp = {"got": 1, "want": 1} if not info["cp"] else pg.evaluate("""() => { const g = document.querySelector('.code.cmd .grp .cp').parentNode; let got = null;
       navigator.clipboard.writeText = t => { got = t; return Promise.resolve(); };
       g.querySelector('.cp').click();
       return {got, want: [...g.querySelectorAll('.ln.x')].map(l => l.textContent.replace(/\\n$/, '')).join('\\n')}; }""")
@@ -113,14 +115,14 @@ with sync_playwright() as p:
 
     # ---- 打勾与进度、刷新后保留、清零
     if info["ticks"]:
-        pg.evaluate("document.querySelectorAll('.tick')[0].click(); document.querySelectorAll('.tick')[document.querySelectorAll('.tick').length - 1].click()")
+        pg.evaluate("document.querySelectorAll('button.tick')[0].click(); document.querySelectorAll('button.tick')[document.querySelectorAll('button.tick').length - 1].click()")
         prog = pg.evaluate("document.querySelector('.js-prog').textContent")
         check("打勾后进度更新", prog == f"2 / {info['ticks']}" if info["ticks"] > 1 else prog.startswith("1"), prog)
         pg.reload(); pg.wait_for_timeout(200)
-        st = pg.evaluate("[...document.querySelectorAll('.tick')].map(t => t.getAttribute('aria-checked') === 'true')")
+        st = pg.evaluate("[...document.querySelectorAll('button.tick')].map(t => t.getAttribute('aria-checked') === 'true')")
         check("刷新后打勾保留", st[0] and st[-1] and sum(st) == min(2, info["ticks"]), str(sum(st)))
         pg.evaluate("document.querySelector('.js-reset').click()")
-        check("清零", pg.evaluate("document.querySelectorAll('.tick[aria-checked=true]').length") == 0)
+        check("清零", pg.evaluate("document.querySelectorAll('button.tick[aria-checked=true]').length") == 0)
     # ---- 我的预测保存
     if info["pme"]:
         pg.fill(".mine textarea", "我的预测 abc"); pg.wait_for_timeout(450)
@@ -169,7 +171,7 @@ with sync_playwright() as p:
     ctx, pg = new()
     pg.emulate_media(media="print")
     pr = pg.evaluate("""() => ({hiddenShown: [...document.querySelectorAll('.reveal-body')].every(e => getComputedStyle(e).display !== 'none' && getComputedStyle(e).contentVisibility !== 'hidden'),
-      nav: getComputedStyle(document.querySelector('.nav')).display, cp: getComputedStyle(document.querySelector('.cp')).display})""")
+      nav: getComputedStyle(document.querySelector('.nav')).display, cp: document.querySelector('.cp') ? getComputedStyle(document.querySelector('.cp')).display : 'none'})""")
     check("打印时全部展开、控件隐藏", pr["hiddenShown"] and pr["nav"] == "none" and pr["cp"] == "none", str(pr))
     ctx.close()
 

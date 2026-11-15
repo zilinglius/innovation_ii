@@ -35,7 +35,7 @@ def check():
     blocks=[body for lang,body in re.findall(r'^```([^\n]*)\n(.*?)^```',md,re.M|re.S) if lang!='mermaid' and '┌─ h1a' not in body]
     assert blocks==page.blocks,'代码或输出内容／顺序不一致'
     assert not [key for key,n in Counter(page.ids).items() if n>1],'ID 重复'
-    assert page.svg==4 and page.math>0,'SVG 或 MathML 缺失'
+    assert html.count('<figure')==4 and page.math>0,'配图或 MathML 缺失'
     assert not page.resources,f'正文存在外部依赖 {page.resources}'
     for link in page.links:
         url=urlsplit(link)

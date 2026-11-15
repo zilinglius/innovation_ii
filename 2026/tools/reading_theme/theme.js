@@ -65,13 +65,19 @@
   $$(".stops > li[data-target]").forEach(function (li) { stopLi[li.getAttribute("data-target")] = li; order.push(li.getAttribute("data-target")); });
   $$(".subs a[href^='#']").forEach(function (a) { subLi[a.getAttribute("href").slice(1)] = a.parentNode; });
   (function collect() {
-    var hero = $(".hero"); if (hero) marks.push({ el: hero, mod: "top", sub: null, step: null, text: "导读与学习目标" });
+    var hero = $(".hero"), first = $(".stops > li[data-target='top'] a");
+    if (hero) marks.push({ el: hero, mod: "top", sub: null, step: null, text: first ? first.textContent : "导读" });
     $$(".module").forEach(function (m) {
       var no = $(".module-no", m), h2 = $("h2", m), base = (no ? no.textContent : "") + " · ";
       marks.push({ el: m, mod: m.id, sub: null, step: null, text: base + (h2 ? h2.textContent : "") });
       var sub = null;
-      $$("h3[id], h4[id]", m).forEach(function (h) {
-        if (h.tagName === "H3") {
+      // 实验页的任务层级（header.tier）当作小节，任务标题（header.task-head）当作步骤
+      $$("h3[id], h4[id], header.tier[id], header.task-head[id]", m).forEach(function (h) {
+        if (h.tagName === "HEADER") {
+          var t = $("h3, h4", h), no = $(".task-no", h), tier = h.classList.contains("tier");
+          if (tier) sub = h.id;
+          marks.push({ el: h, mod: m.id, sub: sub, step: tier ? null : h.id, text: base + (no ? no.textContent + " " : "") + (t ? t.textContent : "") });
+        } else if (h.tagName === "H3") {
           sub = h.id; var n = $(".sec-no", h), t = h.textContent;
           marks.push({ el: h, mod: m.id, sub: sub, step: null, text: base + (n ? n.textContent + " " + t.slice(n.textContent.length) : t) });
         } else marks.push({ el: h, mod: m.id, sub: sub, step: h.id, text: base + h.textContent });
@@ -114,7 +120,7 @@
   function barH() { var b = $(".topbar"); return b && compact() ? b.offsetHeight : 0; }
   function setPresent(on) {
     var keep = current();
-    root.classList.toggle("present", on); syncCompact(); fitTables();
+    root.classList.toggle("present", on); syncCompact(); fitTables(); fitMath();
     $$(".js-present").forEach(function (b) { b.setAttribute("aria-pressed", on ? "true" : "false"); });
     if (keep && keep.mod !== "top") window.requestAnimationFrame(function () {
       window.scrollTo({ top: keep.el.getBoundingClientRect().top + window.scrollY - barH() - 16, behavior: "instant" });
@@ -125,7 +131,7 @@
   $$(".js-present").forEach(function (b) { b.addEventListener("click", function () { setPresent(!root.classList.contains("present")); }); });
   function step(dir) {
     var y = window.scrollY, vh = window.innerHeight, page = vh * 0.85, target;
-    var tops = $$(".opener, h3[id], h4[id], .fig, .pme, .questions > li").map(function (e) {
+    var tops = $$(".opener, h3[id], h4[id], .tier, .task-head, .fig, .pme, .questions > li, .qs > li, .module > ol:not(.qs) > li[id^='q']").map(function (e) {
       return Math.round(e.getBoundingClientRect().top + y - barH() - 16 - (e.closest(".labzone") ? 52 : 0));
     }).sort(function (a, b) { return a - b; });
     if (dir > 0) { target = tops.filter(function (t) { return t > y + 4; })[0]; if (target === undefined || target > y + page) target = y + page; }
@@ -249,6 +255,7 @@
     $$(".js-think").forEach(function (b) { b.setAttribute("aria-checked", think ? "true" : "false"); });
   }
   $$(".js-think").forEach(function (b) {
+    if (!reveals.length) b.hidden = true;                    // 没有可收起内容的页（多数回顾页）不显示这个开关
     b.addEventListener("click", function () {
       think = !think; save("iilec-think", think ? "on" : "off"); applyThink();
       say(think ? "先想后看已开启：样例输出与思考提示先收起" : "先想后看已关闭：全部内容展开");
@@ -273,7 +280,19 @@
   window.addEventListener("load", fitTables);
   if (d.fonts && d.fonts.ready) d.fonts.ready.then(fitTables);      // 内嵌字体生效后列宽会变，重新量一次
 
-  syncCompact(); fitTables(); spy();
+  // ---------- 行内公式：窄屏上比栏还宽的那几个，改成可以在自己的框里横向滚动 ----------
+  function fitMath() {
+    if (!doc) return;
+    var right = doc.getBoundingClientRect().right + 1;
+    $$(".math.inline").forEach(function (m) {
+      m.classList.remove("is-wide");
+      if (m.getBoundingClientRect().right > right) m.classList.add("is-wide");
+    });
+  }
+  window.addEventListener("resize", fitMath);
+  window.addEventListener("load", fitMath);
+
+  syncCompact(); fitTables(); fitMath(); spy();
   if (window.location.hash.length > 1) {      // 带 #锚点 打开：收起内容后版面高度变了，重新对齐一次
     var target = d.getElementById(decodeURIComponent(window.location.hash.slice(1)));
     if (target) window.requestAnimationFrame(function () { target.scrollIntoView(); });

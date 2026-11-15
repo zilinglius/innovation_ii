@@ -144,6 +144,7 @@ button, textarea { font: inherit; color: inherit; }
 .tool[aria-pressed="true"], .tool[aria-checked="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
 .tool svg, .ibtn svg { width: 1.05rem; height: 1.05rem; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .tool.wide { grid-column: 1 / -1; }
+.tool[hidden] { display: none; }
 .switch { display: grid; grid-template-columns: auto 1fr; gap: .1rem .65rem; align-items: center; text-align: left; white-space: normal; padding: .55rem .65rem; }
 .switch[aria-checked="true"] { background: none; color: var(--ink); border-color: var(--rule-2); }
 .switch i { grid-row: 1 / 3; width: 1.9rem; height: 1.1rem; border-radius: 1rem; background: var(--rule-2); position: relative; transition: background .16s ease; }
@@ -322,6 +323,8 @@ a.seg:hover { transform: translateY(-3px); }
 .opener-top .otag { font: 600 .7rem/1 var(--font-mono); letter-spacing: .06em; padding: .28rem .45rem; border-radius: .2rem; border: 1px solid currentColor; opacity: .92; }
 .opener h2 { grid-column: 2; margin: 0; font-size: clamp(1.45rem, 3.6vw, 1.95rem); line-height: 1.3; font-weight: 600; text-wrap: balance; }
 .opener h2 code { font-size: .86em; background: none; padding: 0; }
+.opener.no-num { grid-template-columns: minmax(0, 1fr) auto; }
+.opener.no-num h2 { grid-column: 1; }
 /* 开章的小帧：这一章拆的是帧的哪一段 */
 .opener-art { grid-column: 3; grid-row: 1 / 3; align-self: center; display: flex; gap: 2px; height: 1.6rem; }
 .opener-art i { display: block; height: 100%; border: 1.5px solid currentColor; border-radius: 2px; opacity: .45; }
@@ -362,8 +365,10 @@ code { font-family: var(--font-mono); font-size: .875em; background: var(--surfa
 .math .mb { font-weight: 700; }
 .math-wrap, .math.block { overflow-x: auto; overflow-y: hidden; max-width: 100%; scrollbar-width: thin; }
 .math.block { margin: .6rem 0 1em; }
-.module > blockquote { margin: 1.25rem 0; padding: .1rem 0 .1rem 1rem; border-left: 3px solid var(--rule-2); color: var(--ink-2); }
-.module > blockquote > :last-child { margin-bottom: 0; }
+.math.inline.is-wide { display: inline-block; max-width: 100%; overflow-x: auto; overflow-y: hidden; vertical-align: bottom; scrollbar-width: thin; }
+blockquote { margin: 1.25rem 0; padding: .1rem 0 .1rem 1rem; border-left: 3px solid var(--rule-2); color: var(--ink-2); }
+blockquote > :last-child { margin-bottom: 0; }
+code.nw { white-space: nowrap; }
 .math-block { display: block; overflow-x: auto; overflow-y: hidden; margin: .6rem 0 .25rem; scrollbar-width: thin; }
 
 /* ---------- 提示框：说明 / 重点 / 注意 ---------- */
@@ -504,18 +509,18 @@ html.js .code.cmd .grp.has-tick { padding-left: 3rem; }
 .term { display: inline-block; font: 600 .72rem/1 var(--font-mono); letter-spacing: .02em; color: var(--term); background: var(--term-ink); border-radius: .2rem; padding: .22rem .4rem .22rem .32rem; margin-right: .12em; vertical-align: .08em; white-space: nowrap; }
 .term::before { content: ">_ "; opacity: .55; }
 .kbd { font: 500 .74rem/1 var(--font-mono); padding: .12rem .34rem; border: 1px solid var(--term-dim); border-bottom-width: 2px; border-radius: .25rem; color: var(--term-ink); white-space: nowrap; }
-.cp, .tick { position: absolute; padding: 0; display: grid; place-items: center; cursor: pointer; -webkit-user-select: none; user-select: none; /* 不参与选区，否则选中复制会多出换行 */ }
+.cp, .code .tick { position: absolute; padding: 0; display: grid; place-items: center; cursor: pointer; -webkit-user-select: none; user-select: none; /* 不参与选区，否则选中复制会多出换行 */ }
 .cp { top: .55rem; right: .6rem; width: 2rem; height: 1.9rem; background: var(--term-2); border: 1px solid var(--term-rule); border-radius: .35rem; color: var(--term-dim); }
 .cp:hover { border-color: var(--term-dim); color: var(--term-ink); }
-.cp svg, .tick svg { width: .95rem; height: .95rem; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.cp svg, .code .tick svg { width: .95rem; height: .95rem; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .cp .i-ok { display: none; }
 .cp.ok .i-ok { display: block; } .cp.ok .i-cp { display: none; }
 .cp.ok { color: var(--term-ink); border-color: var(--term-dim); }
 .cp.ok::after { content: "已复制"; position: absolute; right: calc(100% + .5rem); top: 50%; transform: translateY(-50%); font: 500 .74rem/1 var(--font-sans); color: var(--term-ink-2); white-space: nowrap; background: var(--term); padding: .3rem .1rem .3rem .5rem; }
 /* 打勾：这一步做完了 */
-.tick { top: .78rem; left: .95rem; width: 1.3rem; height: 1.3rem; background: none; border: 1.5px solid var(--term-dim); border-radius: 50%; color: transparent; }
-.tick:hover { border-color: var(--term-ink); }
-.tick[aria-checked="true"] { background: var(--term-ink); border-color: var(--term-ink); color: var(--term); }
+.code .tick { top: .78rem; left: .95rem; width: 1.3rem; height: 1.3rem; background: none; border: 1.5px solid var(--term-dim); border-radius: 50%; color: transparent; }
+.code .tick:hover { border-color: var(--term-ink); }
+.code .tick[aria-checked="true"] { background: var(--term-ink); border-color: var(--term-ink); color: var(--term); }
 .grp.is-done .ln { opacity: .5; }
 
 .code.out { background: var(--panel); border: 1px solid var(--rule-2); }
@@ -630,6 +635,84 @@ html.think .questions .hint .reveal-btn { background: none; border: 1px solid va
 html.think .questions .hint .reveal-btn:hover { border-color: var(--ink); opacity: 1; }
 html.think .questions .hint.is-open > .reveal-btn { border: 0; padding: 0; margin-bottom: .35rem; font-size: .78rem; color: var(--ink-3); }
 
+/* ---------- 回顾题单、参考答案与实验指导书的组件 ----------
+   这三类页面与讲义共用外壳（刊头、线路式目录、开章色带、代码、图表），下面是它们特有的部分。 */
+h1 .kicker { display: block; font: 600 .9rem/1.4 var(--font-mono); letter-spacing: .1em; color: var(--ink-3); margin-bottom: .7rem; }
+h1 .nb { display: inline-block; }
+.hero > .legend { margin: 0 0 3rem; }
+.facts { list-style: none; margin: 0 0 2rem; padding: 0; display: flex; flex-wrap: wrap; gap: .5rem 2rem; font-size: .88rem; line-height: 1.6; color: var(--ink-2); }
+.facts li { margin: 0; padding-left: .75rem; border-left: 2px solid var(--rule-2); }
+/* 导读里的引用块：实验页是一行实验信息，回顾页整段导读都在引用块里 */
+.lead blockquote { margin: 0 0 .9rem; padding: 0; border: 0; color: var(--ink-2); font-size: .9em; }
+.lead blockquote:last-child { margin: 0; color: inherit; font-size: inherit; }
+.lead ul, .lead ol { margin: .8em 0 0; }
+/* 难度：一到三个圆点（基础 / 进阶 / 挑战，记得吗 / 看得懂吗 / 说得清吗），旁边总有文字 */
+.pips { display: inline-flex; gap: .19rem; align-items: center; vertical-align: .02em; flex: none; }
+.pips i, .legend .pips i { display: inline-block; width: .44rem; height: .44rem; border-radius: 50%; border: 1.4px solid var(--ink-2); background: transparent; transform: none; }
+.pips i.on, .legend .pips i.on { background: var(--ink-2); }
+/* 使用说明 */
+.howto ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .6rem; }
+.howto li { position: relative; margin: 0; padding-left: 1.4em; }
+.howto li::before { content: ""; position: absolute; left: 0; top: .78em; width: .38rem; height: .38rem; border-radius: 50%; background: var(--ink-3); }
+/* 路线里“实验步骤”一站下面的任务清单 */
+.route .hop-tasks { list-style: none; margin: 0 0 .5rem; padding: 0 0 0 6.9rem; display: grid; gap: .2rem; font-size: .86rem; line-height: 1.6; color: var(--ink-2); }
+.route .hop-tasks li { display: flex; align-items: baseline; gap: .5rem; }
+.route .hop-tasks li::before { content: none; }
+.route .hop-tasks a { display: inline; padding: 0; border-radius: 0; color: inherit; text-decoration: underline dotted var(--ink-3); text-underline-offset: 3px; }
+.route .hop-tasks a:hover { background: none; color: var(--l3); text-decoration-style: solid; }
+.ht-tier { font-weight: 600; flex: none; }
+.ht-list { display: flex; flex-wrap: wrap; gap: 0 1.3rem; }
+@media (max-width: 34em) { .route .hop-tasks { padding-left: 2.4rem; } }
+/* 目录里的任务层级 */
+.subs li.toc-tier > a { color: var(--ink-2); font-weight: 600; }
+.subs li.toc-tier .pips { margin-right: .4rem; }
+.subs li.toc-h4 > a { padding-left: .85rem; font-size: .76rem; }
+/* 任务层级（基础 / 进阶 / 挑战）与任务标题 */
+.tier { margin: 4rem 0 0; scroll-margin-top: calc(var(--bar-h) + 1.25rem); }
+.opener + .tier { margin-top: 0; }
+.tier-row { display: flex; align-items: center; gap: .75rem; padding-bottom: .7rem; border-bottom: 2px solid var(--ink); }
+.tier h3 { margin: 0; padding: 0; border: 0; }
+.tier .pips i { width: .56rem; height: .56rem; border-color: var(--ink); }
+.tier .pips i.on { background: var(--ink); }
+.tier-range { margin-left: auto; font: 500 .75rem/1 var(--font-mono); letter-spacing: .04em; color: var(--ink-3); white-space: nowrap; }
+.task-head { margin: 3rem 0 1.1rem; padding-top: 1.2rem; border-top: 1px solid var(--rule-2); }
+.tier + .task-head { margin-top: 1.5rem; padding-top: 0; border-top: 0; }
+.task-eyebrow { display: flex; align-items: center; gap: .6rem; }
+.task-no { font: 600 .78rem/1 var(--font-mono); letter-spacing: .08em; color: var(--accent); }
+.task-tier { margin-left: auto; display: inline-flex; align-items: center; gap: .45rem; font-size: .75rem; line-height: 1; color: var(--ink-3); letter-spacing: .06em; }
+.task-tier .pips i { border-color: var(--ink-3); }
+.task-tier .pips i.on { background: var(--ink-3); }
+.task-head h4 { font-size: 1.3rem; line-height: 1.45; margin: .6rem 0 0; }
+div.predict > :last-child { margin-bottom: 0; }
+table.fill td:empty { height: 2.7em; }
+table.fill td:empty:not(:first-child) { border-left: 1px solid var(--rule); }
+/* 定位清单 */
+.ladder-wrap { position: relative; margin: 1.4rem 0; border: 1px solid var(--rule-2); border-radius: .6rem; padding: 0 0 .4rem; background: var(--panel); }
+.ladder { list-style: none; counter-reset: lad; margin: .3rem 0 0; padding: 0; }
+.ladder li { counter-increment: lad; position: relative; margin: 0; padding: .55rem 1rem .55rem 3.1rem; display: grid; grid-template-columns: 12.5em 1fr; gap: .1rem 1rem; align-items: baseline; line-height: 1.6; }
+.ladder li::before { content: counter(lad); position: absolute; left: 1rem; top: .62rem; width: 1.25rem; height: 1.25rem; border-radius: 50%; background: var(--ink); color: var(--bg); font: 600 .66rem/1.25rem var(--font-mono); text-align: center; }
+.ladder li:not(:last-child)::after { content: ""; position: absolute; left: 1.6rem; top: 2rem; bottom: -.5rem; width: 1px; background: var(--rule-2); }
+.ladder-cmd { color: var(--ink-3); font-size: .9em; white-space: nowrap; }
+.ladder-cmd code { background: none; padding: 0; font-weight: 600; color: var(--ink); }
+.ladder-q { font-size: .95em; }
+@media (max-width: 35em) { .ladder li { grid-template-columns: 1fr; } }
+/* 题单：题与题之间一条细线；手工页（.qs）的题号与难度放在左侧，生成页用列表自带的题号 */
+.qs { list-style: none; margin: 1.5rem 0 0; padding: 0; }
+.qs > li { position: relative; margin: 0; padding: 1.05rem 0 1.05rem 3.2rem; border-top: 1px solid var(--rule); scroll-margin-top: calc(var(--bar-h) + 1.25rem); }
+.qs > li:last-child { padding-bottom: 0; }
+.q-head { position: absolute; left: 0; top: 1.05rem; display: flex; flex-direction: column; align-items: flex-start; gap: .4rem; }
+.q-no { font: 600 .95rem/1.9 var(--font-mono); color: var(--accent); }
+.qs > li > :last-child { margin-bottom: 0; }
+.src { display: inline-block; margin-left: .6rem; font: 500 .75rem/1.6 var(--font-mono); color: var(--ink-3); }
+ul.lettered { list-style: none; padding-left: 0; }
+ul.lettered > li { padding-left: 2em; text-indent: -2em; }
+ul.lettered > li > strong:first-child { font-family: var(--font-mono); font-size: .9em; color: var(--ink-2); margin-right: .2em; }
+.callout.think { background: none; border: 1px dashed var(--ink-3); }
+.module > ol:not(.qs) > li[id^="q"] { margin: 0; padding: 1.05rem 0 .05rem .3rem; scroll-margin-top: calc(var(--bar-h) + 1.25rem); }
+.module > ol:not(.qs) > li[id^="q"] + li[id^="q"] { border-top: 1px solid var(--rule); }
+.module > ol:not(.qs) > li[id^="q"]::marker { font-weight: 600; font-size: .95em; color: var(--accent); }
+.module > ol:not(.qs):has(> li[id^="q"]) { padding-left: 2.6em; margin-top: 1.25rem; }
+
 /* ---------- 接下来 / 页脚 ---------- */
 .next { margin-top: 4.5rem; }
 .next-grid { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); }
@@ -660,7 +743,7 @@ html.think .questions .hint.is-open > .reveal-btn { border: 0; padding: 0; margi
   body { line-height: 1.72; background: #fff; -webkit-font-smoothing: auto; }
   .layout { display: block !important; padding: 0; }
   .doc { max-width: none; }
-  .nav, .topbar, .scrim, .skip, .toast, .cp, .tick, .zoom-btn, .reveal-btn, .bench-prog, .nav-prog, .next, .mine i, .fig-scroll-hint, .no-print { display: none !important; }
+  .nav, .topbar, .scrim, .skip, .toast, .cp, .code .tick, .zoom-btn, .reveal-btn, .bench-prog, .nav-prog, .next, .mine i, .fig-scroll-hint, .no-print { display: none !important; }
   .hero { padding-top: 0; }
   h1 { font-size: 26pt; margin: 12pt 0 4pt; max-width: none; }
   .hero-en { margin-bottom: 12pt; }
@@ -705,6 +788,7 @@ html.think .questions .hint.is-open > .reveal-btn { border: 0; padding: 0; margi
   .callout > :last-child { margin-bottom: 6pt; }
   .fig { margin: 12pt 0 14pt; padding: 8pt 8pt 7pt; break-inside: avoid; }
   .fig-body { overflow: visible; }
+  .math.inline.is-wide { display: inline; overflow: visible; }
   .fig-body svg { min-width: 0; }
   .pme { margin: 12pt 0 14pt; }
   .pme-step { padding: 7pt 9pt 8pt; grid-template-columns: 46pt minmax(0, 1fr); break-inside: avoid; }
@@ -719,8 +803,17 @@ html.think .questions .hint.is-open > .reveal-btn { border: 0; padding: 0; margi
   .bench-n b { color: var(--ink); }
   .questions > li { padding: 8pt 10pt 8pt 34pt; break-inside: avoid; }
   .questions > li::before { left: 10pt; top: 8pt; }
+  /* 回顾、参考答案与实验页的各节较短，打印时接着排，不强制另起一页 */
+  [data-kind="review"] .module, [data-kind="answers"] .module, [data-kind="lab"] .module { break-before: auto; margin-top: 22pt; }
+  .hero > .legend { margin-bottom: 12pt; }
+  .facts { margin-bottom: 11pt; gap: 4pt 18pt; }
+  .tier { margin-top: 22pt; break-inside: avoid; break-after: avoid; }
+  .task-head { margin: 18pt 0 8pt; padding-top: 9pt; break-inside: avoid; break-after: avoid; }
+  .ladder-wrap { break-inside: avoid; }
+  .qs > li, .module > ol:not(.qs) > li[id^="q"] { padding-top: 7pt; }
+  .qs > li { padding-bottom: 7pt; }
   .colophon { margin-top: 24pt; padding-top: 7pt; }
-  .code, code, .tag, .callout, svg, .seg, .opener, .opener *, .term, tr.key td, .key-mark, .bench, .bench *, .pme-label b, .dot::before, .frame-keys li, .legend i
+  .code, code, .tag, .callout, svg, .seg, .opener, .opener *, .term, tr.key td, .key-mark, .bench, .bench *, .pme-label b, .dot::before, .frame-keys li, .legend i, .pips i, .ladder li::before
     { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   p:has(+ .code), p:has(+ .table-wrap), p:has(+ .fig), p:has(+ ul), p:has(+ ol), p:has(+ .pme) { break-after: avoid; }
 }

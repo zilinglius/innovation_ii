@@ -1,28 +1,39 @@
 # 2026 阅读版维护工具
 
-目前提供 **Lab 3、Lab 4、Lab 5、Lab 6 阅读版**、**第二、三、四、五、六讲回顾阅读版**和**第 06、07、08、09 讲讲义阅读版**的生成入口，以及讲义阅读版的**共用主题**（`reading_theme.py` 与 `reading_theme/`），不是全仓库通用转换器。第 06、07、08 讲与 Lab 4、Lab 5、Lab 6 的生成器共用 `reading_common.py`（命令行内高亮、生成页结构检查、链接与锚点核对、残留标记检查）。教师使用，不属于学生实验依赖；学生 Lab 3 仍只用 Python 标准库。
+目前提供 **Lab 3、Lab 4、Lab 5、Lab 6 阅读版**、**第二、三、四、五、六讲回顾阅读版**和**第 06、07、08、09 讲讲义阅读版**的生成入口，以及全部阅读版的**共用主题**（`reading_theme.py` 与 `reading_theme/`），不是全仓库通用转换器。各生成器共用 `reading_common.py`（命令行内高亮、生成页结构检查、链接与锚点核对、残留标记检查）。教师使用，不属于学生实验依赖；学生 Lab 3 仍只用 Python 标准库。
 
-## 共用主题与新版阅读版（第 01–09 讲）
+## 共用主题
 
-2026-11 改版后，讲义阅读版的样式、脚本与字体集中在 `reading_theme/`（`theme.css`、`theme.js`、`head.js`、`fonts.css`），由 `reading_theme.py` 嵌入各页；版式规范见仓库根目录的 [`html_guidelines.md`](../../html_guidelines.md)。从仓库根目录执行：
+2026-11 改版后，阅读版的样式、脚本与字体集中在 `reading_theme/`（`theme.css`、`theme.js`、`head.js`、`fonts.css`），由 `reading_theme.py` 嵌入各页；版式规范见仓库根目录的 [`html_guidelines.md`](../../html_guidelines.md)。讲义、课堂回顾、参考答案与实验指导书四类页面共用这一套主题：第 01–09 讲于 2026-11-14 改版，各讲课堂回顾（含参考答案）与 Lab 1–6 指导书于同日迁移，改版前的模板 `legacy_reading_template.html` 已删除。
+
+| 页面 | 维护方式 |
+| --- | --- |
+| 第 01–05 讲讲义、第一讲回顾与参考答案、Lab 1、Lab 2 指导书 | 手工维护：先改 Markdown，再按页面开头的维护说明同步 HTML；主题改动后用 `retheme` 刷新 |
+| 第 06–09 讲讲义、第二至六讲回顾与参考答案、Lab 3–6 指导书 | 有生成器：改 Markdown 后重新生成，命令见下文各节 |
+
+从仓库根目录执行：
 
 ```bash
-# 1. 改了共用主题之后：刷新手工维护的页面（第 01–05 讲）里内嵌的样式与脚本
+# 1. 改了共用主题之后：刷新手工维护的页面里内嵌的样式与脚本
 python3 2026/tools/reading_theme.py retheme 2026/docs/network.html 2026/docs/switching_routing.html \
-  2026/docs/routing_protocol.html 2026/docs/link_state_router.html 2026/docs/datacenter_network.html
+  2026/docs/routing_protocol.html 2026/docs/link_state_router.html 2026/docs/datacenter_network.html \
+  2026/docs/network_review.html 2026/docs/network_review_answers.html \
+  2026/experiments/01/README.html 2026/experiments/02/README.html
 
-# 2. 有生成器的页面（第 06–09 讲）：重新生成即可，命令见下文各节
+# 2. 有生成器的页面：重新生成即可，命令见下文各节（--date 沿用该页上一次的内容更新日期）
 
 # 3. 显示与交互测试（需要本机装有 Chrome）；可以一次给多个页面
 uv run --with playwright python 2026/tools/test_reading_page.py 2026/docs/network.html
 ```
 
-- `reading_theme.py` 只用 Python 标准库。`restyle(html, page)` 供生成器在最后一步调用：生成器仍按“旧版结构”（`masthead`、`toc`、`module-head`、`colophon`）拼出整页，`restyle()` 把它换成新版页面，包括开章色带、线路式目录、终端式命令块、“预测、测量、解释”卡片、可收起的思考提示与页尾的“接下来”。正文、表格、公式、SVG 与代码文本逐字沿用。
+- `reading_theme.py` 只用 Python 标准库。`restyle(html, page, kind=…)` 供生成器在最后一步调用：生成器仍按“旧版结构”（`masthead`、`toc`、`module-head`、`colophon`）拼出整页，`restyle()` 把它换成新版页面，包括开章色带、线路式目录、终端式命令块、“预测、测量、解释”卡片、可收起的思考提示与页尾的“接下来”。正文、表格、公式、SVG 与代码文本逐字沿用。
+- `kind` 是页面种类：`lecture`（讲义，缺省）、`review`（课堂回顾）、`answers`（参考答案）、`lab`（实验指导书）。`page` 是页面名，也是浏览器本地存储的键：讲义与回顾用不带扩展名的文件名，实验页写成 `lab03` 这样。种类决定刊头的面包屑、打印页眉、页尾“接下来”的去向（回顾页去原讲义、参考答案与下一讲回顾；实验页去对应讲义与下一个实验），以及打印时各节是否另起一页（只有讲义另起）。
+- 回顾与实验页没有学习目标和“本讲路线”也可以；标题自带“一、二、……”的节不再加大号序号。手工维护的页面里特有的组件（难度圆点 `.pips`、任务层级 `.tier`、任务标题 `.task-head`、定位清单 `.ladder`、题单 `.qs`）的样式也在共用主题里。
 - 命令块里的续行（反斜杠、here-doc、循环与函数体、未闭合的引号、行尾的管道）由 `restyle()` 识别并标成 `.cont`，显示 `>` 提示符。遇到识别不了的写法，命令块结束时会断言失败，而不是悄悄标错。
-- `LECTURES` 表登记每一讲的讲次、配套实验与回顾页，用于页尾的“接下来”；新增一讲时先在这里登记，并与 `2026/README.md` 的大纲保持一致。
-- `retheme` 只替换页面里 id 为 `theme`、`theme-head`、`theme-js` 的三个块，其余内容不动；对旧版式的页面会直接报错。`migrate` 用于把手工维护的旧版页面一次性换成新版（第 02–05 讲已于 2026-11-14 迁移），迁移时本页专属的样式取“旧页样式减去旧模板”的差。
-- `test_reading_page.py` 核对：各宽度下所有块与栏对齐、无横向溢出；“先想后看”的收起与展开；整块选中复制与复制按钮得到的文本和 Markdown 一致；打勾、进度与写下的预测刷新后保留；目录跟随、图放大、投影模式、手机抽屉、深色、打印展开与无脚本回退。它不代替内容核对，也不代替看截图和导出的 PDF。
-- **尚未迁移的页面**：各讲课堂回顾与 Lab 3–6 指导书的生成器读取 `legacy_reading_template.html`，即改版前 `link_state_router.html` 的样式与脚本的冻结副本，重新生成的结果与改版前相同。迁移这些页面时再删除它。
+- `LECTURES` 表登记每一讲的讲次、配套实验与回顾页，用于页尾的“接下来”，也用来确定回顾页属于哪一讲；新增一讲或一份回顾时先在这里登记，并与 `2026/README.md` 的大纲保持一致。
+- `retheme` 只替换页面里 id 为 `theme`、`theme-head`、`theme-js` 的三个块，其余内容不动。
+- `test_reading_page.py` 核对：各宽度下所有块与栏对齐、无横向溢出；“先想后看”的收起与展开（没有可收起内容的页不显示这个开关）；整块选中复制与复制按钮得到的文本和 Markdown 一致；打勾、进度与写下的预测刷新后保留；目录跟随、图放大、投影模式、手机抽屉、深色、打印展开与无脚本回退。它不代替内容核对，也不代替看截图和导出的 PDF。
+- 主题里的类名对配图里的 SVG 同样生效。给配图起类名时避开主题已有的名字（例如打勾按钮的 `.tick` 已限定在命令块内，就是因为回顾页的坐标轴刻度也叫 `tick`）。
 
 ## Lab 3 阅读版
 
@@ -39,7 +50,7 @@ uv run --project 2026/tools --frozen python 2026/tools/build_lab3_html.py --date
 uv run --project 2026/tools --frozen python 2026/tools/check_lab3_html.py
 ```
 
-- 内容源为 `2026/experiments/03/README.md`，输出为同目录的 `README.html`；CSS、字体、打印样式与目录行为来自 `2026/tools/legacy_reading_template.html`（改版前 `link_state_router.html` 的冻结副本）。
+- 内容源为 `2026/experiments/03/README.md`，输出为同目录的 `README.html`；版式由 `reading_theme.restyle()` 套用共用主题（`reading_theme/`），页面种类为 `lab`。
 - 四幅图统一由 `lab3_figures.py` 绘制；生成时也更新图 1 的 SVG 源码快照 `lab3_topology.svg`。Markdown 保留拓扑与 Mermaid，HTML 内嵌 SVG，正文公式转为 MathML。
 - 配图采用相同的 760 单位宽度和既有语义色。对照场景固定节点位置；ECMP 用实线 F1／虚线 F2 跟踪连接，租户图分别标出逻辑流量与共享容量。不要仅靠颜色区分流或租户。
 - `FIGURE_CSS` 只补充配图样式：屏幕最小宽度为 700 px，窄屏在图框内滚动并支持键盘聚焦，打印时恢复为可打印宽度；图注的图号和说明分列。
@@ -65,7 +76,7 @@ uv run --project 2026/tools --frozen python 2026/tools/build_switching_routing_r
 ```
 
 - 默认输出 `switching_routing_review.html`；加 `--answers` 时从 `switching_routing_review_answers.md` 生成同名 HTML。各自以 Markdown 为唯一正文源，保留源文链接、SHA-256 与更新日期。
-- 复用 `legacy_reading_template.html`（改版前 `link_state_router.html` 的冻结副本）的 CSS、内嵌字体、A4 打印样式及目录行为；公式预转 MathML，目录由标题生成。
+- 版式由 `reading_theme.restyle()` 套用共用主题（`reading_theme/`），页面种类为 `review`／`answers`；公式预转 MathML，目录由标题生成。
 - 生成前核对两份材料的 34 个题号逐一对应、命令／输出逐字一致、唯一 ID、目录与题目锚点、本地链接与页面外部资源引用。
 - 答案中的两幅图由 `switching_routing_review_figures.py` 转为 SVG，图注来自 Markdown；其中的源图摘要防止 Mermaid 改动后仍使用旧图。修改源图时须先核对节点、路径、接口及简化条件，再更新 SVG 与摘要。
 - 自动检查不覆盖浏览器显示；生成后仍须核验桌面、约 390 px 手机、浅色／深色和打印显示。本入口不重建第一讲回顾或原第二讲讲义。
@@ -85,7 +96,7 @@ uv run --project 2026/tools --frozen python 2026/tools/build_routing_protocol_re
 uv run --project 2026/tools --frozen python 2026/tools/build_routing_protocol_review_html.py --answers --date 2026-10-11
 ```
 
-- 输出同目录、同名 HTML；正文以 Markdown 为唯一源，沿用 `legacy_reading_template.html`（改版前 `link_state_router.html` 的冻结副本）的公共样式、字体、目录及打印行为。生成信息保留 SHA-256 与日期，公式预转 MathML。
+- 输出同目录、同名 HTML；正文以 Markdown 为唯一源，版式由 `reading_theme.restyle()` 套用共用主题（`reading_theme/`）。生成信息保留 SHA-256 与日期，公式预转 MathML。
 - 题单 9 幅、答案 11 幅图由 `routing_protocol_review_figures.py` 绘制为内嵌 SVG；图注来自 Markdown，源图摘要保存在 `routing_protocol_review_figure_sources.json`。修改 Mermaid 后，应先同步并核对 SVG 的节点、方向、字段、数值和简化条件，再更新对应摘要；不要只刷新摘要掩盖旧图。
 - 生成器核对两份材料 36 个题号、连续图号、命令／输出文本、唯一标识、本地链接、源文摘要与外部资源依赖；它是第三讲专用入口，不重建原讲义或其他讲次。
 - 图示以约 760 单位宽度绘制，手机局部滚动，打印按可用宽度缩放。生成后仍需实际查看桌面、390 px 手机、浅色／深色与打印显示，自动检查不能替代显示验收。
@@ -106,7 +117,7 @@ uv run --project 2026/tools --frozen python 2026/tools/build_link_state_router_r
 uv run --project 2026/tools --frozen python 2026/tools/build_link_state_router_review_html.py --answers --date 2026-10-18
 ```
 
-- 结构与第三讲回顾生成器相同：输出同目录、同名 HTML，公共样式、字体、目录与打印行为取自 `legacy_reading_template.html`，打印页眉改为“第 04 讲回顾”。代码块支持 `bash`、`text` 与 `python` 三类，只做转义、不加高亮，复制文本与源文一致。
+- 结构与第三讲回顾生成器相同：输出同目录、同名 HTML，版式由 `reading_theme.restyle()` 套用共用主题（`reading_theme/`），打印页眉为“第 04 讲回顾”。代码块支持 `bash`、`text` 与 `python` 三类，只做转义、不加高亮，复制文本与源文一致。
 - 题单与答案各 6 幅图，由 `link_state_router_review_figures.py` 绘制为内嵌 SVG；Mermaid 源图以 `%% lsr-review:<key>` 标识，摘要保存在 `link_state_router_review_figure_sources.json`。图注取自源图下方的 `*图 N：…*`，阅读版中图号与说明分列。答案中的计时图（图 1、4、5）在阅读版里按时间比例绘制，图 4 的放大段在图内注明不按比例。修改 Mermaid 后先核对 SVG 的节点、方向、数值与简化条件，再更新摘要。
 - 生成器核对：32 个题号逐一对应、连续图号、代码／输出逐字一致、唯一 ID、本地链接与跨页锚点、源文摘要、外部资源依赖，以及其他讲次模板与未转换 Mermaid 的残留。显示仍须在浏览器中检查桌面、约 390 px 手机、浅色／深色与导出 PDF 的分页；打印时题单的“使用说明”与第一、二、三、五、十节，答案的第一、三、七、八、十一节与“讲评时的核对入口”允许接续上一页，其余模块另起一页。
 - 第八节题 29、30 引用 2026-10-18 在备课虚拟机上用 `02/reference/lsrd` 补测的重启场景，复现命令写在答案题 30；其余数字沿用第四讲模块六的原记录。排版检查不代表实验验证。
@@ -126,7 +137,7 @@ uv run --project 2026/tools --frozen python 2026/tools/build_datacenter_network_
 uv run --project 2026/tools --frozen python 2026/tools/build_datacenter_network_review_html.py --answers --date 2026-10-24
 ```
 
-- 结构与第四讲回顾生成器相同：输出同目录、同名 HTML，公共样式、字体、目录与打印行为取自 `legacy_reading_template.html`，打印页眉改为“第 05 讲回顾”。代码块支持 `bash` 与 `text` 两类，只做转义、不加高亮，复制文本与源文一致。链到仓库内 Markdown 时，若同目录有同名阅读版则改链到 `.html`。
+- 结构与第四讲回顾生成器相同：输出同目录、同名 HTML，版式由 `reading_theme.restyle()` 套用共用主题（`reading_theme/`），打印页眉为“第 05 讲回顾”。代码块支持 `bash` 与 `text` 两类，只做转义、不加高亮，复制文本与源文一致。链到仓库内 Markdown 时，若同目录有同名阅读版则改链到 `.html`。
 - 题单 5 幅、答案 6 幅图，由 `datacenter_network_review_figures.py` 绘制为内嵌 SVG；Mermaid 源图以 `%% dc-review:<key>` 标识，摘要保存在 `datacenter_network_review_figure_sources.json`。图注取自源图下方的 `*图 N：…*`。答案中的柱状图（图 1、2、5）与时间线（图 4）按数值比例绘制，图 4 的放大段在图内注明比例。修改 Mermaid 后先核对 SVG 的节点、方向、数值与简化条件，再更新摘要。
 - 生成器核对：32 个题号逐一对应、连续图号、代码／输出逐字一致、唯一 ID、本地链接与跨页锚点、源文摘要、外部资源依赖、本机绝对路径，以及其他讲次模板与未转换 Mermaid 的残留。显示仍须在浏览器中检查桌面、约 390 px 手机、浅色／深色与导出 PDF 的分页；打印时题单的“使用说明”与第一、六、十节，答案除第三、七节外的各节允许接续上一页。
 - 题 10、24、27–31 引用 2026-10-24 在备课虚拟机上用课堂实验床与 `02/reference/lsrd` 补测的数据，复现命令写在答案题 30、31；其余数字沿用第五讲原记录。排版检查不代表实验验证。
@@ -180,7 +191,7 @@ uv sync --project 2026/tools --frozen
 uv run --project 2026/tools --frozen python 2026/tools/build_lab4_html.py --date 2026-10-17
 ```
 
-- 输出 `2026/experiments/04/README.html`。CSS、字体、目录与打印样式取自 `legacy_reading_template.html`；页面结构与 Lab 3 阅读版一致：实验导读、按“一、二、……”分节、目录列出各级小节，任务（h4）在目录中缩进。
+- 输出 `2026/experiments/04/README.html`。版式由 `reading_theme.restyle()` 套用共用主题（`reading_theme/`）；页面结构与 Lab 3 阅读版一致：实验导读、按“一、二、……”分节、目录列出各级小节，任务（h4）在目录中缩进。
 - `bash` 块只加行内高亮；`output` 块标为“实测样例”，无语言标记的字符块（如 3.3 节的目录树）标为“示意”。出现其他代码类型时生成器会报错。
 - 3.3 节的字符数据流图由 `lab4_figures.py` 绘制为内嵌 SVG，图注取自其下方的 `*图 1：…*`；源图摘要保存在 `lab4_figure_sources.json`。修改字符图后先核对 SVG 的框、箭头、TODO 标签与说明，再更新摘要。
 - 链到仓库内 Markdown 时，若同目录有同名阅读版则改链到 `.html`。生成器自动核对命令／输出文本逐字一致、图号、唯一 ID、链接与锚点、源文摘要、外部资源依赖与残留标记；浏览器显示（桌面、约 390 px 手机、浅色／深色、打印与导出 PDF）须另行检查。

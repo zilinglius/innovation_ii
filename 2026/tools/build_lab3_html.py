@@ -1,4 +1,4 @@
-"""从 Lab 3 Markdown 重建单文件阅读版；复用第四讲公共 CSS 与目录行为。"""
+"""从 Lab 3 Markdown 重建单文件阅读版；先按旧版结构拼出整页，再由 reading_theme.restyle() 套上共用主题。"""
 import argparse
 from datetime import date
 import hashlib
@@ -11,10 +11,10 @@ from markdown_it import MarkdownIt
 from mdit_py_plugins.dollarmath import dollarmath_plugin
 from latex2mathml.converter import convert
 from lab3_figures import FIGURE_CSS, figure
+from reading_theme import restyle
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / '2026/experiments/03/README.md'
-TEMPLATE = ROOT / '2026/tools/legacy_reading_template.html'
 
 
 def math_render(content, display_mode=False):
@@ -33,13 +33,8 @@ def markdown():
 
 
 def build(updated):
-    source=SOURCE.read_text();template=TEMPLATE.read_text();md=markdown()
-    css=re.search(r'<style>(.*?)</style>',template,re.S)[1]
-    css=css.replace('第 04 讲','Lab 3').replace('动手实现一个链路状态路由器','搭一个迷你数据中心')
-    # 保留模板字体的许可注释以及内嵌字体；新增长代码块打印允许分页。
-    css+='\n@media print { .code { break-inside:auto; } .fig svg { min-width:0; } }\n'
-    css += FIGURE_CSS
-    script=re.search(r'<script>(.*?)</script>',template,re.S)[1]
+    source=SOURCE.read_text();md=markdown()
+    css, script = FIGURE_CSS, ""          # 共用样式与脚本由 restyle() 嵌入；这里只带本页配图的专属样式
     expected=json.loads(Path(__file__).with_name('lab3_figure_sources.json').read_text())
     seen=[]
     def diagrams(match):
@@ -86,6 +81,7 @@ def build(updated):
 <main class="doc" id="top"><header class="masthead"><div class="mast-eyebrow"><span>上海交通大学 · 云网融合创新实践</span><span class="lec">2026 · LAB 03</span></div><h1>搭一个<br>迷你数据中心</h1><p class="mast-sub">Build a Mini Data Center: Clos Fabric, ECMP &amp; VXLAN</p><div class="legend"><span><i class="k-l2"></i>二层 · 交换与隔离</span><span><i class="k-l3"></i>三层 · 路由与多路径</span><span><i class="k-l4"></i>四层 · 连接与传输</span></div><div class="lead"><span class="lead-label">实验导读</span>{md.render(intro)}</div></header>
 {''.join(sections)}
 <footer class="colophon"><span>上海交通大学 · 云网融合创新实践 · Lab 3</span><span>由 <a href="README.md">README.md</a> 生成 · sha256 {sha[:12]} · {updated}</span></footer></main></div><script>{script}</script></body></html>'''
+    page=restyle(page,'lab03',kind='lab',page_css=css,base=SOURCE.parent)
     SOURCE.with_suffix('.html').write_text(page)
     print(f'{SOURCE.relative_to(ROOT)} → HTML；4 幅 SVG；sha256 {sha}')
 
