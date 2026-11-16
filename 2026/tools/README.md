@@ -1,6 +1,6 @@
 # 2026 阅读版维护工具
 
-目前提供 **Lab 3、Lab 4、Lab 5、Lab 6、Lab 7 阅读版**、**第二、三、四、五、六讲回顾阅读版**和**第 06、07、08、09、10 讲讲义阅读版**的生成入口，以及全部阅读版的**共用主题**（`reading_theme.py` 与 `reading_theme/`），不是全仓库通用转换器。各生成器共用 `reading_common.py`（命令行内高亮、生成页结构检查、链接与锚点核对、残留标记检查）。教师使用，不属于学生实验依赖；学生 Lab 3 仍只用 Python 标准库。
+目前提供 **Lab 3、Lab 4、Lab 5、Lab 6、Lab 7 阅读版**、**第二、三、四、五、六讲回顾阅读版**和**第 06、07、08、09、10、11 讲讲义阅读版**的生成入口，以及全部阅读版的**共用主题**（`reading_theme.py` 与 `reading_theme/`），不是全仓库通用转换器。各生成器共用 `reading_common.py`（命令行内高亮、生成页结构检查、链接与锚点核对、残留标记检查）。教师使用，不属于学生实验依赖；学生 Lab 3 仍只用 Python 标准库。
 
 ## 共用主题
 
@@ -9,7 +9,7 @@
 | 页面 | 维护方式 |
 | --- | --- |
 | 第 01–05 讲讲义、第一讲回顾与参考答案、Lab 1、Lab 2 指导书 | 手工维护：先改 Markdown，再按页面开头的维护说明同步 HTML；主题改动后用 `retheme` 刷新 |
-| 第 06–10 讲讲义、第二至六讲回顾与参考答案、Lab 3–7 指导书 | 有生成器：改 Markdown 后重新生成，命令见下文各节 |
+| 第 06–11 讲讲义、第二至六讲回顾与参考答案、Lab 3–7 指导书 | 有生成器：改 Markdown 后重新生成，命令见下文各节 |
 
 从仓库根目录执行：
 
@@ -291,3 +291,14 @@ uv run --project 2026/tools --frozen python 2026/tools/build_lab7_html.py --date
 ```
 
 - 输出 `2026/experiments/07/README.html`，结构与 Lab 6 生成器相同，生成器要求配图数为 0。
+
+## 第 11 讲讲义阅读版
+
+先修改 `2026/docs/computing_aware_steering.md`，再从仓库根目录执行：
+
+```bash
+uv run --project 2026/tools --frozen python 2026/tools/build_computing_aware_steering_html.py --date 2026-11-15
+```
+
+- 结构与第 10 讲生成器相同。3 幅配图由 `computing_aware_steering_figures.py` 绘制：图 1 是一个请求的四段时间（长度不按比例），图 2 把两张画像画在一起（蓝线的粗细是吞吐，紫色条的长度是算力），图 3 是 RFC 10053 的 CATS 框架示意。Mermaid 源图的摘要在 `computing_aware_steering_figure_sources.json`。
+- 第 10、11 讲在 `LECTURES` 表里登记的配套实验都是 Lab 7；改了 Lab 7 的标题要重新生成这两讲，改了这两讲的标题要重新生成 Lab 7 与前一讲。

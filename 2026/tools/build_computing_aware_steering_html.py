@@ -1,0 +1,220 @@
+"""从第 11 讲 Markdown 重建单文件阅读版，并核对代码、配图、链接与外部依赖。
+
+正文以 Markdown 为唯一来源。本脚本先按“旧版结构”（导读、学习目标、本讲路线、时间安排、各模块）拼出整页，
+最后交给 reading_theme.restyle() 套上共用主题（2026/tools/reading_theme/），换成新版页面；版式规范见 html_guidelines.md。
+结构沿用第 08 讲的生成器（build_communication_cost_html.py），另外支持无语言标记的字符块（报文位图，标为“示意”）。
+"""
+
+import argparse
+from collections import Counter
+from datetime import date
+import hashlib
+import html
+from pathlib import Path
+import re
+from urllib.parse import unquote, urlsplit
+
+from latex2mathml.converter import convert
+from markdown_it import MarkdownIt
+from mdit_py_plugins.dollarmath import dollarmath_plugin
+from computing_aware_steering_figures import FIGURE_CSS, figure
+from reading_common import Page, check_leftovers, check_links, highlight, html_token, upright_greek
+from reading_theme import restyle
+
+ROOT = Path(__file__).resolve().parents[2]
+SOURCE = ROOT / "2026/docs/computing_aware_steering.md"
+NUMERALS = "一二三四五六七八九"
+# 每个模块的语义色（data-layer）与标签：两张画像与联合代价跨网络和算力，综合动手的分流看到实例的路径。
+MODULE_TAGS = {
+    1: ("", "", "现象 · 实例", "实例"),
+    2: ("", "mix", "跨层 · 两张画像", "画像"),
+    3: ("", "mix", "跨层 · 联合代价", "估计"),
+    4: ("", "", "知识 · 算力网络", "知识"),
+    5: ("l3", "l3", "动手 · 分流", "动手"),
+    6: ("", "", "课后", "课后"),
+}
+
+
+def markdown():
+    md = MarkdownIt("commonmark", {"html": False}).enable("table")
+    # 显示公式放进可横向滚动的容器，窄屏时不撑开整页。
+    md.use(dollarmath_plugin, renderer=lambda text, options: (
+        f'<div class="math-wrap">{upright_greek(convert(text, display="block"))}</div>'
+        if options["display_mode"] else upright_greek(convert(text, display="inline"))))
+
+    def fence(tokens, idx, options, env):
+        token = tokens[idx]
+        language = token.info.strip()
+        short = " short" if token.content.count("\n") <= 14 else ""
+        if language == "bash":
+            return (f'<div class="code cmd{short}"><span class="code-tag">bash</span>'
+                    f'<pre><code>{highlight(token.content)}</code></pre></div>\n')
+        if language in ("output", ""):
+            tag = "实测样例" if language == "output" else "示意"
+            return (f'<div class="code out{short}"><span class="code-tag">{tag}</span>'
+                    f'<pre><code>{html.escape(token.content)}</code></pre></div>\n')
+        raise ValueError(f"未处理的代码类型 {language!r}：先补充对应渲染规则")
+
+    def link_open(tokens, idx, options, env):
+        token = tokens[idx]
+        href = token.attrGet("href")
+        url = urlsplit(href)
+        if url.scheme:
+            token.attrSet("class", "ext")
+        else:
+            token.attrSet("class", "xref")
+            target = SOURCE.parent / unquote(url.path)
+            # 有同名阅读版时链接到 HTML；没有时保留 Markdown 链接。片段锚点在 check() 中逐一核对。
+            if target.suffix == ".md" and target.with_suffix(".html").exists():
+                token.attrSet("href", href.replace(url.path, url.path[:-3] + ".html", 1))
+        return md.renderer.renderToken(tokens, idx, options, env)
+
+    md.renderer.rules["fence"] = fence
+    md.renderer.rules["link_open"] = link_open
+    md.renderer.rules["table_open"] = lambda *args: (
+        '<div class="table-wrap" tabindex="0" role="region" aria-label="表格，可横向滚动"><table>\n')
+    md.renderer.rules["table_close"] = lambda *args: "</table></div>\n"
+    return md
+
+
+def prepare(tokens, md, module, figures, subtoc):
+    """h3 加编号与锚点；Mermaid 与紧随其后的图注合成一幅可访问 SVG。"""
+    out = []
+    idx = 0
+    while idx < len(tokens):
+        token = tokens[idx]
+        if token.type == "heading_open" and token.tag == "h3":
+            inline = tokens[idx + 1].content
+            number, title = re.match(r"^(\d+\.\d+) (.+)$", inline).groups()
+            anchor = f"s{number.replace('.', '-')}"
+            assert anchor == f"s{module}-{len(subtoc) + 1}", f"小节编号不连续：{number}"
+            rendered = md.renderInline(title)
+            out.append(html_token(f'<h3 id="{anchor}"><span class="sec-no">{number}</span>{rendered}</h3>\n'))
+            subtoc.append(f'<li><a href="#{anchor}">{number}　{rendered}</a></li>')
+            idx += 3
+            continue
+        if token.type == "fence" and token.info.strip() == "mermaid":
+            kinds = [t.type for t in tokens[idx + 1:idx + 4]]
+            assert kinds == ["paragraph_open", "inline", "paragraph_close"], "配图后缺少图注"
+            caption = tokens[idx + 2].content
+            match = re.fullmatch(r"\*图示说明：(.+)\*", caption, re.S)
+            assert match, "图注应以 *图示说明：…* 书写"
+            key = re.search(r"%% lecture11:(\w+)", token.content)[1]
+            figures.append(key)
+            plain = re.sub(r"[*`]", "", match[1])
+            out.append(html_token(figure(key, token.content, len(figures), md.renderInline(match[1]), plain)))
+            idx += 4
+            continue
+        out.append(token)
+        idx += 1
+    return out
+
+
+def check(source, output):
+    page = Page()
+    page.feed(output)
+    fences = [t for t in markdown().parse(source) if t.type == "fence"]
+    blocks = [t.content for t in fences if t.info.strip() != "mermaid"]
+    assert blocks == page.blocks, "命令／输出块与源文不一致"
+    mermaid = sum(t.info.strip() == "mermaid" for t in fences)
+    assert page.figures == mermaid, f"配图数量 {page.figures} 与源图 {mermaid} 不符"
+    numbers = [int(n) for n in re.findall(r"<figcaption><b>图 (\d+)</b>", output)]
+    assert numbers == list(range(1, mermaid + 1)), f"图号不连续：{numbers}"
+    duplicated = [key for key, count in Counter(page.ids).items() if count > 1]
+    assert not duplicated, f"ID 重复：{duplicated}"
+    assert not page.resources, f"存在外部资源依赖：{page.resources}"
+    assert hashlib.sha256(source.encode()).hexdigest() in output, "源文摘要不匹配"
+    check_leftovers(page, output)
+    assert not re.search(r"masthead|module-head|toc-mods|pathstrip", output), "有旧版结构残留"
+    check_links(page, SOURCE.parent)
+    math = output.count("<math")
+    print(f"PASS：{len(blocks)} 个命令／输出块逐字一致；{page.figures} 幅配图；{math} 个 MathML；"
+          f"{len(page.links)} 个链接、ID、摘要与外部依赖检查通过。")
+
+
+def build(updated):
+    source = SOURCE.read_text()
+    md = markdown()
+    css, script = FIGURE_CSS, ""          # 共用样式与脚本由 restyle() 嵌入；这里只带本讲配图的专属样式
+
+    title = source.splitlines()[0].removeprefix("# ")
+    lecture, topic = re.match(r"^第 (\d+) 讲 (.+)$", title).groups()
+    head, subhead = topic.split("：", 1)
+    chunks = re.split(r"^## (.+)\n", source, flags=re.M)
+
+    # 导读：引用块进 lead。
+    intro_tokens = md.parse(chunks[0].split("\n", 1)[1].replace("\n---\n", "\n"))
+    quote_end = next(i for i, t in enumerate(intro_tokens) if t.type == "blockquote_close")
+    lead_inline = intro_tokens[2]
+    lead_inline.content = lead_inline.content.removeprefix("**课程导读**：")
+    lead_inline.children = md.parseInline(lead_inline.content, {})[0].children
+    lead = md.renderer.render(intro_tokens[1:quote_end], md.options, {})
+
+    sections, toc, hops, figures = [], [], [], []
+    goals = schedule = ""
+    for idx in range(1, len(chunks), 2):
+        heading, body = chunks[idx], chunks[idx + 1].replace("\n---\n", "\n")
+        if heading == "学习目标":
+            tokens = md.parse(body)
+            end = next(i for i, t in enumerate(tokens) if t.type == "ordered_list_close" and t.level == 0)
+            goals = md.renderer.render(tokens[:end + 1], md.options, {})
+            schedule = md.renderer.render(tokens[end + 1:], md.options, {})
+            continue
+        number, name = re.match(r"^模块([一二三四五六七八九])：(.+)$", heading).groups()
+        module = NUMERALS.index(number) + 1
+        layer, tag_class, tag, hop_tag = MODULE_TAGS[module]
+        subtoc = []
+        tokens = prepare(md.parse(body), md, module, figures, subtoc)
+        rendered_name = md.renderInline(name)
+        layer_attr = f' data-layer="{layer}"' if layer else ""
+        sections.append(
+            f'<section class="module" id="m{module}"{layer_attr}><header class="module-head">'
+            f'<div class="module-eyebrow"><span class="module-no">模块{number}</span>'
+            f'<span class="tag {tag_class}">{tag}</span></div><h2>{rendered_name}</h2></header>\n'
+            + md.renderer.render(tokens, md.options, {}) + "</section>\n")
+        toc.append(f'<li data-layer="{layer}" data-target="m{module}"><a href="#m{module}">'
+                   f'<span class="n">{module:02}</span><span>{rendered_name}</span></a>'
+                   f'<ol class="toc-sub">{"".join(subtoc)}</ol></li>')
+        hops.append(f'<li><a href="#m{module}"><span class="hop-n">{module}</span><span class="hop-m">模块{number}</span>'
+                    f'<span class="hop-t">{rendered_name}</span><span class="tag {tag_class}">{hop_tag}</span></a></li>')
+
+    sha = hashlib.sha256(source.encode()).hexdigest()
+    pathstrip = (
+        '<svg viewBox="0 0 300 40" role="img" aria-label="一个客户端连到三个实例：路越来越细，实例越来越强">'
+        '<rect x="4" y="13" width="40" height="14" rx="2" class="n-host"/>'
+        '<path d="M 44 20 L 200 6" class="wire" style="stroke-width:3.2"/>'
+        '<path d="M 44 20 L 200 20" class="wire" style="stroke-width:1.8"/>'
+        '<path d="M 44 20 L 200 34" class="wire" style="stroke-width:.9"/>'
+        '<rect x="200" y="1" width="30" height="10" rx="2" class="n-l4"/>'
+        '<rect x="200" y="15" width="56" height="10" rx="2" class="n-l4"/>'
+        '<rect x="200" y="29" width="92" height="10" rx="2" class="n-l4"/>'
+        + '</svg>')
+    output = f'''<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="generator" content="2026/tools/build_computing_aware_steering_html.py；源文 sha256 {sha}；更新 {updated}">
+<title>第{lecture}讲 {html.escape(topic)}</title><style>{css}</style></head><body><div class="layout">
+<nav class="toc no-print" aria-label="目录">
+<div class="toc-course">云网融合创新实践 · {lecture}<b>{html.escape(head)}</b></div>
+<ol class="toc-mods"><li data-target="top"><a href="#top"><span class="n">00</span><span>导读与学习目标</span></a></li>{"".join(toc)}</ol>
+<div class="toc-foot"><button type="button" class="btn-print js-print">打印 / 存为 PDF</button><p class="print-hint">版式按 A4 纵向设计，自带页眉与页码；打印对话框里请关掉浏览器自己的“页眉和页脚”。</p></div>
+</nav>
+<main class="doc" id="top">
+<header class="masthead"><div class="mast-eyebrow"><span>上海交通大学 · 云网融合创新实践</span><span class="lec">2026 · LECTURE {lecture} · 讲义</span></div><h1>{html.escape(head)}：<br>{html.escape(subhead)}</h1><p class="mast-sub">Computing-Aware Networking: The Nearest Is Not Always the Fastest</p><div class="pathstrip">{pathstrip}<div class="legend"><span><i class="k-l3"></i>三层 · 到实例的路径</span><span><i class="k-l4"></i>四层 · 请求的传输；紫色也表示实例的算力</span></div></div><div class="lead"><span class="lead-label">课程导读</span>{lead}</div></header>
+<section class="plain-sec goals" id="objectives"><h2>学习目标</h2>{goals}</section>
+<nav class="hops" aria-label="本讲路线"><p class="hops-cmd">$ traceroute -n <b>lecture-{lecture}</b><br>traceroute to lecture-{lecture} ({html.escape(head)}), {len(hops)} hops max</p><ol>{"".join(hops)}</ol></nav>
+<section class="plain-sec" style="margin-top:40px" id="schedule"><h2>课堂时间安排</h2>{schedule}</section>
+{"".join(sections)}
+<footer class="colophon"><span>上海交通大学 ·《云网融合创新实践》第 {lecture} 讲</span><span>由 <a href="{SOURCE.name}">2026/docs/{SOURCE.name}</a> 生成 · sha256 {sha[:10]} · {updated}</span></footer>
+</main></div><script>{script}</script></body></html>
+'''
+    output = restyle(output, SOURCE.stem, page_css=FIGURE_CSS, base=SOURCE.parent)
+    check(source, output)
+    target = SOURCE.with_suffix(".html")
+    target.write_text(output)
+    print(f"已生成 {target.relative_to(ROOT)}；浏览器显示检查须另行完成。")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--date", required=True, type=date.fromisoformat, help="本次内容更新日期，YYYY-MM-DD")
+    build(parser.parse_args().date)

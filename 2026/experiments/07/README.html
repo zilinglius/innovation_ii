@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="generator" content="2026/tools/build_lab7_html.py；源文 sha256 54f33bea4378c88123d2f96ef8b31bc3d4af4ff2107b23ea49bff61431055f64；更新 2026-11-15">
+<meta name="generator" content="2026/tools/build_lab7_html.py；源文 sha256 2dab300485bb0ba9bfde7fd1d4aaf19e4def6685af6d95b20cdb17ec9461362c；更新 2026-11-15">
 <title>Lab 7 · 算网协同调度</title>
 <!--
   维护说明（版式规范见仓库根目录 html_guidelines.md；内容以同名 Markdown 为准）
@@ -870,7 +870,7 @@ ul.lettered > li > strong:first-child { font-family: var(--font-mono); font-size
     <div class="nav-course"><a href="../../README.md">云网融合创新实践 · 2026</a><i>Lab 7</i><b>算网协同调度</b></div>
     <button type="button" class="ibtn nav-close js-toc-close" aria-label="关闭目录"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"/></svg></button>
   </div>
-  <ol class="stops"><li data-target="top"><a href="#top"><span class="dot"></span><span>实验导读</span></a></li><li data-target="m1"><a href="#m1"><span class="dot"></span><span><span class="stop-n">01</span>实验目标</span></a></li><li data-target="m2"><a href="#m2"><span class="dot"></span><span><span class="stop-n">02</span>预备知识与工具</span></a></li><li data-target="m3"><a href="#m3"><span class="dot"></span><span><span class="stop-n">03</span>目录与资源</span></a><ol class="subs"><li><a href="#m3-s1">3.1 文件</a></li><li><a href="#m3-s2">3.2 实验床与测量口径</a></li><li><a href="#m3-s3">3.3 骨架与测试</a></li></ol></li><li data-target="m4"><a href="#m4"><span class="dot"></span><span><span class="stop-n">04</span>实验步骤</span></a><ol class="subs"><li><a href="#m4-s1">A 段：第 10 讲后</a></li><li class="toc-h4"><a href="#m4-s2">任务 1：测一张画像，跑两种不看画像的放置（基础）</a></li><li class="toc-h4"><a href="#m4-s3">任务 2：把代价模型写成函数（基础，TODO 1）</a></li><li class="toc-h4"><a href="#m4-s4">任务 3：在全部候选里找最好的放置（基础，TODO 2）</a></li><li class="toc-h4"><a href="#m4-s5">任务 4：给共享上联做修正（进阶，TODO 3）</a></li><li class="toc-h4"><a href="#m4-s6">任务 5：未知网络里的闭环（挑战）</a></li><li class="toc-h4"><a href="#m4-s7">A 段的清理</a></li><li><a href="#m4-s8">B 段：第 11 讲后</a></li></ol></li><li data-target="m5"><a href="#m5"><span class="dot"></span><span><span class="stop-n">05</span>故障排查</span></a></li><li data-target="m6"><a href="#m6"><span class="dot"></span><span><span class="stop-n">06</span>思考题</span></a></li><li data-target="m7"><a href="#m7"><span class="dot"></span><span><span class="stop-n">07</span>提交要求</span></a><ol class="subs"><li><a href="#m7-s1">维护与验证</a></li></ol></li></ol>
+  <ol class="stops"><li data-target="top"><a href="#top"><span class="dot"></span><span>实验导读</span></a></li><li data-target="m1"><a href="#m1"><span class="dot"></span><span><span class="stop-n">01</span>实验目标</span></a></li><li data-target="m2"><a href="#m2"><span class="dot"></span><span><span class="stop-n">02</span>预备知识与工具</span></a></li><li data-target="m3"><a href="#m3"><span class="dot"></span><span><span class="stop-n">03</span>目录与资源</span></a><ol class="subs"><li><a href="#m3-s1">3.1 文件</a></li><li><a href="#m3-s2">3.2 实验床与测量口径</a></li><li><a href="#m3-s3">3.3 骨架与测试</a></li></ol></li><li data-target="m4"><a href="#m4"><span class="dot"></span><span><span class="stop-n">04</span>实验步骤</span></a><ol class="subs"><li><a href="#m4-s1">A 段：第 10 讲后</a></li><li class="toc-h4"><a href="#m4-s2">任务 1：测一张画像，跑两种不看画像的放置（基础）</a></li><li class="toc-h4"><a href="#m4-s3">任务 2：把代价模型写成函数（基础，TODO 1）</a></li><li class="toc-h4"><a href="#m4-s4">任务 3：在全部候选里找最好的放置（基础，TODO 2）</a></li><li class="toc-h4"><a href="#m4-s5">任务 4：给共享上联做修正（进阶，TODO 3）</a></li><li class="toc-h4"><a href="#m4-s6">任务 5：未知网络里的闭环（挑战）</a></li><li class="toc-h4"><a href="#m4-s7">A 段的清理</a></li><li><a href="#m4-s8">B 段：第 11 讲后</a></li><li class="toc-h4"><a href="#m4-s9">任务 6：两张画像，三种现成的策略（基础）</a></li><li class="toc-h4"><a href="#m4-s10">任务 7：把三项的估计写成函数（基础，TODO 4）</a></li><li class="toc-h4"><a href="#m4-s11">任务 8：联合代价分发器（基础，TODO 5）</a></li><li class="toc-h4"><a href="#m4-s12">任务 9：实例的状态隔一会儿才知道（进阶）</a></li><li class="toc-h4"><a href="#m4-s13">任务 10：换一组条件，完成闭环（挑战）</a></li><li class="toc-h4"><a href="#m4-s14">B 段的清理</a></li></ol></li><li data-target="m5"><a href="#m5"><span class="dot"></span><span><span class="stop-n">05</span>故障排查</span></a></li><li data-target="m6"><a href="#m6"><span class="dot"></span><span><span class="stop-n">06</span>思考题</span></a></li><li data-target="m7"><a href="#m7"><span class="dot"></span><span><span class="stop-n">07</span>提交要求</span></a><ol class="subs"><li><a href="#m7-s1">维护与验证</a></li></ol></li></ol>
   <div class="nav-foot">
     <p class="nav-prog ui"><span>已完成步骤</span><b class="js-prog">0 / 0</b><button type="button" class="js-reset">清零</button></p>
     <div class="nav-tools">
@@ -887,10 +887,10 @@ ul.lettered > li > strong:first-child { font-family: var(--font-mono); font-size
   <h1>算网协同调度</h1>
   <p class="hero-en">Compute–Network Co-Scheduling</p>
   <div class="lead"><span class="lead-label">实验导读</span><blockquote>
-<p>对应第 10、11 讲　｜　建议用时 2 周　｜　A 段（第 10 讲后）约 4 小时；B 段（第 11 讲后）随第 11 讲补充　｜　产出：一个能读画像、给放置打分并在全部候选里选出最好放置的调度器，以及它与两种不看画像的策略的实测对照</p>
+<p>对应第 10、11 讲　｜　建议用时 2 周　｜　A 段（第 10 讲后）约 4 小时；B 段（第 11 讲后）约 4 小时　｜　截止：2026-12-28　｜　产出：A 段是一个能读画像、给放置打分并在全部候选里选出最好放置的调度器；B 段是一个把网络和算力放在一起估计的请求分发器；两者都要有与现成策略的实测对照</p>
 </blockquote>
 <p>第 10 讲的课上，你读了一张网络画像，手算了三种放置的作业完成时间，又凭观察在一个未知的网络里挑出了一种好的放置。本实验把这些手算写成程序：让它读画像文件，给任意一种放置打分，在全部 280 种放置里找出预测最好的一个，再用实测检验它比“同机架优先”和“随机”好多少。</p>
-<p>本实验分两段：<strong>A 段</strong>（任务 1–5）对应第 10 讲，只考虑网络，其中任务 1–3 人人完成，任务 4 是进阶，任务 5 是挑战。<strong>B 段</strong>对应第 11 讲，主机的算力也不相同时，把网络和算力放在一起决策；B 段的任务随第 11 讲补充到本文。计分见第七节。</p>
+<p>本实验分两段：<strong>A 段</strong>（任务 1–5）对应第 10 讲，只考虑网络，其中任务 1–3 人人完成，任务 4 是进阶，任务 5 是挑战。<strong>B 段</strong>（任务 6–10）对应第 11 讲：主机的算力也不相同时，把网络和算力放在一起，决定每个请求发给哪个实例，其中任务 6–8 人人完成，任务 9 是进阶，任务 10 是挑战。计分见第七节。</p>
 </div>
   <div class="legend"><span><i class="k-l3"></i>三层 · 路径与机架上联</span><span><i class="k-l4"></i>四层 · 吞吐与作业流量</span></div>
 </header>
@@ -902,6 +902,8 @@ ul.lettered > li > strong:first-child { font-family: var(--font-mono); font-size
 <li>把第 10 讲的三项代价模型写成函数，预测一种放置的每轮时间与作业完成时间（JCT），并与实测对账。</li>
 <li>给全部候选放置打分并排序，选出预测最好的放置；用后悔值比较“同机架优先”“随机”“按画像打分”三种策略。</li>
 <li>用机架信息给共享上联做修正，说明修正解决了什么、还剩什么没有解决。</li>
+<li>测出网络与算力两张画像，把“传输、排队、计算”三项写成函数，估计一个请求在各实例上的完成时间（B 段）。</li>
+<li>实现联合代价分发器，与“就近”“算力最强”“最空闲”对照；实测实例状态上报有滞后时会发生什么（B 段）。</li>
 </ol>
 </section>
 <section class="module" id="m2" data-layer="">
@@ -910,9 +912,10 @@ ul.lettered > li > strong:first-child { font-family: var(--font-mono); font-size
 <ul>
 <li><a href="../../docs/topology_aware_scheduling.html" class="xref">第 10 讲</a>模块二：画像矩阵的读法；模块三：代价模型与共享上联；模块五：后悔值。</li>
 <li><a href="../../docs/communication_cost.html" class="xref">第 08 讲</a>模块一：参数服务器一轮的时间结构与 barrier。</li>
+<li><a href="../../docs/computing_aware_steering.html" class="xref">第 11 讲</a>模块一到三：请求的四段时间、两张画像、三项的估计与联合代价的手工推演（B 段）。</li>
 <li><a href="../03/README.html" class="xref">Lab 3 指导书</a> 3.2 节：节点、接口与地址约定。Lab 3、Lab 4、Lab 6 没有做完也可以做本实验：实验床、画像工具和作业都是给定的完整版。</li>
 </ul>
-<p><strong>环境</strong>：Linux（<code>sudo</code>）、<code>iproute2</code>、<code>iputils-ping</code>、<code>iperf3</code>、Python 3.10 及以上与 <code>uv</code>；内核支持 namespace、veth、bridge、HTB、fq 与 netem。</p>
+<p><strong>环境</strong>：Linux（<code>sudo</code>）、<code>iproute2</code>、<code>iputils-ping</code>、<code>iperf3</code>、Python 3.10 及以上与 <code>uv</code>；内核支持 namespace、veth、bridge、HTB、fq 与 netem。B 段另外需要 cgroup v2 及其 <code>cpu</code> 控制器（<code>cat /sys/fs/cgroup/cgroup.controllers</code> 的输出里有 <code>cpu</code>；Ubuntu 22.04 起默认满足）。</p>
 <p><strong>约定</strong>：需要 root 的步骤显式写了 <code>sudo</code>。作业与测量都显式指定拥塞控制算法，默认 <code>cubic</code>，不依赖系统默认值。</p>
 </section>
 <section class="module" id="m3" data-layer="">
@@ -969,6 +972,26 @@ ul.lettered > li > strong:first-child { font-family: var(--font-mono); font-size
 <td style="text-align:left">给定</td>
 </tr>
 <tr>
+<td style="text-align:left"><a href="sched/steering.py" class="xref"><code>sched/steering.py</code></a></td>
+<td style="text-align:left">B 段：请求 <code>Request</code>、实例 <code>Instance</code>；三种分发策略（给定）</td>
+<td style="text-align:left"><strong>TODO 4</strong>：<code>estimate</code>；<strong>TODO 5</strong>：<code>Joint.choose</code></td>
+</tr>
+<tr>
+<td style="text-align:left"><a href="edge.sh" class="xref"><code>edge.sh</code></a>、<a href="instance.py" class="xref"><code>instance.py</code></a></td>
+<td style="text-align:left">B 段：在 host 上启动服务实例，并用 cgroup 的 <code>cpu.max</code> 给每个实例限定算力</td>
+<td style="text-align:left">给定</td>
+</tr>
+<tr>
+<td style="text-align:left"><a href="cpuprof.py" class="xref"><code>cpuprof.py</code></a></td>
+<td style="text-align:left">B 段：算力画像</td>
+<td style="text-align:left">给定</td>
+</tr>
+<tr>
+<td style="text-align:left"><a href="steer.py" class="xref"><code>steer.py</code></a>、<code>edge_client.py</code></td>
+<td style="text-align:left">B 段：请求分发器（运行一批请求、排表、估计表）</td>
+<td style="text-align:left">给定</td>
+</tr>
+<tr>
 <td style="text-align:left"><code>tests/</code></td>
 <td style="text-align:left">离线测试；<code>tests/fixtures/</code> 是两份实测的画像</td>
 <td style="text-align:left">给定，用来检查 TODO</td>
@@ -1000,6 +1023,16 @@ ul.lettered > li > strong:first-child { font-family: var(--font-mono); font-size
 <td style="text-align:left"><code>blind --seed N</code></td>
 <td style="text-align:left">随机注入 1–2 项隐藏条件</td>
 <td style="text-align:left">任务 5</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>lecture11</code></td>
+<td style="text-align:left">机架 3 的上联降到 30 Mbit/s，机架 4 的上联降到 10 Mbit/s</td>
+<td style="text-align:left">任务 6–9</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>lecture11x</code></td>
+<td style="text-align:left">第 11 讲综合动手的场景：机架 2 的上联 10 Mbit/s，机架 4 的上联 30 Mbit/s</td>
+<td style="text-align:left">任务 10</td>
 </tr>
 </tbody>
 </table></div>
@@ -1035,21 +1068,41 @@ ul.lettered > li > strong:first-child { font-family: var(--font-mono); font-size
 <td style="text-align:left">后悔值</td>
 <td style="text-align:left">一种放置的平均实测 JCT ÷ 参与比较的放置中最小的平均实测 JCT；1.00 表示它就是最好的</td>
 </tr>
+<tr>
+<td style="text-align:left">实例（B 段）</td>
+<td style="text-align:left"><code>instance.py</code> 的一个进程，监听 7700 端口；一次只算一个请求，先到先算。实例预设 <code>lecture11</code>：h1b 15%、h3a 30%、h4a 60% 个核；<code>lecture11x</code>：h2a 60%、h3b 15%、h4b 30%</td>
+</tr>
+<tr>
+<td style="text-align:left">请求（B 段）</td>
+<td style="text-align:left">先上传输入，再做一段计算。<code>upload</code>：输入 1 MB、计算 20 ms；<code>compute</code>：输入 10 kB、计算 150 ms；<code>mixed</code>：两者交替。计算量是 CPU 时间，不是墙上时间</td>
+</tr>
+<tr>
+<td style="text-align:left">四段时间（B 段）</td>
+<td style="text-align:left">传输：发出 → 实例收齐输入；排队：收齐 → 开始计算；计算：开始 → 算完；返回：算完 → 客户端收到结果</td>
+</tr>
+<tr>
+<td style="text-align:left">批完成（B 段）</td>
+<td style="text-align:left">最后一个请求完成的时刻减第一个请求发出的时刻；默认一批 12 个请求，每 100 ms 发出一个</td>
+</tr>
+<tr>
+<td style="text-align:left">rate（B 段）</td>
+<td style="text-align:left">算力画像里的数：工作量（CPU 时间）÷ 计算用的墙上时间；1.0 相当于一个不受限的核</td>
+</tr>
 </tbody>
 </table></div>
-<p>作业结果写入 <code>/tmp/lab06-results/&lt;label&gt;.json</code>（<code>jobrun.py</code> 沿用 Lab 6 的结果目录），画像默认写入 <code>/tmp/lab04-results/</code>，<code>evaluate.py</code> 的汇总写入 <code>/tmp/lab07-results/</code>。作业结果与评估汇总的<strong>同名文件会被覆盖</strong>；<code>checkup.py</code> 则相反，发现同名的画像或原始输出目录已经存在时会拒绝运行，重测时换一个 <code>--out</code> 文件名，或先删掉旧的 <code>.json</code> 与 <code>.raw</code>。重启主机可能清除 <code>/tmp</code>，需要留存时另外复制。</p>
+<p>作业结果写入 <code>/tmp/lab06-results/&lt;label&gt;.json</code>（<code>jobrun.py</code> 沿用 Lab 6 的结果目录），画像默认写入 <code>/tmp/lab04-results/</code>，<code>evaluate.py</code> 的汇总写入 <code>/tmp/lab07-results/</code>。B 段的两张画像与每批请求的结果（<code>steer-&lt;label&gt;.json</code>）也写入 <code>/tmp/lab07-results/</code>；实例的状态登记在 <code>/run/lab07</code>，cgroup 在 <code>/sys/fs/cgroup/lab07</code>。作业结果与评估汇总的<strong>同名文件会被覆盖</strong>；<code>checkup.py</code> 则相反，发现同名的画像或原始输出目录已经存在时会拒绝运行，重测时换一个 <code>--out</code> 文件名，或先删掉旧的 <code>.json</code> 与 <code>.raw</code>。重启主机可能清除 <code>/tmp</code>，需要留存时另外复制。</p>
 <p><strong>画像只代表测量时的网络</strong>。换了场景要重新测；<code>evaluate.py</code> 发现画像里记录的场景与实验床当前的场景不一致时会提示。</p>
 <h3 id="m3-s3">3.3 骨架与测试</h3>
 <div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="grp" data-step="1"><span class="ln cm"><span class="c step"><span class="step-n"># 1.</span> 进入 Lab 7 目录（压缩包解压后的目录，路径换成你自己的），准备路由守护进程的 Python 环境</span>
 </span><span class="ln x">cd ~/lab07
 </span><span class="ln x">uv sync --frozen
 </span></span><span class="ln gap">
-</span><span class="grp" data-step="2"><span class="ln cm"><span class="c step"><span class="step-n"># 2.</span> 离线测试：骨架原样应为 23 个测试中 3 个通过、20 个报错</span>
+</span><span class="grp" data-step="2"><span class="ln cm"><span class="c step"><span class="step-n"># 2.</span> 离线测试：骨架原样应为 36 个测试中 4 个通过、32 个报错</span>
 </span><span class="ln x">python3 -m unittest 2&gt;&amp;1 | tail -1
 </span></span></code></pre></div>
-<div class="code out short"><span class="code-tag">实测样例</span><pre><code><span class="ln">FAILED (errors=20)
+<div class="code out short"><span class="code-tag">实测样例</span><pre><code><span class="ln">FAILED (errors=32)
 </span></code></pre></div>
-<p>通过的 3 个是给定部分的测试（候选数目与两种不看画像的策略）。TODO 对应的测试：<code>tests.test_cost.RoundCases</code> 是 TODO 1，<code>tests.test_strategy.RankCases</code> 是 TODO 2，<code>tests.test_cost.SharedTimeCases</code> 与 <code>SharedRoundCases</code> 是 TODO 3。本实验的工具只用 Python 标准库，直接用系统 <code>python3</code> 运行。</p>
+<p>通过的 4 个是给定部分的测试（候选数目、两种不看画像的放置策略、三种给定的分发策略）。TODO 对应的测试：<code>tests.test_cost.RoundCases</code> 是 TODO 1，<code>tests.test_strategy.RankCases</code> 是 TODO 2，<code>tests.test_cost.SharedTimeCases</code> 与 <code>SharedRoundCases</code> 是 TODO 3，<code>tests.test_steering.EstimateCases</code> 是 TODO 4，<code>tests.test_steering.JointCases</code> 是 TODO 5。本实验的工具只用 Python 标准库，直接用系统 <code>python3</code> 运行。</p>
 </section>
 <section class="module" id="m4" data-layer="">
 <header class="opener"><span class="opener-no ui" aria-hidden="true">04</span><div class="opener-top"><span class="module-no sr-only">04</span><span class="otag">LAB 7</span></div><h2>实验步骤</h2></header>
@@ -1316,7 +1369,220 @@ ul.lettered > li > strong:first-child { font-family: var(--font-mono); font-size
 </span><span class="ln">[*] 实验床已拆除；路由日志保留在 /tmp/lab04-results。
 </span></code></pre></div>
 <h3 id="m4-s8">B 段：第 11 讲后</h3>
-<p>B 段对应第 11 讲：用 cgroup 限制 CPU，让各主机的算力不同，再实现一个请求分发器，比较“就近”“最空闲”“算力与网络联合代价”三种策略。任务与 TODO 随第 11 讲补充到本文，A 段的画像与代价模型会接着用。</p>
+<p>A 段默认每台主机算得一样快。B 段让主机的算力也不一样，工作负载换成请求与响应：客户端 h1a 把请求发给三个服务实例中的一个，实例先收输入、再计算、最后返回结果。要决定的是每个请求发给谁。背景、两类请求和四段时间的定义见<a href="../../docs/computing_aware_steering.html" class="xref">第 11 讲</a>模块一，3.2 节的表里也有。</p>
+<h4 id="m4-s9">任务 6：两张画像，三种现成的策略（基础）</h4>
+<div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="grp" data-step="23"><span class="ln cm"><span class="c step"><span class="step-n"># 23.</span> 实验床已经拆掉的话重新搭建（接着 A 段做、实验床还在时，这一步什么也不做）</span>
+</span><span class="ln x"><span class="su">sudo</span> bash lab4_topo.sh status &gt;/dev/null 2&gt;&amp;1 || <span class="su">sudo</span> bash lab4_topo.sh up
+</span></span><span class="ln gap">
+</span><span class="grp" data-step="24"><span class="ln cm"><span class="c step"><span class="step-n"># 24.</span> 加载网络场景，启动三个实例（h1b 15%、h3a 30%、h4a 60% 个核）</span>
+</span><span class="ln x"><span class="su">sudo</span> bash lab4_topo.sh scenario lecture11
+</span><span class="ln x"><span class="su">sudo</span> bash edge.sh up
+</span><span class="ln x"><span class="su">sudo</span> bash edge.sh status
+</span></span><span class="ln gap">
+</span><span class="grp" data-step="25"><span class="ln cm"><span class="c step"><span class="step-n"># 25.</span> 两张画像：客户端 h1a 到三个实例的网络（约 10 秒），三个实例的算力（约 6 秒）</span>
+</span><span class="ln x"><span class="su">sudo</span> rm -rf /tmp/lab07-results/net-profile.json /tmp/lab07-results/net-profile.raw
+</span><span class="ln x"><span class="su">sudo</span> python3 checkup.py --src h1a --dst h1b,h3a,h4a --tput-repeats 1 --tput-seconds 1 --tput-omit 1 --out /tmp/lab07-results/net-profile.json
+</span><span class="ln x"><span class="su">sudo</span> python3 cpuprof.py
+</span></span></code></pre></div>
+<p><strong>实测样例</strong>（节选：省略了 <code>[计划]</code> 行和网络画像的两张矩阵）：</p>
+<div class="code out"><span class="code-tag">实测样例</span><pre><code><span class="ln">[*] 场景 lecture11 已加载。结束后执行 lab4_topo.sh scenario clear，再用 lab4_topo.sh status 核对。
+</span><span class="ln">[*] 预设 lecture11：实例已启动，端口 7700。查看限额用 edge.sh status；结束后执行 edge.sh down。
+</span><span class="ln">[预设] lecture11
+</span><span class="ln">[实例] h1b  cpu.max 1500 10000（15% 个核）  计算进程 167965 
+</span><span class="ln">[实例] h3a  cpu.max 3000 10000（30% 个核）  计算进程 167974 
+</span><span class="ln">[实例] h4a  cpu.max 6000 10000（60% 个核）  计算进程 167976 
+</span><span class="ln">[RTT]  h1a ⇄ h1b  p50 0.098 ms  p90 0.107 ms  丢 0/20
+</span><span class="ln">[RTT]  h1a ⇄ h3a  p50 0.143 ms  p90 0.201 ms  丢 0/20
+</span><span class="ln">[RTT]  h1a ⇄ h4a  p50 0.145 ms  p90 0.209 ms  丢 0/20
+</span><span class="ln">[吞吐] h1a → h1b  95.0 Mbit/s（95.0–95.0，n=1）
+</span><span class="ln">[吞吐] h1a → h3a  28.3 Mbit/s（28.3–28.3，n=1）
+</span><span class="ln">[吞吐] h1a → h4a  9.4 Mbit/s（9.4–9.4，n=1）
+</span><span class="ln">[完成] 用时 0.2 分钟；画像 /tmp/lab07-results/net-profile.json；原始输出 /tmp/lab07-results/net-profile.raw/
+</span><span class="ln">[算力] h1b  100 ms 的计算用了 657.2 ms（656.4–658.8，n=5）  rate 0.152
+</span><span class="ln">[算力] h3a  100 ms 的计算用了 326.3 ms（325.6–327.1，n=5）  rate 0.306
+</span><span class="ln">[算力] h4a  100 ms 的计算用了 157.4 ms（156.7–158.1，n=5）  rate 0.635
+</span><span class="ln">[完成] 算力画像 /tmp/lab07-results/cpu-profile.json
+</span></code></pre></div>
+<div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="grp" data-step="26"><span class="ln cm"><span class="c step"><span class="step-n"># 26.</span> 三类负载 × 三种现成的策略，各一批（12 个请求，每 100 ms 一个），共 9 次，约 45 秒</span>
+</span><span class="ln x">for w in compute upload mixed; do
+</span><span class="ln x cont">  for p in nearest:near strongest:strong least:least; do
+</span><span class="ln x cont">    <span class="su">sudo</span> python3 steer.py run --policy ${p%%:*} --workload $w --label ${w:0:1}-${p##*:}
+</span><span class="ln x cont">  done
+</span><span class="ln x cont">done
+</span></span><span class="ln gap">
+</span><span class="grp" data-step="27"><span class="ln cm"><span class="c step"><span class="step-n"># 27.</span> 排成表</span>
+</span><span class="ln x">python3 steer.py report c-near c-strong c-least u-near u-strong u-least m-near m-strong m-least
+</span></span></code></pre></div>
+<p><strong>实测样例</strong>（节选：省略了每次运行打印的一行摘要）：</p>
+<div class="code out short"><span class="code-tag">实测样例</span><pre><code><span class="ln">标签     策略          负载    批完成s p50ms p95ms 传输 排队 计算  各实例请求数
+</span><span class="ln">c-near   nearest       compute  12.023  5503 10923    2 4956 1000  h1b×12
+</span><span class="ln">c-strong strongest     compute   3.014  1010  1914    7  828  249  h4a×12
+</span><span class="ln">c-least  least         compute   4.000   699  3000    4  436  581  h1b×4 h3a×4 h4a×4
+</span><span class="ln">u-near   nearest       upload    1.724   385   624   86  186  135  h1b×12
+</span><span class="ln">u-strong strongest     upload    6.767  5485  6046 4570    5   27  h4a×12
+</span><span class="ln">u-least  least         upload    1.968   341   868  331    7   87  h1b×6 h3a×4 h4a×2
+</span><span class="ln">m-near   nearest       mixed     6.913  2992  5813   44 2398  565  h1b×12
+</span><span class="ln">m-strong strongest     mixed     2.773   591  2024  927   72  138  h4a×12
+</span><span class="ln">m-least  least         mixed     2.157   758  1058  205  206  312  h1b×4 h3a×5 h4a×3
+</span></code></pre></div>
+<p><strong>要回答的问题</strong>：</p>
+<ol>
+<li>两张画像各说明了什么？三个实例里，谁离客户端最近、谁算得最快？</li>
+<li>三类负载各是哪种策略最好？有没有一种策略在三类负载上都不差？</li>
+<li><code>c-least</code> 把 12 个请求平分给了三个实例，为什么反而比全部发给 h4a 的 <code>c-strong</code> 慢？用 <code>python3 steer.py show c-least</code> 的明细说明。</li>
+<li><code>c-strong</code> 的“排队”一列为什么不是 0？它的批完成时间怎样用“一个请求算多久”估出来？</li>
+</ol>
+<h4 id="m4-s10">任务 7：把三项的估计写成函数（基础，TODO 4）</h4>
+<p>完成 <a href="sched/steering.py" class="xref"><code>sched/steering.py</code></a> 的 <code>estimate</code>：把一个请求现在发给某个实例，估计它的传输、排队、计算各要多久，什么时候做完。式子就是第 11 讲 3.1 节的三项。</p>
+<div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="grp" data-step="28"><span class="ln cm"><span class="c step"><span class="step-n"># 28.</span> TODO 4 的离线测试</span>
+</span><span class="ln x">python3 -m unittest tests.test_steering.EstimateCases 2&gt;&amp;1 | tail -1
+</span></span><span class="ln gap">
+</span><span class="grp" data-step="29"><span class="ln cm"><span class="c step"><span class="step-n"># 29.</span> 用两张画像估计两类请求在各实例上的完成时间（实例空闲时）</span>
+</span><span class="ln x">python3 steer.py estimate --workload mixed
+</span></span><span class="ln gap">
+</span><span class="grp" data-step="30"><span class="ln cm"><span class="c step"><span class="step-n"># 30.</span> 实测对账：两类请求各给三个实例发 1 个</span>
+</span><span class="ln x">for h in h1b h3a h4a; do
+</span><span class="ln x cont">  <span class="su">sudo</span> python3 steer.py run --policy only:$h --workload upload --requests 1 --label u1-$h
+</span><span class="ln x cont">  <span class="su">sudo</span> python3 steer.py run --policy only:$h --workload compute --requests 1 --label c1-$h
+</span><span class="ln x cont">done
+</span><span class="ln x">python3 steer.py report u1-h1b u1-h3a u1-h4a c1-h1b c1-h3a c1-h4a
+</span></span></code></pre></div>
+<p><strong>实测样例</strong>（节选：省略了第 30 步每次运行打印的一行摘要）：</p>
+<div class="code out"><span class="code-tag">实测样例</span><pre><code><span class="ln">OK
+</span><span class="ln">输入kB    计算ms  实例   吞吐Mbit/s   rate   传输ms   计算ms   完成ms   （实例空闲、只发这一个请求时的估计）
+</span><span class="ln">1000          20  h1b          95.0  0.152     84.3    131.4    215.8
+</span><span class="ln">1000          20  h3a          28.3  0.306    283.2     65.3    348.5
+</span><span class="ln">1000          20  h4a           9.4  0.635    848.5     31.5    880.0
+</span><span class="ln">10           150  h1b          95.0  0.152      0.9    985.5    986.5
+</span><span class="ln">10           150  h3a          28.3  0.306      3.0    489.4    492.4
+</span><span class="ln">10           150  h4a           9.4  0.635      8.6    236.1    244.8
+</span><span class="ln">标签     策略          负载    批完成s p50ms p95ms 传输 排队 计算  各实例请求数
+</span><span class="ln">u1-h1b   only:h1b      upload    0.217   217   217   89    0  126  h1b×1
+</span><span class="ln">u1-h3a   only:h3a      upload    0.337   337   337  284    0   52  h3a×1
+</span><span class="ln">u1-h4a   only:h4a      upload    0.871   871   871  840    0   29  h4a×1
+</span><span class="ln">c1-h1b   only:h1b      compute   0.994   994   994    8    1  985  h1b×1
+</span><span class="ln">c1-h3a   only:h3a      compute   0.503   503   503   10    0  492  h3a×1
+</span><span class="ln">c1-h4a   only:h4a      compute   0.254   254   254   11    0  242  h4a×1
+</span></code></pre></div>
+<p><strong>要提交的对账表</strong>（用你自己的数据）：6 行，每行是一类请求在一个实例上的估计完成时间、实测完成时间与误差。</p>
+<p><strong>要回答的问题</strong>：</p>
+<ol>
+<li>6 个估计里误差最大的是哪个？偏大还是偏小？可能漏掉了什么？</li>
+<li>对 <code>upload</code> 和 <code>compute</code>，估计最快的实例各是谁？与任务 6 里“哪种策略最好”对得上吗？</li>
+<li><code>estimate</code> 里的 <code>wait</code> 一项，在这一步的对账里用上了吗？它什么时候才不是 0？</li>
+</ol>
+<h4 id="m4-s11">任务 8：联合代价分发器（基础，TODO 5）</h4>
+<p>完成 <a href="sched/steering.py" class="xref"><code>sched/steering.py</code></a> 的 <code>Joint.choose</code>：每个请求发给预计最早做完的实例，并记下这个实例要忙到什么时候。第 11 讲 3.5 节手工推演过前 4 个请求。</p>
+<div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="grp" data-step="31"><span class="ln cm"><span class="c step"><span class="step-n"># 31.</span> TODO 4、5 的离线测试</span>
+</span><span class="ln x">python3 -m unittest tests.test_steering 2&gt;&amp;1 | tail -1
+</span></span><span class="ln gap">
+</span><span class="grp" data-step="32"><span class="ln cm"><span class="c step"><span class="step-n"># 32.</span> 联合代价：三类负载各一批</span>
+</span><span class="ln x">for w in compute upload mixed; do
+</span><span class="ln x cont">  <span class="su">sudo</span> python3 steer.py run --policy joint --workload $w --label ${w:0:1}-joint
+</span><span class="ln x cont">done
+</span></span><span class="ln gap">
+</span><span class="grp" data-step="33"><span class="ln cm"><span class="c step"><span class="step-n"># 33.</span> 与任务 6 的 9 次排在一起；再看混合负载下它把请求发给了谁</span>
+</span><span class="ln x">python3 steer.py report c-near c-strong c-least c-joint u-near u-strong u-least u-joint m-near m-strong m-least m-joint
+</span><span class="ln x">python3 steer.py show m-joint
+</span></span></code></pre></div>
+<p><strong>实测样例</strong>（节选：省略了第 32 步每次运行打印的一行摘要）：</p>
+<div class="code out"><span class="code-tag">实测样例</span><pre><code><span class="ln">OK
+</span><span class="ln">标签     策略          负载    批完成s p50ms p95ms 传输 排队 计算  各实例请求数
+</span><span class="ln">c-near   nearest       compute  12.023  5503 10923    2 4956 1000  h1b×12
+</span><span class="ln">c-strong strongest     compute   3.014  1010  1914    7  828  249  h4a×12
+</span><span class="ln">c-least  least         compute   4.000   699  3000    4  436  581  h1b×4 h3a×4 h4a×4
+</span><span class="ln">c-joint  joint         compute   2.090   653  1004    6  296  372  h1b×1 h3a×3 h4a×8
+</span><span class="ln">u-near   nearest       upload    1.724   385   624   86  186  135  h1b×12
+</span><span class="ln">u-strong strongest     upload    6.767  5485  6046 4570    5   27  h4a×12
+</span><span class="ln">u-least  least         upload    1.968   341   868  331    7   87  h1b×6 h3a×4 h4a×2
+</span><span class="ln">u-joint  joint         upload    1.425   316   355  132   53  121  h1b×10 h3a×2
+</span><span class="ln">m-near   nearest       mixed     6.913  2992  5813   44 2398  565  h1b×12
+</span><span class="ln">m-strong strongest     mixed     2.773   591  2024  927   72  138  h4a×12
+</span><span class="ln">m-least  least         mixed     2.157   758  1058  205  206  312  h1b×4 h3a×5 h4a×3
+</span><span class="ln">m-joint  joint         mixed     1.607   212   507   46   62  184  h1b×6 h4a×6
+</span><span class="ln">实例     请求数    传输    排队    计算    返回    完成   （各段是该实例上请求的平均值，ms）
+</span><span class="ln">h1b           6    85.4     1.0   119.2     0.7   206.3
+</span><span class="ln">h4a           6     7.3   123.8   249.4     1.1   381.6
+</span></code></pre></div>
+<p><strong>要回答的问题</strong>：</p>
+<ol>
+<li>以每类负载里最小的批完成时间为基准，算出四种策略的后悔值。联合代价在三类负载上各是多少？</li>
+<li><code>c-joint</code> 给三个实例各发了几个请求？这个比例与三个实例的 rate 之比接近吗？为什么不是全给 h4a，也不是平分？</li>
+<li><code>m-joint</code> 把哪类请求发给了谁？h3a 用上了吗？把请求间隔从 100 ms 改成 50 ms 再跑一次（<code>--gap-ms 50</code>），分配有什么变化？</li>
+<li>联合代价的分发器靠自己的记录知道每个实例要忙到什么时候。这份记录在什么情况下会不准？</li>
+</ol>
+<h4 id="m4-s12">任务 9：实例的状态隔一会儿才知道（进阶）</h4>
+<p>联合代价的分发器是唯一的客户端，所以它自己的记录够用。更一般的情况是：分发器靠实例<strong>上报</strong>的状态决策，而上报是有间隔的（第 11 讲 4.2 节）。<code>--policy reported</code> 模拟这种情况：每隔 <code>--report-ms</code> 毫秒向各实例查询一次“还有多少工作没算完”，两次查询之间只按上一次查到的数来估计。它用到 TODO 4 的 <code>estimate</code>。</p>
+<div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="grp" data-step="34"><span class="ln cm"><span class="c step"><span class="step-n"># 34.</span> 更密的一批：24 个重计算请求，每 50 ms 一个；联合代价作基线</span>
+</span><span class="ln x"><span class="su">sudo</span> python3 steer.py run --policy joint --workload compute --requests 24 --gap-ms 50 --label r-joint
+</span></span><span class="ln gap">
+</span><span class="grp" data-step="35"><span class="ln cm"><span class="c step"><span class="step-n"># 35.</span> 按上报的状态决策：每个请求之前都查询（0）、每 300 ms、每 1000 ms 查询一次</span>
+</span><span class="ln x">for ms in 0 300 1000; do
+</span><span class="ln x cont">  <span class="su">sudo</span> python3 steer.py run --policy reported --report-ms $ms --workload compute --requests 24 --gap-ms 50 --label r-$ms
+</span><span class="ln x cont">done
+</span></span><span class="ln gap">
+</span><span class="grp" data-step="36"><span class="ln cm"><span class="c step"><span class="step-n"># 36.</span> 排成表；再看间隔 300 ms 时各实例的明细</span>
+</span><span class="ln x">python3 steer.py report r-joint r-0 r-300 r-1000
+</span><span class="ln x">python3 steer.py show r-300
+</span></span></code></pre></div>
+<p><strong>实测样例</strong>（节选：省略了每次运行打印的一行摘要与 <code>[上报]</code> 行）：</p>
+<div class="code out short"><span class="code-tag">实测样例</span><pre><code><span class="ln">标签     策略          负载    批完成s p50ms p95ms 传输 排队 计算  各实例请求数
+</span><span class="ln">r-joint  joint         compute   3.592  1492  2441    5 1024  416  h1b×3 h3a×7 h4a×14
+</span><span class="ln">r-0      reported      compute   3.760  1456  2460    5 1058  384  h1b×2 h3a×7 h4a×15
+</span><span class="ln">r-300    reported      compute   4.596  1357  2892    5 1107  436  h1b×4 h3a×6 h4a×14
+</span><span class="ln">r-1000   reported      compute   5.012  1851  3866    6 1698  291  h3a×4 h4a×20
+</span><span class="ln">实例     请求数    传输    排队    计算    返回    完成   （各段是该实例上请求的平均值，ms）
+</span><span class="ln">h1b           4     1.6  1419.1   996.4     1.2  2418.2
+</span><span class="ln">h3a           6     3.4  1115.2   497.1     0.9  1616.7
+</span><span class="ln">h4a          14     6.7  1015.0   249.6     1.6  1273.0
+</span></code></pre></div>
+<p><strong>要回答的问题</strong>：</p>
+<ol>
+<li>上报间隔为 0 时，结果与联合代价接近吗？它们用的信息有什么不同？</li>
+<li>间隔 300 ms 与 1000 ms 时，各实例收到的请求数怎样变化？哪个实例被“挤爆”了？用“两次上报之间，分发器看到的状态不变”解释。</li>
+<li>批完成时间随间隔单调变差吗？你的数据如果不是单调的，可能是什么原因？（提示：一次查询之后的这一段时间里，所有请求都去了同一个实例；这个实例碰巧是谁，取决于查询的那一刻。）</li>
+<li>不缩短上报间隔，分发器自己可以做什么来减轻这个问题？至少提出一种做法，说明它用到了什么额外的信息。</li>
+</ol>
+<h4 id="m4-s13">任务 10：换一组条件，完成闭环（挑战）</h4>
+<div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="grp" data-step="37"><span class="ln cm"><span class="c step"><span class="step-n"># 37.</span> 换一组条件：实例的位置、算力与到它们的网络都变了；重测两张画像，再比较四种策略</span>
+</span><span class="ln x"><span class="su">sudo</span> bash lab4_topo.sh scenario lecture11x
+</span><span class="ln x"><span class="su">sudo</span> bash edge.sh up lecture11x
+</span><span class="ln x"><span class="su">sudo</span> rm -rf /tmp/lab07-results/net-profile.json /tmp/lab07-results/net-profile.raw
+</span><span class="ln x"><span class="su">sudo</span> python3 checkup.py --src h1a --dst h2a,h3b,h4b --tput-repeats 1 --tput-seconds 1 --tput-omit 1 --out /tmp/lab07-results/net-profile.json
+</span><span class="ln x"><span class="su">sudo</span> python3 cpuprof.py
+</span><span class="ln x">for p in nearest:near strongest:strong least:least joint:joint; do
+</span><span class="ln x cont">  <span class="su">sudo</span> python3 steer.py run --policy ${p%%:*} --workload mixed --label x-${p##*:}
+</span><span class="ln x cont">done
+</span><span class="ln x">python3 steer.py report x-near x-strong x-least x-joint
+</span></span></code></pre></div>
+<p>这一项没有样例输出。先完成上面的闭环，再<strong>选一项深入做</strong>：</p>
+<ul>
+<li><strong>两个分发器</strong>：在 h1a 和另一台主机上（<code>--client h2b</code>，网络画像要另测这台主机到各实例的三对）同时各运行一个联合代价分发器，它们互相不知道对方发了什么。批完成时间比单个分发器发同样多的请求差多少？怎样改进？</li>
+<li><strong>改进上报</strong>：给 <code>reported</code> 加一种修正（例如把自己在上一次查询之后发出的请求也算进去），用任务 9 的三个间隔检验。</li>
+<li><strong>拆开来做</strong>：第 11 讲 6.2 节第 4 题。先在近的实例上做轻的一步、把输入变小，再送去强的实例做重的一步，估计并实测。</li>
+</ul>
+<p>报告里写清楚：你的预测、实测、后悔值，以及改进前后的对比。</p>
+<h4 id="m4-s14">B 段的清理</h4>
+<div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="grp" data-step="38"><span class="ln cm"><span class="c step"><span class="step-n"># 38.</span> 停实例、删 cgroup，恢复网络基线并核对</span>
+</span><span class="ln x"><span class="su">sudo</span> bash edge.sh down
+</span><span class="ln x"><span class="su">sudo</span> bash lab4_topo.sh scenario clear
+</span><span class="ln x"><span class="su">sudo</span> bash lab4_topo.sh status
+</span></span><span class="ln gap">
+</span><span class="grp" data-step="39"><span class="ln cm"><span class="c step"><span class="step-n"># 39.</span> 留存结果（同名文件再次运行会被覆盖）</span>
+</span><span class="ln x">mkdir -p &quot;$HOME/lab07-results&quot; &amp;&amp; cp -r /tmp/lab07-results &quot;$HOME/lab07-results/&quot;
+</span></span><span class="ln gap">
+</span><span class="grp" data-step="40"><span class="ln cm"><span class="c step"><span class="step-n"># 40.</span> 拆实验床（幂等）</span>
+</span><span class="ln x"><span class="su">sudo</span> bash lab4_topo.sh down
+</span></span></code></pre></div>
+<p><strong>实测样例</strong>：</p>
+<div class="code out short"><span class="code-tag">实测样例</span><pre><code><span class="ln">[*] 实例已停止，cgroup 已删除。
+</span><span class="ln">[*] 已恢复基线：全部端口 HTB + fq、档位不变，钉路已取消。
+</span><span class="ln">[档位] leaf–spine 100 Mbit/s；host 接入 100 Mbit/s。场景：无。
+</span><span class="ln">[基线] 32 个限速端口均为 HTB + fq，速率与 burst 为基线值。
+</span><span class="ln">[基线] r1–r4 没有额外策略路由（自然 ECMP）。
+</span><span class="ln">[*] 实验床已拆除；路由日志保留在 /tmp/lab04-results。
+</span></code></pre></div>
+<p><code>edge.sh down</code> 会结束实例的两个进程并删除 <code>/sys/fs/cgroup/lab07</code>，重复执行不报错。要先停实例，再拆实验床。</p>
 </section>
 <section class="module" id="m5" data-layer="">
 <header class="opener"><span class="opener-no ui" aria-hidden="true">05</span><div class="opener-top"><span class="module-no sr-only">05</span><span class="otag">LAB 7</span></div><h2>故障排查</h2></header>
@@ -1379,6 +1645,41 @@ ul.lettered > li > strong:first-child { font-family: var(--font-mono); font-size
 <td style="text-align:left"><code>sudo bash lab4_topo.sh status</code></td>
 <td style="text-align:left">执行 <code>lab4_topo.sh scenario clear</code> 恢复；再不行就 <code>lab4_topo.sh down</code> 后重新 <code>up</code></td>
 </tr>
+<tr>
+<td style="text-align:left"><code>edge.sh up</code> 报需要 cgroup v2 或没有 cpu 控制器</td>
+<td style="text-align:left"><code>cat /sys/fs/cgroup/cgroup.controllers</code></td>
+<td style="text-align:left">系统用的是 cgroup v1，或在不允许写 cgroup 的容器里；换一台标准的 Ubuntu 虚拟机</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>edge.sh up</code> 报实例没有起来</td>
+<td style="text-align:left"><code>cat /run/lab07/&lt;主机&gt;.log</code></td>
+<td style="text-align:left">实验床没搭；7700 端口被上一次没停干净的实例占着，先 <code>edge.sh down</code></td>
+</tr>
+<tr>
+<td style="text-align:left"><code>steer.py</code>、<code>cpuprof.py</code> 报没有在运行的实例或连接被拒</td>
+<td style="text-align:left"><code>sudo bash edge.sh status</code></td>
+<td style="text-align:left">没有执行 <code>edge.sh up</code>；或者实验床重搭过，实例随旧的 namespace 一起没了</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>steer.py run</code> 报网络画像里没有某一对主机</td>
+<td style="text-align:left">画像是为哪几个实例测的</td>
+<td style="text-align:left">换了预设没有重测；按任务 6 第 25 步重测，<code>--dst</code> 写当前的三个实例</td>
+</tr>
+<tr>
+<td style="text-align:left">算力画像的 rate 与限额差很多，或两次差别大</td>
+<td style="text-align:left"><code>top</code>；<code>sudo bash edge.sh status</code></td>
+<td style="text-align:left">机器上有别的负载在抢 CPU；三个实例的限额加起来超过了机器空闲的核数</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>steer.py</code> 提示需要先完成 TODO</td>
+<td style="text-align:left">对应的 TODO</td>
+<td style="text-align:left"><code>estimate</code> 子命令和 <code>reported</code> 需要 TODO 4；<code>joint</code> 需要 TODO 4、5；<code>nearest</code>、<code>strongest</code>、<code>least</code>、<code>only:</code>、<code>split:</code> 不需要</td>
+</tr>
+<tr>
+<td style="text-align:left">同一种策略两次的批完成时间差不少</td>
+<td style="text-align:left"><code>python3 steer.py show 标签</code> 的“传输”一列</td>
+<td style="text-align:left">大输入的请求要过两条限速的上联，多条连接怎样分到两条上每次不同（第 11 讲 3.3 节的边界）</td>
+</tr>
 </tbody>
 </table></div>
 </section>
@@ -1388,12 +1689,14 @@ ul.lettered > li > strong:first-child { font-family: var(--font-mono); font-size
 <li><strong>PS 的位置与 worker 的位置</strong>：同样是“放错了一台”，把 PS 放进慢机架和把一个 worker 放进慢机架，哪个代价更大？用任务 3 的数据说明。</li>
 <li><strong>画像的代价</strong>：快速画像用了约 2.5 分钟，期间每条链路都被 iperf3 占满过。如果集群里有作业在跑，画像会给它们带来什么影响，它们又会怎样影响画像？</li>
 <li><strong>预测值并列时</strong>：30 种放置的预测值只差 2%。真实的调度器在并列的候选之间通常还会考虑什么？（提示：机器上已经在跑的作业、故障域、公平。）</li>
-<li><strong>接到第 11 讲</strong>：本实验假设每台主机算得一样快。如果 h3a 的 CPU 只有别人的四分之一，而它的网络最好，代价模型应该怎么改？</li>
+<li><strong>接到第 11 讲</strong>：A 段假设每台主机算得一样快。如果 h3a 的 CPU 只有别人的四分之一，而它的网络最好，A 段的代价模型应该怎么改？</li>
+<li><strong>两个模型合起来</strong>：A 段的代价模型有“共享上联”，B 段的估计有“排队”。它们描述的是同一类现象吗？各自的“共享资源”是什么？</li>
+<li><strong>度量的单位</strong>：B 段的 rate 是用一种纯 CPU 的计算量出来的。如果服务的计算主要耗在读写内存或使用 GPU 上，这张算力画像还能用吗？应该怎样测？</li>
 </ol>
 </section>
 <section class="module" id="m7" data-layer="">
 <header class="opener"><span class="opener-no ui" aria-hidden="true">07</span><div class="opener-top"><span class="module-no sr-only">07</span><span class="otag">LAB 7</span></div><h2>提交要求</h2></header>
-<p><strong>截止时间</strong>：随 B 段一起公布。</p>
+<p><strong>截止时间</strong>：2026-12-28。</p>
 <div class="table-wrap" tabindex="0" role="region" aria-label="表格，可横向滚动"><table>
 <thead>
 <tr>
@@ -1429,15 +1732,35 @@ ul.lettered > li > strong:first-child { font-family: var(--font-mono); font-size
 <td style="text-align:left">5</td>
 </tr>
 <tr>
-<td style="text-align:left">B 段</td>
-<td style="text-align:left">随第 11 讲公布</td>
-<td style="text-align:left">50</td>
+<td style="text-align:left">B 段 任务 6（基础）</td>
+<td style="text-align:left">两张画像；9 次运行的对照表；四个问题的解答</td>
+<td style="text-align:left">10</td>
+</tr>
+<tr>
+<td style="text-align:left">B 段 任务 7（基础）</td>
+<td style="text-align:left"><code>estimate</code>（<code>EstimateCases</code> 全部通过）；6 行的估计与实测对账表；三个问题的解答</td>
+<td style="text-align:left">15</td>
+</tr>
+<tr>
+<td style="text-align:left">B 段 任务 8（基础）</td>
+<td style="text-align:left"><code>Joint.choose</code>（<code>test_steering</code> 全部通过）；12 次运行的对照表与后悔值；四个问题的解答</td>
+<td style="text-align:left">15</td>
+</tr>
+<tr>
+<td style="text-align:left">B 段 任务 9（进阶）</td>
+<td style="text-align:left">四次运行的对照表与间隔 300 ms 的明细；四个问题的解答</td>
+<td style="text-align:left">5</td>
+</tr>
+<tr>
+<td style="text-align:left">B 段 任务 10（挑战）</td>
+<td style="text-align:left">新条件下的两张画像与四种策略的对照表；所选一项的做法、数据与对比</td>
+<td style="text-align:left">5</td>
 </tr>
 </tbody>
 </table></div>
-<p>报告建议 A 段 3–4 页。每项都要有预测、证据、解释：预测被推翻同样有价值，评分看证据是否充分、解释是否不超出数据。</p>
+<p>报告建议 A 段 3–4 页，B 段 3–4 页。每项都要有预测、证据、解释：预测被推翻同样有价值，评分看证据是否充分、解释是否不超出数据。</p>
 <p>提交 <code>sched/</code> 目录、报告和结果文件。不提交 <code>.venv/</code> 与 <code>__pycache__/</code>。</p>
-<div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="grp" data-step="22"><span class="ln cm"><span class="c step"><span class="step-n"># 22.</span> 打包代码与第 20 步留存的结果</span>
+<div class="code cmd short"><span class="code-tag">bash</span><pre><code><span class="grp" data-step="41"><span class="ln cm"><span class="c step"><span class="step-n"># 41.</span> 打包代码与第 20、39 步留存的结果</span>
 </span><span class="ln x">tar --exclude=__pycache__ -czf &quot;$HOME/lab07-submission.tgz&quot; sched -C &quot;$HOME/lab07-results&quot; .
 </span><span class="ln x">tar -tzf &quot;$HOME/lab07-submission.tgz&quot; | head
 </span></span></code></pre></div>
@@ -1453,7 +1776,7 @@ ul.lettered > li > strong:first-child { font-family: var(--font-mono); font-size
 <tbody>
 <tr>
 <td style="text-align:left">状态</td>
-<td style="text-align:left">A 段已完成；B 段尚未编写，随第 11 讲补充</td>
+<td style="text-align:left">A 段（2026-11-15）与 B 段（2026-11-15）均已编写</td>
 </tr>
 <tr>
 <td style="text-align:left">环境</td>
@@ -1461,11 +1784,11 @@ ul.lettered > li > strong:first-child { font-family: var(--font-mono); font-size
 </tr>
 <tr>
 <td style="text-align:left">离线测试</td>
-<td style="text-align:left">骨架原样 23 个测试：3 个通过、20 个报错；补全 TODO 的参考实现 23 个全部通过。<code>tests/fixtures/</code> 的两份画像是 2026-11-14 在同一台虚拟机上实测的</td>
+<td style="text-align:left">骨架原样 36 个测试：4 个通过、32 个报错；补全 TODO 的参考实现 36 个全部通过。<code>tests/fixtures/</code> 的两份画像是 2026-11-14 在同一台虚拟机上实测的</td>
 </tr>
 <tr>
 <td style="text-align:left">实验床</td>
-<td style="text-align:left">2026-11-15 把本目录复制到仓库外（<code>~/lab07</code>），按本文原样、按顺序运行了全部 22 个步骤：步骤 1–7 用骨架原样，步骤 8–14 用只补全 TODO 1、2 的临时副本，步骤 15–22 用补全全部 TODO 的临时副本；实测样例均来自这次运行。同机架优先的放置在这次运行里 6 次都落在约 27.5 秒一档（上传或下发有一个方向撞车）；第 10 讲备课时的 5 次是 36、35、27、27、19 秒。任务 5 的盲测路径用种子 7 跑通。清理后没有残留进程和 namespace。评估表的排版在这次运行之后改窄了：本文任务 3、4 的三张表是用 <code>evaluate.py --show</code> 从同一批结果文件重新打印的，新格式另用一次短的实跑（1 个随机种子、各 1 次）确认过。参考实现不入库</td>
+<td style="text-align:left">2026-11-15 把本目录复制到仓库外（<code>~/lab07</code>），按本文原样、按顺序运行了 A 段的全部步骤（第 1–21 步与打包）：步骤 1–7 用骨架原样，步骤 8–14 用只补全 TODO 1、2 的临时副本，步骤 15 起用补全 A 段全部 TODO 的临时副本；A 段的实测样例均来自这次运行。B 段（第 23–41 步）同日另行运行：第 23–27 步用骨架原样，第 28 步起用补全全部 TODO 的临时副本，B 段的实测样例均来自这次运行；清理后 <code>/sys/fs/cgroup/lab07</code> 与 namespace 都不存在。任务 10 的第 37 步实测为 <code>nearest</code> 6.919、<code>strongest</code> 3.601、<code>least</code> 2.308、联合代价 1.606 秒。同机架优先的放置在这次运行里 6 次都落在约 27.5 秒一档（上传或下发有一个方向撞车）；第 10 讲备课时的 5 次是 36、35、27、27、19 秒。任务 5 的盲测路径用种子 7 跑通。清理后没有残留进程和 namespace。评估表的排版在这次运行之后改窄了：本文任务 3、4 的三张表是用 <code>evaluate.py --show</code> 从同一批结果文件重新打印的，新格式另用一次短的实跑（1 个随机种子、各 1 次）确认过。参考实现不入库</td>
 </tr>
 <tr>
 <td style="text-align:left">单独运行</td>
@@ -1473,7 +1796,7 @@ ul.lettered > li > strong:first-child { font-family: var(--font-mono); font-size
 </tr>
 <tr>
 <td style="text-align:left">Ubuntu 24.04</td>
-<td style="text-align:left">2026-11-15 在 Ubuntu 24.04.5 用户态容器（iproute2 6.1.0、Python 3.12.3、iperf3 3.16；宿主内核 Linux 7.3、4 vCPU）中，把本目录复制到仓库外，按同样的三段方式原样运行了全部 22 个步骤，全部通过。读数与本文样例一致：按画像打分的放置 8.64–8.67 秒（后悔值 1.00）；<code>lecture10</code> 下同机架优先 35.31、35.52 秒；<code>rack2-slow</code> 下同机架优先 5 次为 19.13、19.10、27.43、27.42、35.84 秒，三档都出现了。这只说明用户态是 24.04，内核不是学生环境的内核</td>
+<td style="text-align:left">2026-11-15 在 Ubuntu 24.04.5 用户态容器（iproute2 6.1.0、Python 3.12.3、iperf3 3.16；宿主内核 Linux 7.3、4 vCPU）中，把本目录复制到仓库外，按同样的三段方式原样运行了 A 段的全部步骤，全部通过。读数与本文样例一致：按画像打分的放置 8.64–8.67 秒（后悔值 1.00）；<code>lecture10</code> 下同机架优先 35.31、35.52 秒；<code>rack2-slow</code> 下同机架优先 5 次为 19.13、19.10、27.43、27.42、35.84 秒，三档都出现了。这只说明用户态是 24.04，内核不是学生环境的内核。B 段：这个容器默认不允许给子 cgroup 开启 <code>cpu</code> 控制器，<code>edge.sh up</code> 直接运行会报错退出（已确认它不改动容器的 cgroup 状态）。2026-11-15 另起了一个同镜像的临时容器，先把容器里的进程移进一个子 cgroup、再给容器的 cgroup 根开启 <code>cpu</code> 控制器，然后把本目录复制到仓库外，按原样运行了 B 段的全部步骤（第 23–27 步用骨架，第 28 步起用补全全部 TODO 的临时副本），全部通过，读数与本文样例一致：算力画像 0.152、0.305、0.632；<code>compute</code> 的四种策略 11.998、3.005、4.004、2.080 秒；<code>mixed</code> 的联合代价 1.601 秒；任务 9 的四次 3.589、3.755、4.590、5.011 秒。同一容器里离线测试的结果与上文相同。<strong>没有验证到的</strong>：学生在标准虚拟机上不需要“先移进程”这一步，<code>edge.sh</code> 在真正的 24.04 根 cgroup 上自动开启控制器的那条路径只在备课虚拟机（26.04）上验证过</td>
 </tr>
 </tbody>
 </table></div>
@@ -1483,9 +1806,10 @@ ul.lettered > li > strong:first-child { font-family: var(--font-mono); font-size
   <h2 class="block-h" id="next-h">接下来</h2>
   <div class="next-grid">
     <a href="../../docs/topology_aware_scheduling.html"><i>对应讲义 · 第 10 讲</i><b>拓扑感知调度：让计算“看见”网络</b></a>
+    <a href="../../docs/computing_aware_steering.html"><i>对应讲义 · 第 11 讲</i><b>算力网络与算网协同：最近的不一定最快</b></a>
   </div>
 </nav>
-<footer class="colophon"><span>上海交通大学 · 云网融合创新实践 · Lab 7</span><span>由 <a href="README.md">README.md</a> 生成 · sha256 54f33bea4378 · 2026-11-15</span></footer>
+<footer class="colophon"><span>上海交通大学 · 云网融合创新实践 · Lab 7</span><span>由 <a href="README.md">README.md</a> 生成 · sha256 2dab300485bb · 2026-11-15</span></footer>
 </main>
 </div>
 <div id="toast" class="toast no-print ui" role="status" aria-hidden="true">投影模式：<kbd>←</kbd><kbd>→</kbd> 按段翻页，<kbd>Esc</kbd> 退出</div>

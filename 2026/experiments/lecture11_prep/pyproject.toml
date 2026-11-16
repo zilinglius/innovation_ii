@@ -1,0 +1,10 @@
+[project]
+name = "lecture11-prep"
+version = "1.0.0"
+description = "第 11 讲：实验床、服务实例、两张画像与请求分发"
+requires-python = ">=3.10"
+dependencies = []
+
+# 只用标准库。路由守护进程以 .venv/bin/python -m lsrd 启动；实例、画像与分发工具也只用标准库。
+# 环境准备（在本目录执行）：uv sync --frozen
+# 测量需要 root 与实验床：sudo python3 steer.py run ...

@@ -32,6 +32,7 @@ LECTURES = [
     ("communication_cost",       "08", "06", "配套实验 · A 段",     None),
     ("collective_communication", "09", "06", "配套实验 · B 段",     None),
     ("topology_aware_scheduling", "10", "07", "配套实验 · A 段",    None),
+    ("computing_aware_steering", "11", "07", "配套实验 · B 段",     None),
 ]
 
 # 页面的四个种类。讲义按 LECTURES 登记；回顾与参考答案挂在对应讲义的“回顾页”一栏；实验页的 page 写成 lab03 这样。

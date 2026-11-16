@@ -721,4 +721,4 @@ Lab 7 B 段对应第 11 讲：主机的算力也不一样时，怎样把网络�
 
 - 上游：[第 06 讲](network_measurement.md)的体检单与测量口径；[第 08 讲](communication_cost.md)的参数服务器、barrier 与 α-β 模型；[第 09 讲](collective_communication.md)的 ECMP 撞车；本讲目录的 `lab4_topo.sh` 与 `netprof/`。
 - 本讲：[Lab 7 指导书](../experiments/07/README.md)的 A 段，把代价模型和搜索写成程序，在多个场景下比较三种策略。
-- 下一讲：第 11 讲讨论算力网络与算网协同：机器的算力也不一样时，怎样把“离得近”和“算得快”放在一起决策。
+- 下一讲：[第 11 讲](computing_aware_steering.md)讨论算力网络与算网协同：机器的算力也不一样时，怎样把“离得近”和“算得快”放在一起决策。
