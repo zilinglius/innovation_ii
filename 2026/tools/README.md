@@ -1,6 +1,6 @@
 # 2026 阅读版维护工具
 
-目前提供 **Lab 3、Lab 4、Lab 5、Lab 6 阅读版**、**第二、三、四、五、六讲回顾阅读版**和**第 06、07、08、09 讲讲义阅读版**的生成入口，以及全部阅读版的**共用主题**（`reading_theme.py` 与 `reading_theme/`），不是全仓库通用转换器。各生成器共用 `reading_common.py`（命令行内高亮、生成页结构检查、链接与锚点核对、残留标记检查）。教师使用，不属于学生实验依赖；学生 Lab 3 仍只用 Python 标准库。
+目前提供 **Lab 3、Lab 4、Lab 5、Lab 6、Lab 7 阅读版**、**第二、三、四、五、六讲回顾阅读版**和**第 06、07、08、09、10 讲讲义阅读版**的生成入口，以及全部阅读版的**共用主题**（`reading_theme.py` 与 `reading_theme/`），不是全仓库通用转换器。各生成器共用 `reading_common.py`（命令行内高亮、生成页结构检查、链接与锚点核对、残留标记检查）。教师使用，不属于学生实验依赖；学生 Lab 3 仍只用 Python 标准库。
 
 ## 共用主题
 
@@ -9,7 +9,7 @@
 | 页面 | 维护方式 |
 | --- | --- |
 | 第 01–05 讲讲义、第一讲回顾与参考答案、Lab 1、Lab 2 指导书 | 手工维护：先改 Markdown，再按页面开头的维护说明同步 HTML；主题改动后用 `retheme` 刷新 |
-| 第 06–09 讲讲义、第二至六讲回顾与参考答案、Lab 3–6 指导书 | 有生成器：改 Markdown 后重新生成，命令见下文各节 |
+| 第 06–10 讲讲义、第二至六讲回顾与参考答案、Lab 3–7 指导书 | 有生成器：改 Markdown 后重新生成，命令见下文各节 |
 
 从仓库根目录执行：
 
@@ -265,3 +265,29 @@ uv run --project 2026/tools --frozen python 2026/tools/build_collective_communic
 
 - 结构与第 08 讲生成器相同；另外支持无语言标记的字符块（4.3 节的 RoCEv2 报文位图），标为“示意”。
 - 4 幅配图由 `collective_communication_figures.py` 绘制，拓扑骨架复用 `communication_cost_figures.py` 的 `_fabric`、`_panel`；Mermaid 源图的摘要在 `collective_communication_figure_sources.json`。改源图时先核对 SVG 的节点、方向、标签与简化条件，再更新摘要。图 3 的两种环序节点位置相同，琥珀色弧线是跨机架边。
+
+## 第 10 讲讲义阅读版
+
+先修改 `2026/docs/topology_aware_scheduling.md`，再从仓库根目录执行：
+
+```bash
+# 1. 按本目录锁文件准备依赖（与其他生成器共用）
+uv sync --project 2026/tools --frozen
+
+# 2. 生成第 10 讲阅读版，日期填写本次内容更新日期
+uv run --project 2026/tools --frozen python 2026/tools/build_topology_aware_scheduling_html.py --date 2026-11-15
+```
+
+- 结构与第 09 讲生成器相同，最后调用 `reading_theme.restyle()`。
+- 3 幅配图由 `topology_aware_scheduling_figures.py` 绘制：图 1 的两种放置使用与第 08、09 讲相同的节点位置（坐标取自 `communication_cost_figures.py` 的 `RACKS`、`SPINES`），琥珀色粗线是限速的上联；图 2 是两条流不撞与撞车两种情况；图 3 是一次放置的决策过程。Mermaid 源图的摘要在 `topology_aware_scheduling_figure_sources.json`。改源图时先核对 SVG 的节点、方向、标签与简化条件，再更新摘要。
+- 第 10 讲在 `reading_theme.py` 的 `LECTURES` 表里登记的配套实验是 Lab 7；页尾“接下来”的实验卡片读取 `2026/experiments/07/README.html` 的标题，所以要先生成 Lab 7 阅读版。
+
+## Lab 7 阅读版
+
+先修改 `2026/experiments/07/README.md`，再从仓库根目录执行：
+
+```bash
+uv run --project 2026/tools --frozen python 2026/tools/build_lab7_html.py --date 2026-11-15
+```
+
+- 输出 `2026/experiments/07/README.html`，结构与 Lab 6 生成器相同，生成器要求配图数为 0。

@@ -1,6 +1,6 @@
 # 2026 实验设计总览
 
-> 状态：设计与实现并存（2026-11-07）。Lab 1 已有指导书与拓扑脚本，Lab 2 已有指导书、教学骨架与离线测试；Lab 3 已有修订指导书、学生拓扑骨架、测量助手与分层任务；Lab 4（选做）已有指导书、完整实验床、体检工具骨架与离线测试；Lab 5 已有指导书、测量工具、骨架与离线测试；Lab 6 已有指导书、工具、骨架与离线测试；Lab 7 仍为设计稿。2026-09-27 因课时压缩为 15 讲，原 Lab 3、Lab 4 合并为 Lab 3，其后编号前移一位。2026-11-07 因学生进度偏紧再次压缩为 12 讲，每部分只做一个实验：原 Lab 6 改为 Lab 5，原 Lab 7、Lab 8 并为 Lab 6，原 Lab 9 改为 Lab 7，Lab 4 改为选做。文件存在与 Linux 实机验证是两回事，交付每个实验前须在 Linux 上按指导书跑通，尚未验证的机制应明确标注。
+> 状态：设计与实现并存（2026-11-15）。Lab 1 已有指导书与拓扑脚本，Lab 2 已有指导书、教学骨架与离线测试；Lab 3 已有修订指导书、学生拓扑骨架、测量助手与分层任务；Lab 4（选做）已有指导书、完整实验床、体检工具骨架与离线测试；Lab 5 已有指导书、测量工具、骨架与离线测试；Lab 6 已有指导书、工具、骨架与离线测试；Lab 7 的 A 段（第 10 讲）已有指导书、工具、骨架与离线测试，B 段（第 11 讲）仍为设计稿。2026-09-27 因课时压缩为 15 讲，原 Lab 3、Lab 4 合并为 Lab 3，其后编号前移一位。2026-11-07 因学生进度偏紧再次压缩为 12 讲，每部分只做一个实验：原 Lab 6 改为 Lab 5，原 Lab 7、Lab 8 并为 Lab 6，原 Lab 9 改为 Lab 7，Lab 4 改为选做。文件存在与 Linux 实机验证是两回事，交付每个实验前须在 Linux 上按指导书跑通，尚未验证的机制应明确标注。
 
 7 个实验，覆盖 12 讲。全部实验共用一个逐步长大的实验床，各实验的产出依次复用，最后落到课程目标：**用网络信息和算力信息做联合决策，让计算更快**。
 
@@ -24,7 +24,7 @@
 | [`04/`](04/README.md) | 给网络做体检（选做） | 06 | — | 📝 |
 | [`05/`](05/README.md) | 长尾延迟与对冲请求（挑战含 incast），截止 2026-11-30 | 07 | 1 | ✅ |
 | [`06/`](06/README.md) | 分布式作业的时间花在哪，以及怎么省，截止 2026-12-14 | 08–09 | 2 | 📝 |
-| `07/` | 算网协同调度 | 10–11 | 2 | ⏳ |
+| [`07/`](07/README.md) | 算网协同调度（A 段已编写，B 段随第 11 讲补充） | 10–11 | 2 | 📝 |
 
 第一部分的 Lab 1、Lab 2 已经完成，不受“每部分一个实验”调整的影响。
 
@@ -102,12 +102,14 @@
 
 ### Lab 7　算网协同调度
 
-内容不变（原 Lab 9）。尚未实现，以下为设计稿。
+指导书：[`07/README.md`](07/README.md)（[阅读版](07/README.html)）　｜　代码：`07/sched/`（`model.py` 给定；`cost.py` 的代价模型与 `strategy.py` 的排序是学生的 TODO 1–3）、`07/place.py`（选位置、预测、排表，给定）、`07/evaluate.py`（同一场景下比较各策略，输出预测、实测与后悔值，给定）、`07/tests/`（离线测试，fixtures 是两份实测画像）；`07/checkup.py` 与 `07/netprof/` 是 Lab 4 体检工具的**完整实现**；作业与实验床是 Lab 6、Lab 4 相应文件的副本。
 
-- **做什么**：
-  1. 用网络画像决定 worker 放置，真实运行，对比随机、同机架优先、代价模型评分三种策略的 JCT。开始前发布完整的 `netprof`，未做 Lab 4 的同学也能生成画像。
-  2. 用 cgroup 限制 CPU，造出算力不同的节点，分布在不同网络距离上；实现请求分发器，对比“就近”“最空闲”“算力 + 网络联合代价”三种策略。
+内容不变（原 Lab 9），分两段，与 Lab 6 的做法相同。
+
+- **A 段（第 10 讲，2026-11-15 已编写）**：用网络画像决定参数服务器作业的放置，真实运行，对比随机、同机架优先、按画像打分三种策略的 JCT 与后悔值。任务 1–3 是基础（测画像、代价模型、在 280 种放置里排序），任务 4 是进阶（用机架信息修正共享上联），任务 5 是挑战（盲测场景下的闭环与一项改进）。完整的 `netprof` 随本实验发布，未做 Lab 4 的同学也能生成画像。
+- **B 段（第 11 讲，尚未编写，以下为设计稿）**：用 cgroup 限制 CPU，造出算力不同的节点，分布在不同网络距离上；实现请求分发器，对比“就近”“最空闲”“算力 + 网络联合代价”三种策略。
 - **产出**：算网融合的完整闭环：感知网络、感知算力、联合决策。
+- **验证**：A 段于 2026-11-15 在 Ubuntu 26.04 / Linux 7.0 的备课虚拟机中，把目录复制到仓库外，用补全 TODO 的临时副本按指导书原样运行。骨架离线测试 23 个中 3 个通过、20 个报错，参考实现全部通过。同日在 Ubuntu 24.04 用户态容器中按同样方式运行了全部 22 个步骤，全部通过。详见指导书末尾的“维护与验证”。
 
 ## 讲次副本目录
 
@@ -119,17 +121,21 @@
 | `lecture08_prep/` | 第 08 讲：同上的清理脚本、`lab4_topo.sh`、`reference/`，以及 `jobrun.py`、`job.py`、`timeline.py`、`curve.py`、`jobkit/`（TODO 留白）；在本目录执行 | `03/`、`04/`、`02/reference/`、`06/` |
 | `lecture09_prep/` | 第 09 讲：同 `lecture08_prep/`，另加 `compare.py`；`jobkit/ring.py` 换成 Ring 的流量替身；在本目录执行 | `03/`、`04/`、`02/reference/`、`06/` |
 | `05/` | Lab 5 自带：同上的清理脚本、`lab4_topo.sh`、`reference/`；`tail.sh` 用本目录的 `lab4_topo.sh`；在本目录执行 | `03/`、`04/`、`02/reference/` |
+| `lecture10_prep/` | 第 10 讲：同上的清理脚本、`lab4_topo.sh`、`reference/`，`jobrun.py`、`job.py`、`timeline.py`、`compare.py`、`jobkit/`（同 `lecture09_prep/`），`checkup.py`、`owd.py` 与**完整的** `netprof/`，以及只带“随机”“同机架优先”两种策略的 `place.py`；在本目录执行 | `03/`、`04/`、`02/reference/`、`06/`、`07/` |
 | `06/` | Lab 6 自带：同上的清理脚本、`lab4_topo.sh`、`reference/`；在本目录执行 | `03/`、`04/`、`02/reference/` |
+| `07/` | Lab 7 自带：同上的清理脚本、`lab4_topo.sh`、`reference/`，`jobrun.py`、`job.py`、`timeline.py`、`jobkit/`，`checkup.py`、`owd.py` 与完整的 `netprof/`；在本目录执行 | `03/`、`04/`、`02/reference/`、`06/` |
 
-可单独运行的五个目录（`lecture07_prep/`、`lecture08_prep/`、`lecture09_prep/`、`05/`、`06/`）与源文件的差异：
+可单独运行的七个目录（`lecture07_prep/`、`lecture08_prep/`、`lecture09_prep/`、`lecture10_prep/`、`05/`、`06/`、`07/`）与源文件的差异：
 
 - 路径与提示文字：脚本用 `XX_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)` 定位本目录，提示与用法都写短路径。
 - `lab4_topo.sh up --own DIR`：改用 DIR（学生自己的 Lab 2 目录，下面要有 `lsrd/`）里的 lsrd；源文件 `04/topo.sh` 的 `--own` 不带参数，固定用 `02/`。
 - `lab3_classroom.sh`、`lab3_topo.sh` 的副本只用于 `down` 清理同名节点，`up` 只支持 `--reference`。
-- `lecture08_prep/`、`lecture09_prep/` 的 `jobrun.py` 遇到 `--compute numpy` 直接报错，指向 Lab 6 目录（课前不必下载 numpy）。
-- `lecture09_prep/jobkit/ring.py` 是课堂用的 Ring 流量替身，步数、每步字节数与合并次数同真实 Ring，但结果不正确，也不提供 `--order topo`；相应地该目录的 `jobrun.py` 不核对 Ring 的结果，只打印 `[替身]` 提示。这样第 09 讲课上可以观察 Ring 的时间与流量，而 Lab 6 的 TODO 5、7 仍保持留白。
+- `lecture08_prep/`、`lecture09_prep/`、`lecture10_prep/` 与 `07/` 的 `jobrun.py` 遇到 `--compute numpy` 直接报错，指向 Lab 6 目录（不必下载 numpy）。
+- `lecture09_prep/jobkit/ring.py` 是课堂用的 Ring 流量替身，步数、每步字节数与合并次数同真实 Ring，但结果不正确，也不提供 `--order topo`；相应地该目录的 `jobrun.py` 不核对 Ring 的结果，只打印 `[替身]` 提示。这样第 09 讲课上可以观察 Ring 的时间与流量，而 Lab 6 的 TODO 5、7 仍保持留白。`lecture10_prep/` 与 `07/` 沿用这份替身（第 10 讲与 Lab 7 只用参数服务器）。
+- `lecture10_prep/` 与 `07/` 的 `netprof/` 是 Lab 4 八个 TODO 的完整实现（2026-12-07 随第 10 讲与 Lab 7 发布），`checkup.py` 改为调用本目录的 `lab4_topo.sh` 与 `transfer.py`；源目录 `04/netprof/` 仍是学生骨架，**不要把完整实现同步回 `04/`**。
+- `lecture10_prep/place.py` 不带按画像打分的策略（`score` 子命令只提示去 Lab 7）；`07/place.py` 带 `score` 与 `predict`，依赖学生的 TODO。两者的 `rack`、`random`、`report` 行为相同。
 
-修改 `04/topo.sh`、`03/` 的脚本、`03/transfer.py` 或 `02/reference/` 时，要同步上面所有副本（保留上述差异）；修改 `05/` 中 `tail.sh`、`backend.py`、`tailbench.py`、`compare.py`、`bulk.py` 或 `tailkit/` 的给定部分时，同步 `lecture07_prep/`（`tail.sh` 的副本叫 `lab5_tail.sh`）；修改 `06/` 中 `jobrun.py`、`job.py`、`timeline.py`、`curve.py`、`compare.py` 或 `jobkit/` 的给定部分时，同步 `lecture08_prep/` 与 `lecture09_prep/`。五个可单独运行的目录之间，`lab3_classroom.sh`、`lab3_topo.sh`、`lab4_topo.sh`、`overlay_down.sh` 除文件头的讲次字样（第 07 讲的 `lab4_topo.sh` 多一句 `stats.py` 来源）外逐字相同；`reference/`、`transfer.py` 与源文件逐字相同，`jobkit/` 除 `lecture09_prep/jobkit/ring.py` 外也逐字相同，可直接用 `diff -r` 核对。验证时把目录复制到仓库外，在目录里按讲义原样执行。
+修改 `04/topo.sh`、`03/` 的脚本、`03/transfer.py` 或 `02/reference/` 时，要同步上面所有副本（保留上述差异）；修改 `05/` 中 `tail.sh`、`backend.py`、`tailbench.py`、`compare.py`、`bulk.py` 或 `tailkit/` 的给定部分时，同步 `lecture07_prep/`（`tail.sh` 的副本叫 `lab5_tail.sh`）；修改 `06/` 中 `jobrun.py`、`job.py`、`timeline.py`、`curve.py`、`compare.py` 或 `jobkit/` 的给定部分时，同步 `lecture08_prep/`、`lecture09_prep/`、`lecture10_prep/` 与 `07/`（后两处没有 `curve.py`，`07/` 没有 `compare.py`）；修改 `04/checkup.py`、`04/owd.py` 或 `04/netprof/` 的给定部分时，同步 `lecture10_prep/` 与 `07/`。七个可单独运行的目录之间，`lab3_classroom.sh`、`lab3_topo.sh`、`lab4_topo.sh`、`overlay_down.sh` 除文件头的讲次字样（第 07 讲的 `lab4_topo.sh` 多一句 `stats.py` 来源）外逐字相同；`reference/`、`transfer.py` 与源文件逐字相同，`jobkit/` 除 `lecture09_prep/jobkit/ring.py` 外也逐字相同，可直接用 `diff -r` 核对。验证时把目录复制到仓库外，在目录里按讲义原样执行。
 
 ## 已知风险
 

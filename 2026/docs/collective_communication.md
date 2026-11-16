@@ -736,4 +736,4 @@ sudo bash lab4_topo.sh down
 
 - 上游：[第 05 讲](datacenter_network.md)的 ECMP 与收敛比；[第 08 讲](communication_cost.md)的参数服务器与 α-β 模型；本讲目录的 `lab4_topo.sh`。
 - 本讲：[Lab 6 指导书](../experiments/06/README.md)的 B 段，实现真正的 Ring AllReduce、预测与拓扑感知环序，截止 2026-12-14。
-- 下一讲：第 10 讲讨论拓扑感知调度：不只是排好环序，而是决定作业的哪些部分放到哪些机器上，让计算“看见”网络。
+- 下一讲：[第 10 讲](topology_aware_scheduling.md)讨论拓扑感知调度：不只是排好环序，而是决定作业的哪些部分放到哪些机器上，让计算“看见”网络。

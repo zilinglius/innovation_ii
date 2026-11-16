@@ -1,0 +1,11 @@
+[project]
+name = "lab07-compute-network-scheduling"
+version = "1.0.0"
+description = "Lab 7：算网协同调度"
+requires-python = ">=3.10"
+dependencies = []
+
+# 只用标准库。路由守护进程以 .venv/bin/python -m lsrd 启动；作业、画像与调度工具也只用标准库。
+# 环境准备（在本目录执行）：uv sync --frozen
+# 离线测试（在本目录执行）：python3 -m unittest -v
+# 测量需要 root 与实验床：sudo python3 jobrun.py ...

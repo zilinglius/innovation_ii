@@ -31,6 +31,7 @@ LECTURES = [
     ("tail_latency",             "07", "05", "配套实验",            None),
     ("communication_cost",       "08", "06", "配套实验 · A 段",     None),
     ("collective_communication", "09", "06", "配套实验 · B 段",     None),
+    ("topology_aware_scheduling", "10", "07", "配套实验 · A 段",    None),
 ]
 
 # 页面的四个种类。讲义按 LECTURES 登记；回顾与参考答案挂在对应讲义的“回顾页”一栏；实验页的 page 写成 lab03 这样。
@@ -379,7 +380,8 @@ def next_nav(page, kind, base):
 
     if kind == "lecture":
         i, (_, _, lab, lab_kicker, review) = lecture_info(page)
-        card(f"../experiments/{lab}/README.html", lab_kicker)
+        if lab:
+            card(f"../experiments/{lab}/README.html", lab_kicker)
         if i + 1 < len(LECTURES):
             card(f"{LECTURES[i + 1][0]}.html", f"下一讲 · 第 {LECTURES[i + 1][1]} 讲")
         if review:

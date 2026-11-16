@@ -498,6 +498,8 @@ scenario_list() {
   cat <<'EOF'
   lecture06     第 06 讲综合动手：两项条件，课上先不看定义
   uplink-r1r5   Lab 4 任务 5：只把 r1–r5 一条上联两个方向降到 20 Mbit/s
+  rack2-slow    第 10 讲与 Lab 7：机架 2 的两条上联、两个方向都降到 10 Mbit/s
+  lecture10     第 10 讲综合动手：两项条件，课上先不看定义
 EOF
 }
 
@@ -516,6 +518,25 @@ scenario() {
       clear_all
       limit r1 r1-r5 20
       limit r5 r5-r1 20
+      ;;
+    rack2-slow)
+      clear_all
+      # 机架 2 与两台 spine 之间的四个方向都降到 10 Mbit/s：机架内不受影响，跨机架只剩 2 × 10 Mbit/s
+      limit r2 r2-r5 10
+      limit r2 r2-r6 10
+      limit r5 r5-r2 10
+      limit r6 r6-r2 10
+      ;;
+    lecture10)
+      clear_all
+      # X：h1a 的接入口两个方向都降到 20 Mbit/s（h1a 是作业默认的参数服务器）
+      limit h1a eth0 20
+      limit r1 r1-h1a 20
+      # Y：机架 3 与两台 spine 之间的四个方向都降到 10 Mbit/s
+      limit r3 r3-r5 10
+      limit r3 r3-r6 10
+      limit r5 r5-r3 10
+      limit r6 r6-r3 10
       ;;
     clear)
       clear_all
